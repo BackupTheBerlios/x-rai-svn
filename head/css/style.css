@@ -1,0 +1,475 @@
+div.help_top {
+  font-size: medium;
+  font-weight: normal;
+  text-align: left;
+  position: fixed;
+  bottom: 2em;
+  left: 1em;
+  background: #eeeeff;
+  border: 1px solid blue;
+  padding: 3px;   
+  visibility: hidden;   
+}
+
+div.help_bottom {
+  font-size: medium;
+  font-weight: normal;
+  text-align: left;
+  position: fixed;
+  bottom: 2em;
+  left: 1em;
+  background: #eeeeff;
+  border: 1px solid blue;
+  padding: 3px;   
+  visibility: hidden;   
+}
+
+div.message_panel {
+  position: fixed;
+  background: #eeffee;
+  border: 2px solid #00ff00;
+  padding: 0.5cm;
+  top: 40%;
+  left: 10%;  
+  visibility: hidden; 
+}
+
+div.warn_panel {
+  position: fixed;
+  background: #ffeeee;
+  border: 2px solid #ff0000;
+  padding: 0.5cm;
+  top: 40%;
+  left: 10%;  
+  visibility: hidden; 
+}
+
+
+
+p { text-align: justify; }
+img { border: 0; }
+
+.warning {  background: #eeeeee; color: #ff0000; text-align: center; }
+.error { background: #eeeeee; color: #ff0000; text-align: center; font-weight: bold; }
+
+iframe.right_panel {
+  visibility: hidden;
+  position: fixed;
+  right: 0;
+  top: 10px;
+  height: 100%;
+  background: white;
+/*   opacity: 0.8; */
+}
+
+A.text:visited {
+   text-decoration : none;
+   background : inherit;
+   font-weight: normal;
+   color: black;
+   background: transparent;
+}
+
+A.text:link {
+   font-weight: normal;
+   text-decoration : none;
+   background : inherit;
+   color: black;
+}
+
+A.text:active,A.text:hover {
+   font-weight: normal;
+   color: black;
+}
+
+
+/*
+
+	Normal link
+
+ */
+
+A.text {
+   font-weight: normal;
+   color : #000000;
+}
+
+
+
+A:visited {
+/*    font-weight : bold; */
+/*   background : inherit; */
+   text-decoration : none;
+}
+
+A:link {
+/*    font-weight : bold; */
+   text-decoration : none;
+/*   background : inherit; */
+}
+
+a.img img {
+  border: 1px solid white;
+  padding: 1px; margin: 0; 
+  vertical-align: bottom;
+  background: #cccccc;
+}
+
+
+a.img:hover img, a.img:active img {
+  border: 1px solid yellow;
+  background: yellow;
+}
+
+
+a.img:active,a.img:hover {
+  background: inherit;
+}
+
+
+a:active,a:hover {
+/*    font-weight : bold; */
+/*    background: #993333; */
+   background: yellow;
+/*    color: #ffffff; */
+   /* text-decoration : underline; */
+}
+
+a {
+ text-decoration: none;
+ color : #0000AA;
+}
+
+
+
+big { font-size:150%; }
+
+hr { height: 1pt; }
+
+
+body {
+ color: black;
+ background: #ffffff;
+ margin: 0.3cm;
+ margin-top: 1em;
+ margin-bottom: 1cm;
+}
+
+
+
+
+
+div.section { border-left: black solid 1pt; padding : 4pt; margin: 4pt }
+a.evaluated {  font-size: small;  }
+a.not-evaluated {font-size: small;  }
+
+div.nohigh { border-left: black solid 1pt; padding : 4pt; margin: 4pt; }
+div.high {  border-left: black solid 5pt; padding : 4pt; margin: 4pt; background: #fffff7; }
+div.pool { margin-left: 10pt; }
+td.nohigh { border-left: black solid 1pt; padding : 4pt; margin: 4pt; }
+td.high {  border-left: black solid 5pt; padding : 4pt; margin: 4pt; background: #ffff88; }
+
+div.message { color: blue; font-weight: bold; padding: 5pt; text-align: center; background: #eeeeee; }
+div.error { color: red; font-weight: bold; padding: 5pt;  }
+
+span.nohigh { }
+span.high {   background: #ffff00; }
+
+table.border tr { border: 1pt solid black; }
+table.border td, table.border th {  text-align: center; }
+
+tr.b1 {background: #eeeeee; }
+tr.b2 {}
+
+h1 {
+  color: #0000aa;
+  margin-left: -3pt;
+}
+h2 {
+  color: #0000aa;
+}
+
+/* Table (statistics) */
+
+table.stats {
+  text-align: center;
+  border-collapse: collapse;
+}
+
+table.stats thead tr {
+ background: #ddddee;
+}
+
+table.stats tbody tr {
+  border-top: 1pt solid black;
+  background: #eeeeff;
+}
+
+table.stats tfoot tr {
+  border-top: 1pt solid black;
+  background: #eeeeff;
+}
+
+/* Table (list) */
+
+table.list {
+  text-align: center;
+  border-collapse: collapse;
+}
+
+table.list thead tr {
+ background: #ddddee;
+}
+
+table.list tbody tr {
+  border-top: 1pt solid black;
+  background: #eeeeff;
+}
+
+table.list tfoot tr {
+  border-top: 1pt solid black;
+  background: #eeeeff;
+}
+
+table.list th {
+	border-left: 1pt solid #aaaaee;
+	border-right: 1pt solid #aaaaee;
+	padding: 3pt;
+}
+
+
+div.status {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  bottom: 0;
+  left: 0;
+/*   min-height: 30px; */
+  width: 100%;
+/* IE ?
+  width: expression(document.body.clientWidth);
+  top: expression(document.body.scrollTop + this.offsetHeight - this.offsetHeight);
+  */
+}
+
+div.status img {
+  border: 1px transparent outset;
+  padding: 2px;
+  margin:0;
+  vertical-align: bottom;
+}
+
+div.status img:hover {
+ background: #bbbbbb;
+ border: 1px solid #cccccc;
+}
+
+div.status > div {
+  border: 0;
+  margin: 0; 
+  padding: 0px;
+}
+
+div.status > div > span {
+  border: 1px outset #888888; 
+  background: #eeeeee; 
+  margin: 0;
+  margin-right: 0.2cm;
+  padding: 0px; 
+}
+
+
+
+
+/* An XML tag */
+
+div.inex div.article {
+	padding: 2px;
+}
+
+
+
+div.inex h1, div.inex h2 {
+  padding: 0;
+  margin: 0;
+  color: #000000;
+  background: inherit;
+}
+
+
+
+/** Logs */
+
+div.log {
+	margin-top: 5pt;
+	margin-bottom: 5pt;
+}
+
+div.log div {
+	background: #ffffff;
+	margin: 0;
+	margin-bottom: 1px;
+	padding: 3pt;
+	border-bottom: #888899 1px solid;
+}
+
+div.log div span.when {
+	width: 200pt;
+	color: #444444;
+}
+
+div.log div span.in_progress {
+	border-left: 3px solid #00FFFF  ;
+	padding-left: 3pt;
+}
+
+div.log div.wishlist span.what {
+	border-left: 3px solid #FF0000;
+	padding-left: 3pt;
+}
+
+div.log div.bug span.what {
+	border-left: 3px solid #FF0000;
+	padding-left: 3pt;
+}
+
+div.log div.fixed span.what {
+	border-left: 3px solid #00FF00;
+	padding-left: 3pt;
+}
+
+
+div.log div span.what {
+	border-left: 3px solid #0000FF;
+	padding-left: 3pt;
+}
+
+
+/* 
+  Localisation 
+  (Menu bar)
+  */
+
+table.localisation {
+  margin: 0; 
+  padding: 0;
+  position: fixed;
+  top: 0; 
+  left: 0;
+  width: 100%;
+  background: #eeeeee;
+  color: #000000;
+  border: 1px outset #888888;
+  font-size: small;
+  border-collapse: collapse;
+}
+
+table.localisation tr {
+  padding: 0; margin: 0; 
+}
+
+table.localisation td {
+  padding: 2px; margin: 0;
+}
+
+
+
+
+table.localisation a { padding: 1px; font-weight: bold; color: #000000; }
+table.localisation a:hover {  padding: 1px; background: yellow; color: #000000; }
+
+table.localisation a.on img { 
+   border: 1px inset white;
+   background: yellow; 
+}
+table.localisation a img { 
+  vertical-align: bottom; 
+  margin: 0; 
+  padding: 2px; 
+  background: #dddddd;
+  border: 1px outset white; 
+}
+
+table.localisation a.on:hover img { 
+   background: #dddddd;
+   border: 1px outset white;
+}
+table.localisation a:hover img { 
+  border: 1px outset white; 
+  background: yellow; 
+}
+
+table.localisation a img.selected { 
+  vertical-align: bottom; 
+  margin: 0; 
+  padding: 2px; 
+  background: yellow;
+  border: 1px outset white; 
+}
+table.localisation a:hover img.selected { 
+  border: 1px inset white;
+  background: #dddddd; 
+}
+
+/* Menu */
+
+
+div.menu {
+  margin: 0;
+  position: fixed;
+  background: transparent;
+  visibility: hidden;
+  padding: 0;
+  background: #eeeeee;
+  border: 1px solid #dddddd;  
+  text-align: left;
+ }
+
+table.localisation div.menu a:hover { 
+  border-left: 3px solid yellow;
+  border-right: 3px solid yellow;
+   color: #000000;
+}
+
+table.localisation div.menu div a { 
+  font-weight: normal;
+   background: inherit; 
+   border:0; 
+   border-left:3px solid transparent; 
+   border-right:3px solid transparent; 
+   padding: 2px; color: #000000; 
+ }
+
+ span.menubar a.menu:hover, span.menubar a.menu:active { 
+  background: white;
+  color: #000000;
+  padding: 1px; 
+  border: 1px outset white;
+}
+
+span.menubar a.menu, span.menubar a.menu:visited { 
+  font-weight: normal; 
+/*   border: 1px solid white;  */
+  padding: 1px; 
+/*   background: #dddddd;  */
+  color: #000000; 
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+ 
+div.menu > div { 
+  margin: 3px; 
+}
+
+
+
+/* Panel */
+
+div.askpanel {
+  visibility: hidden; 
+  position: absolute; 
+  background: #DDDDDD; 
+  padding: 5px; width: 60%;
+  border: 1px solid red;
+}

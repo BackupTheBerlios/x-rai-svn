@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Check pool status
+
+for id_pool in $(echo "SELECT id_pool FROM pools" | mysql -N inex); do 
+	echo "Pool $id_pool"
+	wget --quiet --output-document=- "http://www-connex.lip6.fr/~bpiwowar/inex-dev/admin/check.php?check_id=$id_pool"
+	
+done

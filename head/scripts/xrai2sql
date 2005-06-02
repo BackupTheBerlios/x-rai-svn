@@ -1,0 +1,282 @@
+#!/usr/bin/perl -w
+
+# Parse the INEX collection and output SQL commands
+# that will fill the database
+# B. Piwowarski / aug 2003
+
+
+use strict;
+use XML::Parser;
+use File::Basename;
+use FileHandle;
+use File::Basename;
+use Pod::Usage;
+use Getopt::Long;
+use DBI;
+
+our %xpaths;
+our $xpaths = 1;
+
+my $VERSION="0.1";
+
+my %OPT = (
+  xid => -1,
+  xraixsl => '',
+  xmlxsl => '',
+  dir => '',
+  collection => '',
+  name => 'no name'
+);
+
+GetOptions( \%OPT,
+  qw(help|usage),
+  qw(
+    xid=i
+    dir=s
+    collection=s
+    xraixsl=s
+    xmlxsl=s
+    name=s
+  )
+) or pod2usage(2);
+
+pod2usage(VERBOSE => 2) if $OPT{help};
+print $VERSION, "\n" and exit if $OPT{version};
+
+
+our $xid = $OPT{xid};
+my $basedir = $OPT{dir};
+my $collection = $OPT{collection};
+my $mainfile="$basedir/$collection/index.xrai";
+die "Main file ($mainfile) does not exist!\n" unless (-f $mainfile);
+my $maindir = dirname($mainfile);
+our $currentdir = dirname($mainfile);
+
+
+# Read settings from PHP
+my %settings;
+open SETTINGS,'php-cgi -q get_settings|';
+while ($_=<SETTINGS>) {
+  chop($_);
+  /^([^:]*):(.*)$/;
+  $settings{$1}=$2;
+}
+close SETTINGS;
+
+my $dbh = DBI->connect("DBI:mysql:host=$settings{host};database=$settings{database}","$settings{login}","$settings{password}", {'RaiseError' => 1})
+                or die "Couldn't connect to database: " . DBI->errstr;
+
+                
+                
+#open OUT,"| bzip2 -c > $ARGV[1]";
+open OUT,">-";
+
+
+our @tags;
+our @xid;
+our @ranks;
+our @number_of_children;
+our @rankscount;
+our $current_ent_file;
+our @number_of_text_nodes;
+
+
+# -*- Read the existing information
+
+my $sth;
+my @record;
+
+# if no xid is specified, find out the good one
+if ($xid < 1) {
+  $sth = $dbh->prepare("SELECT max(xid)+1 FROM map");
+  $sth->execute();
+  @record = $sth->fetchrow_array();
+  $xid = $record[0];
+  print STDERR "Starting xid is $xid (override it with -xid)\n";
+}
+
+# Read all existing paths
+print STDERR "Reading existing paths (this could take a long time)...\n";
+$sth = $dbh->prepare("SELECT id, path FROM paths");
+$sth->execute();
+while (@record = $sth->fetchrow_array()) {
+  if ($xpaths <= $record[0]) { $xpaths = $record[0] + 1; }
+  $xpaths{$record[1]} = $record[0];
+}
+print STDERR "Current XPATH number is $xpaths\n";
+
+# our $oldfh = select STDOUT; $| = 1; select STDOUT;
+
+
+#
+# --- Misc functions ---
+#
+
+sub get_name {
+  $_ = $_[0];
+  s/^$basedir\///;
+  s/\.\w+$//;
+  return $_;
+}
+
+#
+# --- SAX handlers ---
+#
+
+
+
+sub handle_start {
+#  	print "$_[1]" . "\n";
+
+	$xid++;
+	die if ($#rankscount < 0);
+	my $rank = (defined($rankscount[$#rankscount]{$_[1]}) ?
+					$rankscount[$#rankscount]{$_[1]} : 0) + 1;
+	$rankscount[$#rankscount]{$_[1]} = $rank;
+	push @rankscount, {};
+	push @ranks, $rank;
+	push @tags, $_[1];
+	push @xid, $xid;
+  $number_of_children[$#number_of_children]++ if ($#number_of_children >= 0);
+  push @number_of_children, 0;
+
+}
+
+sub handle_text {
+# 	if ($_[0]->in_element("atl") && $_[0]->within_element("fm")) { $article{"title"} .= "$_[1]"; }
+	if ($_[1] =~ /\w/) {
+		$number_of_children[$#number_of_children]++;
+	};
+}
+
+sub handle_end {
+	die if ($#ranks == -1);
+	pop @rankscount; # Hash map
+	my $tag_xid = pop @xid;
+   my $path = 'null';
+   
+   # Define the XPath
+   my $xpath = "";
+   for(my $i = 0; $i <= $#tags; $i++) {
+     $xpath .= "/$tags[$i]\[$ranks[$i]\]";
+   }
+   if (!defined($xpaths{$xpath})) {
+     $path = $xpaths{$xpath} = $xpaths++;
+     print OUT "INSERT INTO paths (id,path) values ($path,'$xpath');\n";
+   }
+   else { $path  = $xpaths{$xpath}; }
+   
+ 
+ 
+	my $rank = pop @ranks;
+	my $tag = pop @tags;
+   my $children_count = pop @number_of_children;
+
+	print OUT "REPLACE INTO map(tag,rank,xid,parent,post,children_count,path) VALUES('$tag',$rank,$tag_xid,"
+			. ($#xid >= 0 ? $xid[$#xid] : 0)
+			. ",$xid, $children_count,$path);\n"
+
+
+	# . $tag . " " . $tag_xid . " " . "$xid" . "\n";
+}
+
+
+
+### --- Parser
+
+our @files;
+push @files, {};
+
+sub index_start {
+ if ($_[1] eq "subcollection") {
+     for(my $i=2; $i < $#_; $i+=2) {
+       if ($_[$i] eq "path") {
+         my $parser = new XML::Parser(Handlers => {Start => \&index_start, End   => \&index_end, Char => \&index_text});
+          my $olddir = $currentdir;
+          my $path = "$currentdir/$_[$i+1]";
+          if (! -f $path) {
+            if (-d "$path") { $path .= "/index.xrai"; }
+          }
+          die "Can't find subcollection with path $path (search for $path\{.xrai,index,})" unless (-f $path);
+          $currentdir = dirname($path);
+          print STDERR "Parsing $path\n";
+          push @files, { "xid" => $xid+1, "title" => "", "path" => get_name("$olddir/$_[$i+1]"), "type" => "xrai", "xsl" => $OPT{xraixsl}};
+          $parser->parsefile($path);
+          $currentdir = $olddir;
+       }
+     } 
+   } elsif ($_[1] eq "document") {
+     for(my $i=2; $i < $#_; $i++) {
+       if ($_[$i] eq "path") {
+          my $parser = new XML::Parser(Handlers => {Start => \&handle_start, End   => \&handle_end, Char => \&handle_text});
+          my $path = "$currentdir/$_[$i+1].xml";
+          print STDERR "Parsing $path\n";
+          push @rankscount,{};
+          push @files, { "xid" => $xid+1, "title" => "", "path" => get_name("$path"), "type" => "xml", "xsl" => $OPT{xmlxsl}};
+          $parser->parsefile($path);
+          pop @rankscount;
+       }
+     } 
+   }
+}
+
+sub index_end {
+  if ($_[1] eq "document" || $_[1] eq "subcollection") {
+    if ($xid >= $files[$#files]{"xid"}) {
+    $files[$#files]{"title"} =~ s/'/\\'/g;
+    my $parent = '';
+    $parent = $files[$#files-1]{path} if ($#files > 0);
+    print OUT "REPLACE INTO files(name,title,type,parent,xid,post,xsl)  VALUES('$files[$#files]{path}','$files[$#files]{title}','$files[$#files]{type}','$parent',$files[$#files]{xid},$xid,$files[$#files]{xsl});\n";
+    }
+    pop @files;
+  }
+}
+
+sub index_text {
+ if ($_[0]->in_element("document") || $_[0]->in_element("subcollection")) {
+   $files[$#files]{"title"} .= "$_[1]";
+ }
+}
+
+my $parser = new XML::Parser(Handlers => {Start => \&index_start, End   => \&index_end, Char => \&index_text});
+push @files, { "xid" => $xid, "title" => "$OPT{name}", "path" => get_name("$basedir/$collection"), "type" => "xrai"};
+$parser->parsefile($mainfile);
+index_end("","subcollection");
+close OUT;
+
+
+__END__
+
+## ###################################################################
+## pod
+## ###################################################################
+
+=pod
+
+=head1 NAME
+
+xrai2sql - Convert an X-Rai organised database into SQL
+
+=head1 SYNOPSIS
+
+B<xrai2sql>
+  B<-xraixsl> Name (without the .xsl extension) of the XSL file used for transformation xrai documents
+  B<-xmlxsl> Name (without the .xsl extension) of the XSL file used for transformation XML documents
+  B<-dir> The XML repository used by X-Rai
+  B<-collection> Collection name (must be a valid directory inside B<dir>)
+  B<-xid> (optional) Starts the numerotation of elements with the number given after this option (by default, xrai2sql connects to the database to find out which is the next available xid)
+
+=head1 DESCRIPTION
+
+This command is used to add a collection to X-Rai.
+
+=head1 OPTIONS
+
+Option names may be abbreviated to uniqueness.
+
+=head1 AUTHOR
+
+B. Piwowarski (F<Benjamin.Piwowarski@lip6.fr>)
+
+=cut
+
