@@ -1,9 +1,10 @@
 <?php
-
 /*
 
-	Show an article
-	B. Piwowarski, 2003
+   Article view
+
+   (c) B. Piwowarski, 2003-2005
+
 
 */
 
@@ -11,6 +12,7 @@ header("Content-cache: 0");
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 set_time_limit(360);
+
 
 // ------------------------
 // --- Retrieve article ---
@@ -22,25 +24,26 @@ if ($_REQUEST["view_jump"] == 1) {
   $sql_begin = "SELECT * FROM assessments WHERE id_pool=$id_pool AND (assessment = 'U' or inconsistant='Y') AND xid " ;
   if (($row = sql_get_row($sql_begin . ($next ? ">" : "<") . " $view_xid ORDER BY xid " . ($next ? "" : "DESC") . " LIMIT 0,1", false))
 || ($row = sql_get_row($sql_begin . ($next ? "<" : ">") . " $view_xid ORDER BY xid " . ($next ? "" : "DESC") . " LIMIT 0,1", false))) {
-		$rfile = sql_get_row("SELECT * FROM files WHERE type='xml' AND xid <= $row[xid] AND post >= $row[xid]");
-		header("Location: $PHP_SELF?id_pool=$id_pool&file=$rfile[name]");
-		exit();
-	} else {
- 		header("Location: $base_url/pool.php?id_pool=$id_pool&message=Pool%20completed%20!!!");
-		exit();
-	}
+        $rfile = sql_get_row("SELECT * FROM files WHERE type='xml' AND xid <= $row[xid] AND post >= $row[xid]");
+        header("Location: $PHP_SELF?id_pool=$id_pool&file=$rfile[name]");
+        exit();
+    } else {
+        header("Location: $base_url/pool.php?id_pool=$id_pool&message=Pool%20completed%20!!!");
+        exit();
+    }
 
 }
 
 $file = $_REQUEST["file"];
-$row = sql_get_row("select title,xid,post,parent,xsl from files where name='$file'");
+$directory = dirname($file);
+$collection = $_REQUEST["collection"];
+$row = sql_get_row("select title,xid,post,parent,xsl from {$collection}_$db_files where name='$file'");
 //print "$query";
 $title = $row[0];
 $current_xid = $did = $row[1]; // document ID
 $postid = $row[2]; // post id
 $xslfilename = dirname(__FILE__) . "/xsl/" . $row[4] . ".xsl";
-$xmlfilename = "$xml_documents/$file.xml";
-
+$xmlfilename = "$xml_documents/$collection/$file.xml";
 
 // Begins output
 
@@ -48,7 +51,7 @@ if ($id_pool) $localisation[] = array("$pool[name]","pool.php?id_pool=$id_pool",
 
 
 $i = sizeof($localisation);
-while ($row = sql_get_row("SELECT * FROM $db_files WHERE name='$row[parent]'",false)) {
+while ($row["parent"] != $row["name"] && $row = sql_get_row("SELECT * FROM {$collection}_$db_files WHERE name='$row[parent]'",false)) {
   array_splice($localisation,$i,0,array(array($row["name"],"$base_url/collections/$row[name]?id_pool=$id_pool",$row["title"])));
 }
 $up_url = $localisation[sizeof($localisation)-1][1];
@@ -75,6 +78,8 @@ $no_mathml = ($force_update == 2); // 2nd update ==> no mathml
   var root_xid = <?=$did?>;
   var force_regeneration = <?= $force_update ?>;
   var treeview_url = "<?="$base_url/iframe/article_treeview.php?file=$file"?>";
+  var xrains = "<?="$base_url"?>";
+  var documentns = "<?="$base_url/$collection"?>";
 //   var assess_url = "assess.php?id_pool=<?=$id_pool?>&amp;file=<?=$file?>";
   up_url = "<?=$up_url?>";
  document.onkeypress = article_keypress;
@@ -95,10 +100,10 @@ if ($id_pool > 0) {
   $num_keywords = 0;
  while ($row = mysql_fetch_row($result)) {
   $kws = preg_split("-[\n\r]+-",$row[1]);
-	$num_keywords++;
+    $num_keywords++;
    $mode = $row[2];
    $cssname = "k_${mode}_${num_keywords}";
-	$style .= " span.$cssname { ";
+    $style .= " kw { ";
    switch($mode) {
      case "border": $style .= "border: 1pt solid #$row[0];"; break;
      case "color": $style .= "color: #$row[0];"; break;
@@ -106,28 +111,78 @@ if ($id_pool > 0) {
    }
    $style .= "padding: 1pt; }\n";
   foreach($kws as $kw) {
-	$kw = preg_replace('-(^\s+)|(\s+$)-','',$kw);
-  	if (!preg_match("-\w-",$kw)) continue;
+    $kw = preg_replace('-(^\s+)|(\s+$)-','',$kw);
+    if (!preg_match("-\w-",$kw)) continue;
     $kw= preg_replace("-\s*(.*)\s*-",'$1',$kw);
     $kw= preg_replace("-\s\s+-",' ',$kw);
     $keywords[] = "/(\W|^)($kw)(\W|$)/i";
-    $colours[] = '$1<span class="' . $cssname . '">$2</span>$3';
+    $colours[] = '$1<xrai:kw class="' . $cssname . '">$2</xrai:kw>$3';
   }
 }
 }
 
-if ($num_keywords > 0) print "<style type='text/css'>\n$style\n</style>\n";
+if ($num_keywords > 0) print "<style type='text/css'>\n@namespace url($base_url);\n$style\n</style>\n";
+
+?>
+<style type='text/css'>
+
+*|a[*|a='U']:before { content: url(<?=get_assessment_link("U");?>); }
+*|a[*|a='1']:before { content: url(<?=get_assessment_link("1");?>); }
+*|a[*|a='2']:before { content: url(<?=get_assessment_link("2");?>); }
+*|a[*|a='3']:before { content: url(<?=get_assessment_link("3");?>); }
+
+@namespace url(<?="$base_url/$collection"?>);
+@namespace xrai url(<?="$base_url"?>);
+article, atl, ip1, sec, sec1, bdy, p, st, fno, tig, hdr1, abs, fig, h, bibl, vt, bb { display: block; }
+
+sec, sec1 { padding-left: 1em; }
+p, bb { padding: 1em 0 0 0; }
+
+it { font-style: italic; }
+b { font-weight: bold;}
+super { vertical-align: text-top; font-size: smaller; }
+
+fm atl { font-size: xx-large;   }
+
+abs { margin: 5px; border: 1px solid gray; padding: 5px; }
+abs:before { content: "Abstract"; font-size: large; }
+
+fn { border: 1px solid black; color: #444444; display: inline; }
+fn p { display: inline; }
+
+bdy, bibl { border-top: 1px solid black; }
+
+st,h { font-size: xx-large; color: blue; padding: 5px 0 5px 0; }
+
+bb ti { font-style: italic; }
+
+l1 { display: block; padding-left: 2em; list-style: outside disc;}
+li { display: list-item; }
+
+
+*|*[hidden] { display: none; }
+*|*[hidden]:before { display: none; }
+
+*[name='sel'] { background: yellow; }
+*[name='relevant'] { background: #FFFFA0; }
+
+
+
+/* "<?="$media_url/$collection/$directory"?>/"  attr(file)); } */
+</style>
+<?
+
 
 // --- Retrieve assessments & elements to assess ---
 
 if ($id_pool> 0) {
-	$doc_assessments = new Assessments($id_pool,"$file","","");
-	// makes inference
-	if ($do_debug) $doc_assessments->print_debug();
-	$doc_assessments->inference();
-	if ($do_debug) $doc_assessments->print_changes();
-	$doc_assessments->update_database(false);
-	if ($do_debug) $doc_assessments->print_debug();
+/*  $doc_assessments = new Assessments($id_pool,"$file","","");
+    // makes inference
+    if ($do_debug) $doc_assessments->print_debug();
+    $doc_assessments->inference();
+    if ($do_debug) $doc_assessments->print_changes();
+    $doc_assessments->update_database(false);
+    if ($do_debug) $doc_assessments->print_debug();*/
 }
 
 // ------------------------
@@ -135,40 +190,16 @@ if ($id_pool> 0) {
 // ------------------------
 
 
-?>
-<script type="text/javascript" language="javascript">
-<![CDATA[
-sorted_assessments = new Array(<?=sizeof($sorted_assessments); ?>);
-<?
-foreach($sorted_assessments as $k => $v) {
-  print "sorted_assessments[$k] = '$v';\n";
-}
-?>
-
-assessments = { 'A': 'No asssessment' };
-<?
- foreach($assessments as $key => $value) {
-  print "assessments['$key'] = '$value';\n";
-}
-?>
-// -->
-]]>
-</script>
-
-<? if ($write_access) {
-	$statistics = $doc_assessments->get_statistics();
+ if ($write_access) {
+//  $statistics = $doc_assessments->get_statistics();
 ?>
 
 <script language="javascript">
-  view_xid = <?=$doc_assessments->data->xid?>;
+  debug = true;
+  view_xid = "<?=$doc_assessments->data->xid?>";
   id_pool = <?=$id_pool?>;
-  todo = new Array(<? for($i=0; $i < sizeof($statistics["TODO"]); $i++) {
-		print ($i > 0 ? "," : "") . "'a_" . $doc_assessments->get_relative_path($statistics["TODO"][$i]) . "'";
-   }
-   ?>);
-
 </script>
-      
+
       <form id="form_save" method="post" action="assess.php" target="xrai-assessing">
       <input type="hidden" name="id_pool" value="<?=$id_pool?>"/>
       <input type="hidden" name="file" value="<?=htmlspecialchars($file)?>"/>
@@ -183,35 +214,21 @@ assessments = { 'A': 'No asssessment' };
 
 <div id="eval_div"  onclick="hideEval()" onmouseover="window.status='Click to assess the element(s)'" onmouseout="window.status=''">
 <div id="eval_path"><div></div></div>
-
-<table><tr>
 <?
 
-function judge($a) {
-  global $assessments;
-  print "<td><img "
+  foreach($relevances as $a => $t) {
+  print "<img "
     . " src='" . get_assessment_link($a,false) . "'"
-    . " alt='$assessments[$a]'"
-    . " id=\"asssess_$a\" onclick=\"assess(this,'$a',event); return false;\" "
-    . " title=\"$assessments[$a]\" "
+    . " alt='$t'"
+    . " id=\"assess_$a\" onclick=\"assess(this,'$a',event); return false;\" "
+    . " title=\"$t\" "
     . " name=\"assess\" "
-    . " value=\"$a\" /></td>";
+    . " value=\"$a\" />";
 }
-print '<td><table><tr>';
-judge("U");
-judge("00");
-print '</tr></table></td>';
 
-
-print '<td><table>';
-  for($s=1; $s < 4; $s++) {
-    print "<tr>";
-    for($e = 1; $e < 4; $e++) judge("$e$s");
-    print "</tr>\n";
-  }
-
-?></table></td></tr></table></div>
-
+?>
+<div id="eval_breakup_link"><a href="javascript:void(0)" onclick="goDown()">Assess element components</a></div>
+</div>
 <? } // end of if (write_access)
 
 
@@ -222,23 +239,17 @@ print '<td><table>';
 
 
 
-function color($txt) {
-   global $keywords, $colours, $in_mathml;
-  if ($in_mathml == 1) return $txt; 
-  if (!$keywords) return $txt;
-  else return preg_replace($keywords,$colours,$txt);
-}
 
 // Image URL callback
 function show_art($file,$width,$height) {
-  global $directory, $year,$media_url;
+  global $directory, $year,$media_url, $collection;
   $file = preg_replace('-\.gif$-',".png",$file);
- // Scale down figures 
-  if ($width > 860) { $w = $width; $width = 860; $height *= 860/$w; } 
-  print "<div><img src='$media_url/" . strtolower("$directory/$file") . "'"
-  	. ($width > 0 ? " width='$width'" : "")
-	. ($height > 0 ? " height='$height'" : "")
-	. " /></div>\n";
+ // Scale down figures
+  if ($width > 860) { $w = $width; $width = 860; $height *= 860/$w; }
+  print "<div><img src='$media_url/$collection/" . strtolower("$directory/$file") . "'"
+    . ($width > 0 ? " width='$width'" : "")
+    . ($height > 0 ? " height='$height'" : "")
+    . " /></div>\n";
 }
 
 
@@ -248,7 +259,7 @@ $tags = array();
 $xids = array();
 // Callback function for a new XML element (div/span type)
 // $mode is "span" or "div"
-function print_tag($mode,$tag,$xpath,$count,$tcount) {
+function print_tag($mode,$tag,$xpath,$count) {
   global $doc_assessments, $xids;
   global $tags, $current_xid, $in_mathml;
   array_push($tags,$tag);
@@ -258,9 +269,9 @@ function print_tag($mode,$tag,$xpath,$count,$tcount) {
   // i:cm represent the assessment values mask for descendants without a mask
   // i:a is the current assessed value
   // i:p post-id value
-  print "<$mode s='' id='$current_xid' i:post='" . ($current_xid+$count) 
-      . "' class='xmle' path='$xpath' nc='$tcount'" 
-    . (sizeof($xids) > 0 ? " i:p='" . $xids[sizeof($xids)-1] . "'" : "")     
+  print "<$mode s='' id='$current_xid' i:post='" . ($current_xid+$count)
+      . "' class='xmle' path='$xpath'"
+    . (sizeof($xids) > 0 ? " i:p='" . $xids[sizeof($xids)-1] . "'" : "")
     . ($a ? " name='" . $a->get_assessment_wta() . "'"
           . ($a->is_inferred() ? " ii='yes'" : "")
           . ($a->is_inconsistant() ? " ic='yes'" : "")
@@ -269,16 +280,16 @@ function print_tag($mode,$tag,$xpath,$count,$tcount) {
     . ">";
   $xids[] = $current_xid;
   $current_xid++;
-  if ($mode == "tr") print "<td class='xmlp'><span class='xml'>$tag</span></td>";
-  elseif ($mode == "tbody") print "<tr class='xmlp'><td class='xmlp'><span class='xml'>$tag</span></td></tr>";
-  else print "<span class='xml'>$tag</span>\n";
- 
+//   if ($mode == "tr") print "<td class='xmlp'><span class='xml'>$tag</span></td>"; else
+//   if ($mode == "tbody") print "<tr class='xmlp'><td class='xmlp'><span class='xml'>$tag</span></td></tr>";
+//   else print "<span class='xml'>$tag</span>\n";
+
 }
 
 function end_tag_up() {
   global $tags, $xids;
   array_pop($tags);
-  array_pop($xids);  
+  array_pop($xids);
 }
 
 function end_tag($mode,$tag,$xpath) {
@@ -286,8 +297,8 @@ function end_tag($mode,$tag,$xpath) {
   switch($tag) {
     case "bdy": case "sec": case "ss1": case "ss2": case "bm": case "fm": case "bibl":
       if ($doc_assessments) $a = $doc_assessments->get_element("$xpath");
-    print "<span class='xml' title='$xpath'>";
-      print "/$tag</span>";
+//     print "<span class='xml' title='$xpath'>";
+//       print "/$tag</span>";
   }
 }
 
@@ -297,61 +308,94 @@ function end_tag($mode,$tag,$xpath) {
 // Process XML file with stylesheet (if not in cache)
 if (!$xslt) print "<div class='error'>No XSLT processor defined !</div>";
 
-print "<div id='inex' oncontextmenu=\"return show_nav(event);\" ondblclick='do_dblclick(event)' onclick='do_click(event)' onmouseover='inex_mouseover(event)'>\n";
-// print "<h1>$title</h1>\n";
+print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='do_dblclick(event)' onclick='do_click(event)' onmousemove='XRai.mousemoved(event)'>\n";
+// // print "<h1>$title</h1>\n";
 
-$precompute = false;
-include("include/process_article.inc");
-if ($current_xid != $postid+1) {
-  ?>
-    <script language="javascript">
-      alert("Major error: database ids (<?=$current_xid?>) and document ids (<?=$postid+1?>) do not match. Don't assess this document and fill a bug report!");
-    </script>
-  <?
-  exit;
+function startElement($parser, $name, $attrs) {
+   global $depth, $base_url, $media_url, $collection, $directory;
+   print "<$name";
+   if ($depth == 0) print " xmlns=\"$base_url/$collection\"";
+   $depth++;
+   foreach($attrs as $aname => $value) {
+      print " $aname=\"$value\"";
+   }
+   print ">";
+
+
+   if ($name == "art")
+      print "<html:img src=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"/>";
 }
+
+function endElement($parser, $name) {
+   $depth--;
+   print "</$name>";
+}
+
+function cdata($parser, $data) {
+  global $keywords, $colours, $in_mathml;
+  $data = preg_replace(array("/&/"),array("&amp;"),$data);
+  if ($in_mathml == 1 || !$keywords) print $data;
+  else print preg_replace($keywords,$colours,$data);
+}
+
+$xml_parser = xml_parser_create();
+xml_set_element_handler($xml_parser, "startElement", "endElement");
+xml_set_character_data_handler($xml_parser, "cdata");
+xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
+if (!($fp = fopen("$xml_documents/$collection/$file.xml", "r")))
+   die("could not open XML input");
+
+
+while ($data = fread($fp, 4096)) {
+   if (!xml_parse($xml_parser, $data, feof($fp))) {
+       die(sprintf("XML error: %s at line %d",
+                   xml_error_string(xml_get_error_code($xml_parser)),
+                   xml_get_current_line_number($xml_parser)));
+   }
+}
+xml_parser_free($xml_parser);
+
+print "</div>";
 
 if ($write_access) {
 ?>
-          
+
 <div id="s_nav" onclick="this.style.visibility='hidden'">
           <img src="img/left.png" alt="&lt;-" onclick="goto_previous_assessment()"/>
           <img src="img/right.png" alt="-&gt;" onclick="goto_next_assessment()"/>
 </div>
-          
-<div id="alert_no_selected" class="warn_panel">
-  Can't assess the selection because there is no selected elements.
-</div>
 
-<div id="s_div" class="status" >
-  <div style="padding: 3pt">
+<div id="s_div" class="status">
+  <div>
   <span>
           <span><img onclick="save_assessments();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shift+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
           <span><img src="<?=$base_url?>/img/greenled.png" alt="[S]"  title="Assess selected elements (control+g)" onclick="show_eval_selected(event.pageX,event.pageY)"/><div class="help_bottom">Assess the selected elements. Elements can be (de)selected by clicking on the <span class="xml">[tag</span> name while pressing the key <code>control</code>. It is also possible to select all the siblings (which are in the same state: assessed or not assessed) with a double-clic.<br/><b>Shortcut</b>: hold the key <code>shift</code> and press <code>g</code></div></span>
           <span><img src="<?=$base_url?>/img/redled.png" alt="[C]"  title="Clear selection (control+shift+g)" onclick="clear_selected()"/><div class="help_bottom">Clear the current element selection (put the mouse over the green disc for more help on selection).<br/><b>Shortcut</b>: hold the key <code>shift</code> and <code>control</code> and press <code>g</code></div></span>
-  </span> 
-   <span>
-          <span><img src="img/fgauche.png" title="previous assessment (shift+left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the left arrow key</div></span>
-          
-          <span><img src="img/fhaut.png" title="Go to the container (shift+up arrow)" alt="^" onclick="location='<?=$up_url?>'"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: hold <code>shift</code> and press the up arrow key</div></span>
-          
-          <span><img src="img/fdroit.png" title="Next assessment (shift+right arrow)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the right arrow key</div></span>
+  </span>
+  <span>
+<!--           <span><img src="img/fgauche.png" title="previous assessment (shift+left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the left arrow key</div></span> -->
+
+          <span><img src="img/up.png" title="Go to the container (shift+up arrow)" alt="^" onclick="goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>u</code> key</div></span>
+
+      <span style="display: none; font-size: small;" id="assessedPassageSpan">
+         Within <xrai:a a="U"/>
+      </span>
+<!--           <span><img src="img/fdroit.png" title="Next assessment (shift+right arrow)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the right arrow key</div></span> -->
    </span>
-   <span id="stat_div" ><?=get_stats_string($statistics,true,true);?></span>
  </div>
 </div>
 
-<? 
+<?
 }
 
 // Add Bookmarks
     if ($_GET["h"]) {
     ?>
    <script language="javascript">
-    
+
      function bookmarks_loaded() {
        var e;
-       <? foreach($_GET["h"] as $path) { ?> 
+       <? foreach($_GET["h"] as $path) { ?>
              e = get_xrai_element_by_path('<?=$path?>');
             if (!e) alert('<?=$path?>  does not exist');
        else {
@@ -388,8 +432,8 @@ if ($write_access) {
     if (tags_css) tags_css.disabled = true;
 ]]>
 </script>
-      
+
 <?
-make_footer(); 
+make_footer();
 
 ?>

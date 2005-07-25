@@ -12,7 +12,6 @@ use FileHandle;
 use File::Basename;
 use Pod::Usage;
 use Getopt::Long;
-use DBI;
 
 our %xpaths;
 our $xpaths = 1;
@@ -20,7 +19,6 @@ our $xpaths = 1;
 my $VERSION="0.1";
 
 my %OPT = (
-  xid => -1,
   xraixsl => '',
   xmlxsl => '',
   dir => '',
@@ -31,12 +29,12 @@ my %OPT = (
 GetOptions( \%OPT,
   qw(help|usage),
   qw(
-    xid=i
     dir=s
     collection=s
     xraixsl=s
     xmlxsl=s
     name=s
+    title=s
   )
 ) or pod2usage(2);
 
@@ -44,30 +42,123 @@ pod2usage(VERBOSE => 2) if $OPT{help};
 print $VERSION, "\n" and exit if $OPT{version};
 
 
-our $xid = $OPT{xid};
+our $xid = 1;
 my $basedir = $OPT{dir};
 my $collection = $OPT{collection};
 my $mainfile="$basedir/$collection/index.xrai";
 die "Main file ($mainfile) does not exist!\n" unless (-f $mainfile);
 my $maindir = dirname($mainfile);
 our $currentdir = dirname($mainfile);
+our $title = $OPT{title} or die "A title should be given for the collection";
+my $tables =
+<<EOM
 
+REPLACE INTO collections (id,title) values ('COLLECTION','$title');
+DROP TABLE IF EXISTS COLLECTION_files;
+DROP TABLE IF EXISTS COLLECTION_map;
+DROP TABLE IF EXISTS COLLECTION_paths;
+# Note: don't touch to assessments table!
+
+
+# --------------------------------------------------------
+
+#
+# Structure de la table files
+#
+
+CREATE TABLE COLLECTION_files (
+  name varchar(70) NOT NULL default '',
+  parent varchar(70) NOT NULL default '',
+  `type` enum('xrai','xml') NOT NULL,
+  xsl varchar(70) NOT NULL,
+  title text NOT NULL default '',
+  xid int(11) NOT NULL default '0',
+  post int(11) NOT NULL default '0',
+  PRIMARY KEY  (name),
+  KEY parent (parent),
+  KEY name (name,xid,post),
+  KEY xid (xid),
+  KEY post (post), 
+  KEY type (type)  
+) TYPE=MyISAM;
+
+# --------------------------------------------------------
+
+#
+# Structure de la table map
+#
+
+CREATE TABLE COLLECTION_map (
+  tag varchar(15) NOT NULL default '',
+  rank smallint(6) NOT NULL default '0',
+  xid int(11) NOT NULL default '0',
+--  parent int(11) NOT NULL default '0',
+--  children_count smallint(6) NOT NULL default '0',
+  post int(11) NOT NULL default '0',
+  path int(11) default NULL,
+  PRIMARY KEY  (xid),
+--  KEY parent (parent),
+  KEY rank (rank),
+  KEY tag (tag),
+  KEY post (post),
+  KEY path (path)
+) TYPE=MyISAM;
+
+# --------------------------------------------------------
+
+#
+# Structure de la table paths
+#
+
+CREATE TABLE COLLECTION_paths (
+  id int(11) NOT NULL auto_increment,
+  path varchar(255) NOT NULL default '',
+  PRIMARY KEY  (id),
+  UNIQUE KEY path (path)
+) TYPE=MyISAM;
+
+
+
+# --------------------------------------------------------
+
+#
+# Structure de la table assessments
+#
+
+CREATE TABLE IF NOT EXISTS COLLECTION_assessments (
+  id_pool smallint(4) NOT NULL default '0',
+
+  -- Start and stop XML element
+  start int(11) NOT NULL,
+  stop int(11) NOT NULL,
+
+  assessment enum('0','1','2','3') NOT NULL, -- exhaustivity level
+
+  -- unique assessment for a given pool and segment
+  -- the ideal would be to add a containment constraint but mysql cannot do it
+  -- exh. rules could also be directly enforced by the DB
+  PRIMARY KEY  (id_pool,start,stop),
+  KEY assessment (assessment),
+  KEY the_pool (id_pool)
+) TYPE=INNODB;
+EOM
+;
+
+$tables =~ s/COLLECTION/$collection/g;
+print $tables;
 
 # Read settings from PHP
-my %settings;
-open SETTINGS,'php-cgi -q get_settings|';
-while ($_=<SETTINGS>) {
-  chop($_);
-  /^([^:]*):(.*)$/;
-  $settings{$1}=$2;
-}
-close SETTINGS;
+# my %settings;
+# open SETTINGS,'php-cgi -q get_settings|';
+# while ($_=<SETTINGS>) {
+#   chop($_);
+#   /^([^:]*):(.*)$/;
+#   $settings{$1}=$2;
+# }
+# close SETTINGS;
 
-my $dbh = DBI->connect("DBI:mysql:host=$settings{host};database=$settings{database}","$settings{login}","$settings{password}", {'RaiseError' => 1})
-                or die "Couldn't connect to database: " . DBI->errstr;
 
-                
-                
+
 #open OUT,"| bzip2 -c > $ARGV[1]";
 open OUT,">-";
 
@@ -79,34 +170,9 @@ our @number_of_children;
 our @rankscount;
 our $current_ent_file;
 our @number_of_text_nodes;
-
-
-# -*- Read the existing information
-
 my $sth;
 my @record;
-
-# if no xid is specified, find out the good one
-if ($xid < 1) {
-  $sth = $dbh->prepare("SELECT max(xid)+1 FROM map");
-  $sth->execute();
-  @record = $sth->fetchrow_array();
-  $xid = $record[0];
-  print STDERR "Starting xid is $xid (override it with -xid)\n";
-}
-
-# Read all existing paths
-print STDERR "Reading existing paths (this could take a long time)...\n";
-$sth = $dbh->prepare("SELECT id, path FROM paths");
-$sth->execute();
-while (@record = $sth->fetchrow_array()) {
-  if ($xpaths <= $record[0]) { $xpaths = $record[0] + 1; }
-  $xpaths{$record[1]} = $record[0];
-}
-print STDERR "Current XPATH number is $xpaths\n";
-
-# our $oldfh = select STDOUT; $| = 1; select STDOUT;
-
+my %tables = ("map" => "${collection}_map", "files" => "${collection}_files", "paths" => "${collection}_paths");
 
 #
 # --- Misc functions ---
@@ -114,7 +180,7 @@ print STDERR "Current XPATH number is $xpaths\n";
 
 sub get_name {
   $_ = $_[0];
-  s/^$basedir\///;
+  s/^$basedir\/$collection(\/|$)//;
   s/\.\w+$//;
   return $_;
 }
@@ -162,7 +228,7 @@ sub handle_end {
    }
    if (!defined($xpaths{$xpath})) {
      $path = $xpaths{$xpath} = $xpaths++;
-     print OUT "INSERT INTO paths (id,path) values ($path,'$xpath');\n";
+     print OUT "INSERT INTO $tables{paths} (id,path) values ($path,'$xpath');\n";
    }
    else { $path  = $xpaths{$xpath}; }
    
@@ -172,9 +238,10 @@ sub handle_end {
 	my $tag = pop @tags;
    my $children_count = pop @number_of_children;
 
-	print OUT "REPLACE INTO map(tag,rank,xid,parent,post,children_count,path) VALUES('$tag',$rank,$tag_xid,"
-			. ($#xid >= 0 ? $xid[$#xid] : 0)
-			. ",$xid, $children_count,$path);\n"
+ print OUT "REPLACE INTO $tables{map}(tag,rank,xid,post,path) VALUES('$tag',$rank,$tag_xid,$xid,$path);\n"
+# 	print OUT "REPLACE INTO $tables{map}(tag,rank,xid,parent,post,children_count,path) VALUES('$tag',$rank,$tag_xid,"
+# 			. ($#xid >= 0 ? $xid[$#xid] : 0)
+# 			. ",$xid, $children_count,$path);\n"
 
 
 	# . $tag . " " . $tag_xid . " " . "$xid" . "\n";
@@ -226,7 +293,7 @@ sub index_end {
     $files[$#files]{"title"} =~ s/'/\\'/g;
     my $parent = '';
     $parent = $files[$#files-1]{path} if ($#files > 0);
-    print OUT "REPLACE INTO files(name,title,type,parent,xid,post,xsl)  VALUES('$files[$#files]{path}','$files[$#files]{title}','$files[$#files]{type}','$parent',$files[$#files]{xid},$xid,$files[$#files]{xsl});\n";
+    print OUT "REPLACE INTO $tables{files}(name,title,type,parent,xid,post,xsl)  VALUES('$files[$#files]{path}','$files[$#files]{title}','$files[$#files]{type}','$parent',$files[$#files]{xid},$xid,'$files[$#files]{xsl}');\n";
     }
     pop @files;
   }
@@ -239,13 +306,17 @@ sub index_text {
 }
 
 my $parser = new XML::Parser(Handlers => {Start => \&index_start, End   => \&index_end, Char => \&index_text});
-push @files, { "xid" => $xid, "title" => "$OPT{name}", "path" => get_name("$basedir/$collection"), "type" => "xrai"};
+push @files, { "xid" => $xid, "xsl" => $OPT{"xraixsl"}, "title" => "$title", "path" => get_name("$basedir/$collection"), "type" => "xrai"};
 $parser->parsefile($mainfile);
 index_end("","subcollection");
 close OUT;
 
 
+
+
 __END__
+
+
 
 ## ###################################################################
 ## pod
@@ -264,7 +335,6 @@ B<xrai2sql>
   B<-xmlxsl> Name (without the .xsl extension) of the XSL file used for transformation XML documents
   B<-dir> The XML repository used by X-Rai
   B<-collection> Collection name (must be a valid directory inside B<dir>)
-  B<-xid> (optional) Starts the numerotation of elements with the number given after this option (by default, xrai2sql connects to the database to find out which is the next available xid)
 
 =head1 DESCRIPTION
 

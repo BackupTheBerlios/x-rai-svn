@@ -155,17 +155,21 @@
   <!-- HTML code -->
 
   <xsl:template match="/">
+    <div style="background: #eeeeee; padding: 5px; boder: 1px solid #000000;">
+    <xsl:call-template name="toc"/>
+    </div>
+
     <xsl:apply-templates mode="high"  select="/article"/>
   </xsl:template>
 
   <!-- general document structure: title, front matter, body matter -->
 
   <xsl:template match="article">
-    <xsl:apply-templates mode="high" select="fm"/>
+    <xsl:apply-templates mode="high" select="*"/>
 
-    <xsl:apply-templates  select="bdy" mode="high"/>
+<!--     <xsl:apply-templates  select="bdy" mode="high"/> -->
 
-    <xsl:apply-templates  select="bm" mode="high"/>
+<!--     <xsl:apply-templates  select="bm" mode="high"/> -->
 
   </xsl:template>
 
@@ -606,9 +610,6 @@
   </xsl:template>
 
   <xsl:template match="bdy">
-    <hr/>
-    <xsl:call-template name="toc"/>
-    <hr/>
     <xsl:apply-templates mode="high" select="."/>
   </xsl:template>
 

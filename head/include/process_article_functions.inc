@@ -1,8 +1,8 @@
 <?
 function startelement($parser, $name, $data) {
-	global $parse_error, $tfh, $current_tags, $current_types, $sqlinfo, $current_xid, $in_xrai_maths,$xrai_transform_buffer;
+	global $parse_error, $tfh, $current_tags, $current_types, $current_xid, $in_xrai_maths,$xrai_transform_buffer;
 	
-	// print_tag("div","<xsl:value-of select="name(.)"/>","<xsl:apply-templates mode="localize" select="."/>"<!--,'<xsl:apply-templates mode="localize" select="@*"/>'//-->);
+// 	print_tag("div","<xsl:value-of select="name(.)"/>","<xsl:apply-templates mode="localize" select="."/>"<!--,'<xsl:apply-templates mode="localize" select="@*"/>'//-->);
 
 	switch($name) {
    case "showart": {
@@ -12,10 +12,8 @@ function startelement($parser, $name, $data) {
    }
    
    case "xmltag": {
-     $row = @mysql_fetch_row($sqlinfo);
-     if (!$row || $row[0] != $current_xid) $parse_error = true;// { $parse_error = "$row, $row[0], $current_xid"; }
      $current_xid++;
-     fwrite($tfh, "<? print_tag('$data[type]','$data[name]','$data[path]',$data[count],'$row[1]'); ?>"); 
+     fwrite($tfh, "<? print_tag('$data[type]','$data[name]','$data[path]',$data[count]); ?>");
 // 		print "<div style='margin-left: " . (sizeof($current_types)*5) ."px'>" . $data["type"] . "</div>";
 		$current_types[] = $data["type"];
 		$current_tags[] =  $data["name"];
@@ -23,10 +21,10 @@ function startelement($parser, $name, $data) {
    
  }
    case "endtag": {
-     fwrite($tfh,"<?end_tag('$data[type]','$data[name]','$data[path]');?>");   
+     fwrite($tfh,"<?end_tag('$data[type]','$data[name]','$data[path]');?>");
      break;
    }
-   case "xrai-maths": 
+   case "xrai-maths":
       $xrai_transform_buffer = "";
       $in_xrai_maths = true;
       break;

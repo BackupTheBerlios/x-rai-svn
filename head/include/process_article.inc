@@ -16,9 +16,9 @@ require_once("include/xrai.inc");
 require_once("include/process_article_functions.inc");
 
 $directory = dirname($file);
-xslt_setopt($xslt,XSLT_OPT_SILENT|XSLT_SABOPT_PARSE_PUBLIC_ENTITIES);
+xslt_setopt($xslt,/*XSLT_OPT_SILENT|*/XSLT_SABOPT_PARSE_PUBLIC_ENTITIES);
 
-  
+
 $no_cache = false;
 if (!is_dir("$xml_cache/$directory")) {
    if ($remote) fatal_error("No cache directory ($xml_cache/$directory)</div>");
@@ -44,11 +44,11 @@ if ($do_debug || $force_update  || !hasCache($xmlfilename,$xslfilename,$phpfilen
   $tfh = fopen("$phpfilename.tmp","w");
   xslt_set_sax_handlers($xslt,array("element" => array("startelement","endelement"), "character" => "characters"));
   // Retrieve info
-  $sqlinfo = mysql_query("SELECT xid,children_count FROM map WHERE post<=$postid AND xid>=$did ORDER BY xid");
+//   $sqlinfo = mysql_query("SELECT xid,children_count FROM {$collection}_map WHERE post<=$postid AND xid>=$did ORDER BY xid");
   $current_xid = $did;
   $parse_error = false;
-  if (!$sqlinfo) fatal_error("Database error</div>");
-  
+//   if (!$sqlinfo) fatal_error("Database error: " . mysql_error() . "</div>");
+//    print "$xmlfilename and $xslfilename -&gt; $phpfilename.tmp<br/>";
   if (!@xslt_process($xslt,"$xmlfilename","$xslfilename")) {
       @unlink("$phpfilename.tmp");
       fatal_error("XSLT error (1): " . xslt_error($xslt) . "</div>");

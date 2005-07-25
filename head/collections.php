@@ -17,11 +17,14 @@ set_time_limit(360); // Time limit = 6 minutes
 
 $in_volume = true;
 
-$path = preg_replace('#^/#','',$_SERVER["PATH_INFO"]);
-$basepath = "$base_url/article.php?id_pool=$id_pool&file=$path";
+preg_match('#^/([^/]*)(?:|/(.*))$#',$_SERVER["PATH_INFO"], $matches);
+$collection = $matches[1];
+$path = $matches[2];
+
+$basepath = "$base_url/article.php?id_pool=$id_pool&collection=$collection&file=$path";
 $xsl_params = array("basepath" => $basepath);
 
-$row = sql_get_row("SELECT * FROM $db_files WHERE name='$path'");
+$row = sql_get_row("SELECT * FROM ${collection}_$db_files WHERE name='$path'");
 
 $title = $row["title"];
 $basepath = $row["name"];
@@ -34,36 +37,20 @@ if ($id_pool)
 $i = sizeof($localisation);
 do {
   array_splice($localisation,$i,0,array(array($row["name"],"$base_url/collections/$row[name]?id_pool=$id_pool",$row["title"])));
-} while ($row = sql_get_row("SELECT * FROM $db_files WHERE name='$row[parent]'",false));
+} while ($row["name"] != "" && $row = sql_get_row("SELECT * FROM ${collection}_$db_files WHERE name='$row[parent]'",false));
 $up_url = $localisation[sizeof($localisation)-2][1];
 
 
 // $localisation[] = array("$row[","$PHP_SELF?id_pool=$id_pool");
 make_header("$title");
 $xslfilename = dirname(__FILE__) . "/xsl/$xslname.xsl";
-$xmlfilename = "$xml_documents/$path/index.xrai";
+$xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // print "$xmlfilename";
 
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-$query  = "SELECT f.name, f.parent, assessment, inconsistant, count(*) n"
-	. " FROM files f, $db_assessments a "
-	. " WHERE f.parent = '$basepath'"
-	. " AND a.xid >= f.xid AND a.xid <= f.post and a.id_pool=$id_pool "
-	. " GROUP by assessment, a.inconsistant, f.xid";
-$qh = sql_query($query);
-// print htmlspecialchars($query) . "<br/>";
-while ($row = sql_fetch_array($qh)) {
-	$a = $row["inconsistant"] == 'Y' ? "I" : $row["assessment"];
-//    print $row["name"] . "<br/>";
-	$assessments[$row["name"]][$a] += $row["n"];
-// 	if ($row["assessment"] == 'U') $to_assess  += $row["n"];*
-	if ($row["assessment"] == 'U' || $row["inconsistant"] == 'Y')
-		$todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[name]'";
-  $stats[$a] += $row["n"];
-}
-sql_free($qh);
+   // TODO: print stats
 }
 
 
@@ -103,10 +90,10 @@ function begin_subcollection($path) {
 function end_subcollection() { print "</a>"; }
 
 function begin_document($path) {
-  global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath;
+  global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath, $collection;
   $id = get_full_path($basepath, $path);
   print_assessments($id);
-  print "<a id='$id' href=\"$base_url/article?id_pool=$id_pool&amp;file=$id\">";
+  print "<a id='$id' href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
 }
 
 function end_document() { print "</a>"; }
@@ -128,7 +115,7 @@ print "<div class='inex'>";
 xslt_set_encoding($xslt,"UTF-8");
 
 // Has no cache
-//  if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";
+ if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";
 if (!is_dir("$xml_cache/$path")) {
   
   $result = xslt_process($xslt,$xmlfilename,"$xslfilename")  ;

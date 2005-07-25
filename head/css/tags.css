@@ -1,85 +1,11 @@
-
-
-div#navigation { 
-  position: absolute;
-  visibility: hidden;
-  border: 1px outset #aaaaaa;
-  background: #eeeeee;
-  top: 0;
-  left: 0;
-}
-
-div#s_nav {
-  z-index: 2;
-  position: absolute;
-  visibility: hidden;
-  border: 1px outset #aaaaaa;
-  background: #eeeeee;
-  padding: 4px; 
-  top: 0;
-  left: 0;
-}
-
-div#s_nav img:hover, div#navigation img:hover {
-  border: 2px outset #444444;
-  background: #aaaaaa;
-}
-
-div#s_nav img, div#navigation img {
-  border: 2px solid transparent;
-}
-
-
-div#eval_div {
-  border: 1px outset #aaaaaa;
-  background: #eeeeee;
-  visibility: hidden; 
-  padding: 4pt; 
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-/*   background: #ffffcc;  */
-  font-size: small;
-}
-
-div#eval_div img:hover {
-  border: 1px inset #ffffff;
-}
-
-div#eval_div img {
-  background: #eeeeee;
-  border: 1px outset #ffffff;
-  cursor: pointer;
-  padding: 5pt; 
-  font-size: small;
-}
-
-div#eval_div img.disabled {
-  cursor: default;
-  background: #cccccc;
-  color: #444444;
-  border: 1px solid transparent  ;
-}
-
-div#eval_div img.selected {
-  border: 1px solid red;
-  cursor: default;
-}
-
-div#eval_div img.inconsistant {
-  background: #cccccc;
-  color: #444444;
-  border: 1px solid red;
-  cursor: default;
-}
-
+@namespace url(http://www.w3.org/1999/xhtml)
 
 div#inex .xmle {
   border: 1px solid transparent;
 }
 
 div#inex div.xmle {
-  border-left: 1px solid #dddddd;
+/*   border-left: 1px solid #dddddd; */
   padding-left: 4px;
 }
 
@@ -88,15 +14,17 @@ div#inex div.xmle {
 *[sel] > .xml { background: #ddddaa; }
 *[sel] > *[class='xmlp'] .xml { background: #ddddaa; }
 
-
+*.xmle [name='sel'] {
+ background: #EAFF62;
+}
 
 /* One level xmle */
 
-*[class='xmle'] > .xml:before { content:  "["; }
+/* *[class='xmle'] > .xml:before { content:  "["; } */
 
 /**[class='xmle'][highlight] > .xml:before { border: 1px solid red; }*/
 
-*[class='xmle'][name='A']  > .xml:before { content:  "[" url('../img/U.png') " "; }
+/**[class='xmle'][name='A']  > .xml:before { content:  "[" url('../img/U.png') " "; }
 *[class='xmle'][name='U'] > .xml:before { content:  "[" url('../img/na.png') " "; }
 
 *[class='xmle'][name='33'][ii='yes'] > .xml:before { content:  "[" url('../img/i33.png') " "; }
@@ -121,11 +49,11 @@ div#inex div.xmle {
 *[class='xmle'][name='11']  > .xml:before { content:  "[" url('../img/a11.png') " "; }
 *[class='xmle'][name='00']  > .xml:before { content:  "[" url('../img/a00.png') " "; }
 
-*[class='xmle'][ic='yes']  > .xml:before { content:  "[" url('../img/I.png') " "; }
+*[class='xmle'][ic='yes']  > .xml:before { content:  "[" url('../img/I.png') " "; }*/
 
 /* Second level xmle */
 
-*[class='xmle'] > .xmlp .xml:before { content:  "["; }
+/**[class='xmle'] > .xmlp .xml:before { content:  "["; }
 
 *[class='xmle'][name='A'] > .xmlp  .xml:before { content:  "[" url('../img/U.png') " "; }
 *[class='xmle'][name='U'] > .xmlp  .xml:before { content:  "[" url('../img/na.png') " "; }
@@ -152,7 +80,7 @@ div#inex div.xmle {
 *[class='xmle'][name='11']  > .xmlp .xml:before { content:  "[" url('../img/a11.png') " "; }
 *[class='xmle'][name='00']  > .xmlp .xml:before { content:  "[" url('../img/a00.png') " "; }
 
-*[class='xmle'][ic='yes'] > .xmlp .xml:before { content:  "[" url('../img/I.png') " "; }
+*[class='xmle'][ic='yes'] > .xmlp .xml:before { content:  "[" url('../img/I.png') " "; }*/
 
 
 
@@ -166,10 +94,10 @@ span.xml {
   color: #8888ff;
 }
 
-span.xml:after { content: "]"; }
+/* span.xml:after { content: "]"; } */
 
 
-*[class='xmle'][selected='yes'] > *[class='xmlp'] span.xml { 
+*[class='xmle'][selected='yes'] > *[class='xmlp'] span.xml {
   color: red; 
 }
 
@@ -177,11 +105,6 @@ span.xml:after { content: "]"; }
   color: red; 
 }
 
-
-div#inex div.xmle {
-  border-left: 1px solid #dddddd;
-  padding-left: 4px;
-}
 
 span.xml {
  display: inline;

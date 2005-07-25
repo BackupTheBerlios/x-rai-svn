@@ -307,7 +307,7 @@ function toggle_right_panel(element, image) {
 }
 
 function collection_keypress(event) {
-    if (event.shiftKey && !event.ctrlKey) {
+    if (!event.shiftKey && event.ctrlKey) {
 //     alert(event.keyCode + "!!!");
     switch(event.keyCode) {
       case 37: todo_previous(); return false;

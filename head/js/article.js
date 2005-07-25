@@ -1,20 +1,54 @@
 // Javascript code
 // Article view javascript code
-// (c) B. Piwowarski, 2004
+// (c) B. Piwowarski, 2004-2005
 
+
+// ==================
+// ================== Misc
+// ==================
+
+
+// *** Display a message box for a short amount of time
+var message_id = 0;
+function display_message(type,msg) {
+   var div = document.createElement("div");
+   div.appendChild(document.createTextNode(msg));
+   div.setAttribute("class","message_" + type);
+   message_id++;
+   div.id = "message_" + message_id;
+   document.getElementById("body").appendChild(div);
+   setTimeout('message_clear("' + div.id + '")',1200);
+
+}
+function message_clear(id) {
+   var x = document.getElementById(id);
+   if (x) x.parentNode.removeChild(x);
+}
+
+
+
+// ==================
+// ================== Navigation in the XML document
+// ==================
 
 var count = 0;
+
+
+function get_container(x) {
+   while (x && x.namespaceURI != documentns) x = x.parentNode;
+   return x;
+}
 
 function get_xml(x) {
   if (x.className == "xml") return x;
   x = x.parentNode; if (x.className == "xml") return x;
-  return false;  
+  return false;
 }
 
 
 function get_first_xml(x) {
-	while (x && x.className != "xml") x = x.firstChild;
-	return x;
+    while (x && x.className != "xml") x = x.firstChild;
+    return x;
 }
 
 function get_xmle(x) {
@@ -24,29 +58,7 @@ function get_xmle(x) {
 
 var boxed = false; // old boxed
 var boxed_border = "";
-function inex_mousemoved(from,to) {
-  var old_to = to;
-  to = get_xml(to);
-  if (to = get_xmle(to)) {
-    if (boxed == to) return;
-    if (boxed) boxed.style.border = "";
-    boxed = to;
-    boxed_border = boxed.style.border;
-    boxed.style.border = "1px solid black";
-    old_to.setAttribute("title",get_xrai_path(boxed));
-    return;
-  } else {
-    if (boxed) {
-    old_to.removeAttribute("title");
-    boxed.style.border = "";
-    boxed = false;
-  }
- }
-}
 
-function inex_mouseover(event) {
-  inex_mousemoved(event.relatedTarget, event.target);
-}
 
 
 function toggle_treeview() {
@@ -57,58 +69,174 @@ function toggle_treeview() {
 // -*- X-RAI navigation
 // -*-
 
-function get_xrai_parent(e) {
-  return document.getElementById(e.getAttribute("i:p"));
-}
+// Container elements have a class set to "xmle"
+// These elements have the following attributes:
+// 1. id = the id of the node in the XML collection
+// 2. i:post = the id of the last descendant of the node (= to id if no descendants)
+// 3. i:p = the parent id
 
-function get_xrai_next_sibling(e) {
-  var xid = e.getAttribute("i:post");
-  if (!xid) return;
-  var x = document.getElementById(parseInt(xid)+1);
-  if (!x) return;
-  if (x.getAttribute("i:p") == e.getAttribute("i:p")) return x;
-  return false;
-}
+var ELEMENT_NODE = 1;
 
-function get_xrai_first_child(e) {
-  if (!e) return false;
-  var y = document.getElementById(parseInt(e.id) + 1);
-  if (y && y.getAttribute("i:p") == e.id) return y;
-  return false;
-}
+var XRai = {
+   // last mouse coordinates
+   lastX : 0,
+   lastY : 0,
 
-function get_xrai_previous_sibling(e) {
-  if (e.id == 1) return false;
-  var x = get_xrai_first_child(get_xrai_parent(e));
-  var y = null;
-  while (x && x != e) {
-    y = x;
-    x = get_xrai_next_sibling(x);
-  }
-  if (x==e) return y;  
-  return false;
-}
+   /*
+      Returns true if x is in y
+      @note assume that x and y are X-Rai elements
+   */
+   is_in: function(x, y) {
+      for(x = x.parentNode; x; x = x.parentNode)
+         if (x==y) return true;
+      return false;
+   },
 
-function get_xrai_path(e) {
-  if (e.className != "xmle") { alert("Can't get the path: the element class is not an 'xmle'"); return; }
-  var s = "";
-  do {
-    s = "/" + e.getAttribute("path") + s;
-  } while (e = get_xrai_parent(e));  
-  return s;
-}
+   parent: function(e) {
+      var x = e.parentNode;
+      if (!x || x.namespaceURI != documentns) return null;
+      return x;
+   },
+
+   nextSibling: function(e) {
+      e = e.nextSibling;
+      while (e && (e.nodeType != ELEMENT_NODE || e.namespaceURI != documentns)) e = e.nextSibling;
+      return e;
+   },
+
+   firstChild: function(e) {
+      e = e.firstChild;
+      while (e && (e.nodeType != ELEMENT_NODE || e.namespaceURI != documentns)) e = e.nextSibling;
+      return e;
+   },
+
+   previousSibling: function(e) {
+      e = e.previousSibling;
+      while (e && (e.nodeType != ELEMENT_NODE || e.namespaceURI != documentns)) e = e.previousSibling;
+      return e;
+   },
+
+
+   /** Return the previous element (document order): previous sibling or parent */
+   previous: function(x) {
+      var y;
+      if (y= XRai.previousSibling(x)) return y;
+      return XRai.parentNode(x);
+   },
+
+   /** Return the next element: first child, next sibling or the first ancestor next sibling */
+   next: function(x) {
+      var y;
+      if (y= XRai.firstChild(x)) return y;
+      while (x != null) {
+         if (y = XRai.nextSibling(x)) return y;
+         x = XRai.parent(x);
+      }
+      return null;
+   },
+
+   /** Return the previous element (document order): previous sibling or parent */
+   noDirectPrevious: function(x) {
+      var y;
+      if (y= XRai.previousSibling(x)) return y;
+      while (x != null) {
+         if (y = XRai.previousSibling(x)) return y;
+         x = XRai.parent(x);
+      }
+      return null;
+   },
+
+   /** Return the next element: first child, next sibling or the first ancestor next sibling */
+   noDirectNext: function(x) {
+      var y;
+      while (x != null) {
+         if (y = XRai.nextSibling(x)) return y;
+         x = XRai.parent(x);
+      }
+      return null;
+   },
+
+   /** Returns the next XML node leaf after x */
+   nextLeaf: function(x) {
+      var y = XRai.nextSibling(x);
+      while (y == null && x != null) {
+         x = XRai.parent(x);
+         if (x) y = XRai.nextSibling(x);
+      }
+      if (y == null) return null;
+
+      var z = y;
+      while (z != null) { y = z; z = XRai.firstChild(y); }
+      return y;
+   },
+
+   nextElementTo: function(x,y) {
+      if (x == y) return null;
+      var z = null;
+      while (x && z == null) {
+         z = XRai.nextSibling(x);
+         if (z == null) x = XRai.parent(x);
+         if (debug) window.dump("Current x is = " + XRai.getPath(x) + " / z is " + XRai.getPath(z) + "\n");
+      }
+      x = z;
+      while (x != null && XRai.is_in(y,x)) {
+         if (debug) window.dump("  Loop " + XRai.getPath(y) + " is in " + XRai.getPath(x) + "\n");
+         x = XRai.firstChild(x);
+      }
+      return x;
+   },
+
+
+   getPath: function(e) {
+      if (e == null) return null;
+      if (e.namespaceURI != documentns) { alert("Can't get the path of " + e + ": element " + e.tagName + " NS is " + e.namespaceURI); return; }
+      var s = "";
+      var f;
+      do {
+         f = XRai.parent(e);
+         var n = 1;
+         if (f) for(var x = XRai.firstChild(f); x !=  e; x = XRai.nextSibling(x)) {
+            if (x.tagName == e.tagName) n++;
+         }
+         s = "/" + e.tagName + "[" + n + "]" + s;
+      } while (e = f);
+      return s;
+   },
 
 // Return the element "path" or null
-function get_xrai_element_by_path(path) {
-  var path_array = path.match(/\w+\[\d+\]+/g);
-  var x = document.getElementById(root_xid);
-  if (!path_array || x.getAttribute("path") != path_array[0]) return false;
-  for (var i = 1;  x && i < path_array.length; i++) {
-    x = get_xrai_first_child(x);
-    while (x && x.getAttribute("path") != path_array[i]) x = get_xrai_next_sibling(x);
-  }
-  return x;
+   resolveXPath: function(path) {
+      alert("Not implemented");
+      var path_array = path.match(/\w+\[\d+\]+/g);
+      var x = document.getElementById(root_xid);
+      if (!path_array || x.getAttribute("path") != path_array[0]) return false;
+      for (var i = 1;  x && i < path_array.length; i++) {
+         x = XRai.firstChild(x);
+         while (x && x.getAttribute("path") != path_array[i]) x = XRai.nextSibling(x);
+      }
+      return x;
+   },
+
+   /** Handlers */
+   mousemoved: function(event) {
+//       window.dump("Mouse is: " + event.pageX + " / " + event.pageY + "\n");
+     XRai.lastX = event.pageX;
+     XRai.lastY = event.pageY;
+   },
+
+   mouseover: function(event) {
+     if (event.target.tagName == "a" && event.target.namespaceURI == xrains) {
+      alert("coucou");
+     }
+   },
+     
+   mouseout: function(event) {
+   }
+
 }
+
+// ==================
+// ================== Events
+// ==================
 
 // -*- Context menu
 var current_nav_element = false;
@@ -116,18 +244,18 @@ var current_nav_element = false;
 function nav_goto(event) {
   var x = false;
   switch(event.currentTarget.id) {
-    case "nav_parent": 
-      x = get_xrai_parent(current_nav_element);
+    case "nav_parent":
+      x = XRai.parent(current_nav_element);
       break;
     case "nav_next":
-      x = get_xrai_next_sibling(current_nav_element);
+      x = XRai.nextSibling(current_nav_element);
       break;
     case "nav_prec":
       x = get_xrai_previous_sibling(current_nav_element);
       break;
     case "nav_child":
-      x = get_xrai_first_child(current_nav_element);
-      break;    
+      x = XRai.firstChild(current_nav_element);
+      break;
     case "nav_bookmark":
       add_bookmark(current_nav_element);
       break;
@@ -139,23 +267,23 @@ function nav_goto(event) {
 
 function show_nav(event) {
 
-  
-  var target = get_xml(event.target); 
+
+  var target = get_xml(event.target);
   if (!target || !(target = get_xmle(target))) {
-	 return; // not an xml tag
+    return; // not an xml tag
   }
   event.stopPropagation(); // Not not bubble anymore
   var nav = document.getElementById("navigation");
   // Disable / enable images
   current_nav_element = target;
-  
-  document.getElementById("nav_parent").style.visibility = get_xrai_parent(current_nav_element) ? "" : "hidden";
-  document.getElementById("nav_next").style.visibility = get_xrai_next_sibling(current_nav_element) ? "" : "hidden";
+
+  document.getElementById("nav_parent").style.visibility = XRai.parent(current_nav_element) ? "" : "hidden";
+  document.getElementById("nav_next").style.visibility = XRai.nextSibling(current_nav_element) ? "" : "hidden";
   document.getElementById("nav_prec").style.visibility = get_xrai_previous_sibling(current_nav_element) ? "" : "hidden";
   document.getElementById("nav_bookmark").src = bookmark_exists(current_nav_element) ? "img/rm_bookmark.png" : "img/add_bookmark.png";
-//   document.getElementById().style.visibility = get_xrai_first_child(current_nav_element) ? "visible" : "hidden";
+//   document.getElementById().style.visibility = XRai.firstChild(current_nav_element) ? "visible" : "hidden";
 
-  
+
   // Move, set visible
   show_div_xy(event.pageX,event.pageY,"navigation");
   event.stopPropagation();
@@ -167,26 +295,89 @@ function show_nav(event) {
 
 
 function article_keypress(event) {
-  if (event.shiftKey && !event.ctrlKey) {
+  // NORMAL
+  if (!event.shiftKey && !event.ctrlKey) {
     switch(event.which) {
-      case 84: toggle_treeview(); return false;
-      case 66: toggle_bookmarks(); return false;
-      case 71:  show_eval_selected(window.scrollX + window.innerWidth / 2, window.scrollY + window.innerHeight / 2); return false;
+      case 84 /* t */ : toggle_treeview(); return false;
+      case 66 /* b */: toggle_bookmarks(); return false;
+      case 97 /* a */: show_eval_selected(XRai.lastX, XRai.lastY); return false;
+         //window.scrollX + window.innerWidth / 2, window.scrollY + window.innerHeight / 2); return false;
       case 73: right_panel('informations','img_informations',base_url + '/iframe/informations.php'); return false;
       case 83: save_assessments(); return false;
-    } 
-  } else if (event.shiftKey && event.ctrlKey) {
+    }
+  }
+
+  // SHIFT + CTRL
+  else if (event.shiftKey && event.ctrlKey) {
      switch(event.which) {
-        case 71: clear_selected(); return false; 
+        case 71: clear_selected(); return false;
      }
   }
-/*   alert("Key pressed: charchode" + event.charCode 
+
+  // CTRL
+  else if (!event.shiftKey && event.ctrlKey) {
+     switch(event.keyCode) {
+        case 38: goUp(); return false;
+     }
+  }
+  
+   if (debug) window.dump("Key pressed: charchode" + event.charCode
         + ", keycode=" + event.keyCode
-      + ", which=" + event.which + ", shiftKey=" + event.shiftKey + ", ctrlKey=" + event.ctrlKey);*/
+      + ", which=" + event.which + ", shiftKey=" + event.shiftKey + ", ctrlKey=" + event.ctrlKey
+      + ", x= " + event.pageX + "\n");
   return collection_keypress(event);
 }
 
-// -*- Bookmarks 
+
+
+
+// Handles a click
+function do_click(e) {
+   if (e.target.namespaceURI == xrains) {
+      switch(e.target.tagName) {
+         case "a": reassess(e); break;
+      }
+  }
+
+  // Handle ctrl key + click in a passage to go down
+  if (e.ctrlKey) {
+    for(var x = e.target; x != null; x = x.parentNode) {
+      if (x.getAttribute && x.getAttribute("name") == "relevant" && x.reference) {
+         currentAssessed = x.reference;
+         goDown();
+         return;
+      }
+    }
+  }
+
+  e.stopPropagation(); // Not not bubble anymore
+}
+
+function do_dblclick(e) {
+  var x = get_xml(e.target);
+  if (!x) return;
+  e.stopPropagation();
+ if (e.ctrlKey || e.metaKey) {
+   x = get_xmle(x); if (!x) return;
+   var to_add = toggle_selection(x);
+   var y = XRai.parent(x);
+   if (!y) return; // no parent
+   y = XRai.firstChild(y);
+   var s = x.getAttribute("name").length;
+   if (!y) { alert("No first child for our parent !?!"); return; }
+   while (y) {
+      if (x!= y && (y.hasAttribute("sel") ^ to_add))
+      if (y.getAttribute("name").length == s) {// Not assessed
+          toggle_selection(y);
+      }
+      y = XRai.nextSibling(y);
+   }
+  }
+}
+
+// ==================
+// ================== Bookmarks
+// ==================
 
 function bookmark_exists(e) {
   var doc = document.getElementById("bookmarks").contentDocument;
@@ -202,10 +393,10 @@ function add_bookmark(e) {
   var doc = document.getElementById("bookmarks").contentDocument;
   if (!doc) alert("Can't find the bookmarks document");
   var x = doc.getElementById(e.id);
-  if (x) { 
+  if (x) {
    x.parentNode.removeChild(x);
       e.removeAttribute("selected");
-   return; 
+   return;
   }
   var list = doc.getElementById("list");
   var y = null;
@@ -215,33 +406,271 @@ function add_bookmark(e) {
   var id = parseInt(e.id);
   for(x = list.firstChild; x && (parseInt(x.id) < id); x = x.nextSibling) { s += x.id + " ";}
   // Construct the element
-	var new_div = document.createElement("div");
+    var new_div = document.createElement("div");
    new_div.setAttribute("id",e.id);
-   var path = get_xrai_path(e);
-   new_div.onclick = goto_path;  
+   var path = XRai.getPath(e);
+   new_div.onclick = goto_path;
    if (path.length > 20) {
      new_div.setAttribute("title",path);
      path = "..." + path.substr(path.length-20);
    }
-	new_div.appendChild(document.createTextNode(path));
-   
+    new_div.appendChild(document.createTextNode(path));
+
    if (!x) list.appendChild(new_div);
    else list.insertBefore(new_div,x);
-   
+
    e.setAttribute("selected","yes");
 }
+
 function toggle_bookmarks() {
   right_panel("bookmarks","img_bookmarks",null);
-/*  var b_iframe = document.getElementById("bookmarks");
- var menubar = document.getElementById("menubar");
-  b_iframe.style.top = menubar.scrollHeight + "px";
-  toggle_right_panel(b_iframe,document.getElementById("img_bookmarks"));*/
 }
 
 
-/* List manager */
 
 
+// ==================
+// ================== Assessments
+// ==================
+
+
+// Sorted array containing XRange objects
+var assessed_ranges = Array();
+// Associative array containing
+var assessed_ancestors = Array();
+
+// Contains the reference to the element being re-assessed
+var currentAssessed = null;
+
+// Show the eval panel
+
+function show_eval_panel(px,py) {
+  document.getElementById("eval_breakup_link").style.display = currentAssessed ? "block" : "none";
+  var eval = document.getElementById("eval_div");
+
+   // Check for valid assessments
+   // ie a >= max(children) && <= any ancestor
+   var max=3; var min = 0;
+
+  show_div_xy(px,py,   "eval_div");
+  return true;
+
+}
+
+
+function showEval(event,link) {
+ // Get the panel element
+ var x = get_xml(link);
+  show_eval_panel(event.pageX,event.pageY,[get_xmle(x).id]);
+  return true;
+}
+
+
+/** Selects the X-Rai elements which have been highlighted
+   @param range A Range object
+*/
+function highlight(range) {
+   // Find the beginning & end elements xids
+   var x = get_container(range.startContainer);
+   var y = get_container(range.endContainer);
+   if (debug) window.dump(XRai.getPath(x) + " -> " + XRai.getPath(y) + "\n");
+
+   var z;
+//    if (z = XRai.previous(y)) {
+//    } else if (z = XRai.next(x)) {
+//    }
+
+   var flag = true;
+   for(; x != null; x = XRai.nextElementTo(x,y)) {
+      window.dump("HIGH " + XRai.getPath(x) + "\n");
+      if (x.getAttribute("name") != null && x.getAttribute("name") != "") {
+         display_message("warning","The passage overlaps with an already assessed one (" + x.getAttribute("name") + ")");
+         clear_selected();
+         return false;
+      }
+      x.setAttribute("name","sel");
+   }
+   return true;
+}
+
+function clear_selected(event) {
+  var selected = document.getElementsByName("sel");
+  for(var i = 0; i < selected.length; i++) {
+   selected[i].setAttribute("name",null);
+  }
+}
+
+/** Assess the current selection */
+function show_eval_selected(x,y) {
+ var selection = window.getSelection();
+ var range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+  if (range == null || range.collapsed) {
+     display_message("warning","No selected elements");
+     return;
+  }
+
+  clear_selected();
+  if (highlight(range)) {
+   selection.collapseToStart();
+   show_eval_panel(x,y);
+  }
+ return true;
+}
+
+/** Re-assess */
+function reassess(event) {
+ // Display show eval panel
+  event.target.xraiParent = currentAssessed;
+  currentAssessed = event.target;
+  show_eval_panel(event.pageX, event.pageY);
+}
+
+
+// Structure
+// currentAssessed is a <xrai:a> element if we are already "zooming in" or null if top level
+
+// <xrai:a>.lastElement is the last element of the highlighted passage
+// <xrai:a>.parentPassage is the containing passage (if there is any)
+// <xrai.a>.nextPassage is the next passage at this level
+// <xrai:a>.firstSubpassage is the first sub-passage
+
+
+
+function setPassage(p,v) {
+   if (!v) p.setAttribute("hidden",""); else p.removeAttribute("hidden");
+   for(var x = p.parentNode; x != null; x = XRai.nextElementTo(x,p.lastElement)) {
+      if (v) x.reference = p;
+      x.setAttribute("name",v ? "relevant" : null);
+   }
+}
+
+function changesSubpassages(p,v) {
+   for(var p = currentAssessed.firstSubpassage; p != null; p = p.nextPassage)
+      setPassage(p,v);
+}
+
+/** Hide surroundings
+
+ */
+function hideSurroundings(element, flag) {
+      var y = element.parentNode;
+      while (y = XRai.noDirectPrevious(y)) {
+         if (flag) y.setAttribute("hidden","true");
+         else y.removeAttribute("hidden");
+      }
+
+      y = element.lastElement;
+      while (y = XRai.noDirectNext(y))
+         if (flag) y.setAttribute("hidden","true");
+         else y.removeAttribute("hidden");
+}
+
+
+// Update passage information
+function updatePassageInfo() {
+   var info = document.getElementById("assessedPassageSpan");
+   if (currentAssessed) {
+      for(var x = info.firstChild; x!=null; x=x.nextSibling) {
+         if (x && x.tagName == "xrai:a") {
+            x.setAttribute("a",currentAssessed.getAttribute("a"));
+            break;
+         }
+      }
+      info.style.display = null;
+   } else {
+      info.style.display = "none";
+   }
+}
+
+// Function called when the user wants to go "up"
+// If innermost, go to the "up" URL
+// Otherwise, go up using currentAssessed.parent
+function goUp() {
+   if (currentAssessed) {
+      // Deselect current level highlighted passages
+      changesSubpassages(currentAssessed,false);
+      var p = currentAssessed;
+      currentAssessed = currentAssessed.parentPassage;
+      if (currentAssessed) changesSubpassages(currentAssessed,true);
+      else setPassage(p,true);
+
+      // Unhide components: to optimize
+      hideSurroundings(p,false);
+      if (currentAssessed) hideSurroundings(currentAssessed,true);
+      scrollTo(0,p.scrollY);
+  }
+  
+  updatePassageInfo();
+}
+
+function goDown() {
+   // Save scroll position
+   currentAssessed.scrollY = scrollY;
+
+   var last = currentAssessed.lastElement;
+   // Hide other components
+   hideSurroundings(currentAssessed,true);
+
+   // * Restablish the highlighting at this level
+
+   // (a) Null the current highlighting of the passage
+   currentAssessed.setAttribute("hidden","");
+   var first = XRai.nextSibling(currentAssessed);
+   for(var x = currentAssessed.parentNode; x != null; x = XRai.nextElementTo(x,last))
+      x.setAttribute("name",null);
+
+   // (b) highlight subpassages 
+   changesSubpassages(currentAssessed,true);
+
+   updatePassageInfo();
+   scrollTo(0,0);
+}
+
+/** Assess the current selection */
+function assess(e,a,the_event) {
+   var ts = get_time_string();
+
+  window.dump("Assessing with " + a + "\n");
+
+  // Otherwise
+  var selected = document.getElementsByName("sel");
+  if (selected.length > 0) {
+     changed = true;
+     if (a == "0") {
+         // The passage was not assessed
+        for(var i = 0; i < selected.length; i++) {
+            selected[i].setAttribute("name", null);
+        }
+     } else {
+        // The passage was assessed
+
+        // Create an xrai tag and add it to the currentPassage children
+        var xraia = document.createElementNS(xrains,"a");
+        if (currentAssessed) {
+         xraia.nextPassage = currentAssessed.firstSubpassage;
+         xraia.parentPassage = currentAssessed;
+         currentAssessed.firstSubpassage = xraia;
+        }
+        xraia.setAttribute("a",a);
+
+        // Insert <xrai:a> just before the first child of the first selected element
+        xraia.lastElement = selected[selected.length-1];
+        selected[0].insertBefore(xraia,selected[0].firstChild);
+
+        setPassage(xraia,true);
+
+
+     }
+  }
+
+  var save = document.getElementById("save");
+  if (changed) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed.length + " assessment(s) to save");  }
+  else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","No assessment to save"); }
+}
+/*
+   Ordered array of elements
+
+   */
 
 // Add/remove an id to the array
 function toggle_from_array(a,x) {
@@ -251,166 +680,6 @@ function toggle_from_array(a,x) {
   else a.splice(i,0,x);
   return true;
 }
-
-
-
-/* 
-      Evaluation
-      
-*/
-
-var eval_elements = null;
-
-// Show the eval panel : event (positioning 
-function show_eval_panel(px,py, ids) {
-  construct_assessment_tree(); // Check everything is OK
-  
-  for(var i = 0; i < ids.length; i++) {
-  	var x = document.getElementById(ids[i]);
-   add_to_tree(x);
-   x.setAttribute("current","yes");
-  }
-  if (!tree_root) { alert("No tree root defined!"); return; }
-  inference(tree_root,true); // Make some inference
-  
-  var eval = document.getElementById("eval_div");
-  eval_elements = []; // Elements to be evaluated
-  var mask = ~0;
-  var new_div = document.createElement("div");
-  var selected = null;
-  for(var i = 0; i < ids.length; i++) {
-  	var x = document.getElementById(ids[i]);
-//    if (!x.parent) alert("No parent!?!");
-   x.removeAttribute("current");
-   eval_elements.push(x);
-   var a = x.getAttribute("name");
-   if (a == null || x.hasAttribute("ii")) a = "U";
-   else if (a=="A") a = "U";
- 
-   if (!selected) selected = a;
-   else if (selected != a) selected = "?";
-	var path = get_xrai_path(x);
-        var div_a = document.createElement("div");
-        var node = document.createElement("span"); node.setAttribute("style","color: blue");
-//         node.setAttribute("href","javascript:show_element(\"" + path + "\")");
-         node.appendChild(document.createTextNode(path));
-        div_a.appendChild(node);
-        div_a.appendChild(document.createTextNode(" (" + assessments[a] + ")"));
-        if (!assessments[a]) alert(a + " is not a valid assessment");
-        new_div.appendChild(div_a);
-       if (x.mask == null) { alert("Error (no mask for element)"); }
-   	mask &= x.mask;
-   }
-   var eval_path = document.getElementById("eval_path");
-   eval_path.replaceChild(new_div,eval_path.firstChild);
-
-    bit_mask = 1;
-   for(i=0; i < sorted_assessments.length; i++) {
-    var a = sorted_assessments[i];
-    var id = "asssess_" + a;
-    var e = document.getElementById(id);
-    if (e == null) alert("Error: " + id + " is not a valid id in document (" + i + ")");
-    if (bit_mask & mask) {
-      if (selected != a) { e.className = '';}
-      else {  e.className = 'selected'; }
-    } else {
-      e.className = selected == a ? 'inconsistant' : 'disabled' ;
-    }
-    bit_mask <<= 1;
-   }
-
-   show_div_xy(px,py,   "eval_div");
-   return true;
-
-}
-
-var selected_elements = new Array();
-
-function showEval(event,link) {
- // Get the panel element
- var x = get_xml(link);
-  show_eval_panel(event.pageX,event.pageY,[get_xmle(x).id]);
-  return true;
-}
-
-function cb_hide_element(id) {
-   var x = document.getElementById(id);
-   if (x) x.style.visibility = "hidden"; 
-}
-
-function show_eval_selected(x,y) {
-  if (selected_elements.length == 0) { 
-     var x = document.getElementById("alert_no_selected");
-     if (!x) alert("No selected elements"); 
-     else {
-        x.style.visibility = "visible";
-        setTimeout('cb_hide_element("alert_no_selected")',1200);
-     }
-     return;
-  }
-  show_eval_panel(x,y,selected_elements);
- return true;
-}
-
-
-// Handles a click on an element tag
-
-
-function toggle_selection(x) {
-  var added = toggle_from_array(selected_elements, parseInt(x.id));
-//   alert(get_xrai_path(x) + ": " + added);
-  if (added) x.setAttribute("sel","");
-  else x.removeAttribute("sel");
- return added;
-}
-
-function do_click(e) {
-  var x = get_xml(e.target);
-  if (!x) {
-  	return; // not an xml tag
-  }
-  e.stopPropagation(); // Not not bubble anymore
-  
-  if (e.ctrlKey || e.altKey) { toggle_selection(get_xmle(x)); }
-  else if (write_access) showEval(e,x);
-}
-
-function do_dblclick(e) {
-  var x = get_xml(e.target);
-  if (!x) return;
-  e.stopPropagation();
- if (e.ctrlKey || e.metaKey) { 
-   x = get_xmle(x); if (!x) return;
-   var to_add = toggle_selection(x);
-   var y = get_xrai_parent(x);
-   if (!y) return; // no parent
-   y = get_xrai_first_child(y);
-   var s = x.getAttribute("name").length;
-   if (!y) { alert("No first child for our parent !?!"); return; }
-   while (y) {
-      if (x!= y && (y.hasAttribute("sel") ^ to_add))
-      if (y.getAttribute("name").length == s) {// Not assessed 
-          toggle_selection(y);
-      }
-      y = get_xrai_next_sibling(y);
-   }
-  } 
-}
-
-function clear_selected(event) {
-  for(var i = 0; i < selected_elements.length; i++) {
-  	var x = document.getElementById(selected_elements[i]);
-	if (!x)  continue; 
-       x.removeAttribute("sel");
-  }
-  selected_elements = [];
-}
-
-
-
-// *************
-// * Inference *
-// *************
 
 // Add an id to the array
 function add_element_to_array(a,x) {
@@ -429,267 +698,11 @@ function remove_element_from_array(a,x) {
 }
 
 
-// 11 values (unknown, 0, 11, 12, 13, 21, 22, 23, 31, 32, 33) => 2^10 - 1 = 1023
-// unknown: 1
-// (0,0): 2
-// (e,s) != (0,0) => 2^((e-1)*3+(s-1)+2)
-var nomask = 2047;
-var emask = { min: [ 2047, 2045, 2017, 1793], max: [3, 31, 255, 2047 ], val: [ 2, 28, 224, 1792]};
-var smask = { min: [ 2047, 2045, 1753, 1169], max: [3, 295, 879, 2047], val: [ 2, 292, 584, 1168]};
 
-function e_range(mask) {
-  r = [ 3, 0 ];
-  var i = 0;
-  while (((emask.val[i] & mask) == 0) && i <= 3) { i++; } r[0] = i;
-  while ((emask.val[i] & mask) && i <= 3) { r[1] = i; i++; }
-  return r;
-}
-function s_range(mask) {
-  r = [ 3, 0 ];
-  var i = 0;
-  while (((smask.val[i] & mask) == 0) && i <= 3) i++; r[0] = i;
-  while ((smask.val[i] & mask) && i <= 3) { r[1] = i; i++; }
-  return r;
-}
+// *************
+// * Inference *
+// *************
 
-function is_assessed(x) {
-  return  x.getAttribute('name').length == 2 && !x.hasAttribute("current") && !x.hasAttribute("ii");
-}
-
-function get_exh(x) {
-  var s  = x.getAttribute('name');
-  if (s.length == 2 && !x.hasAttribute("current") && !x.hasAttribute("ii")) { var e = parseInt(s.substr(0,1)); return [e,e]; }
-  return e_range(x.mask);
-}
-function get_spe(x) {
-  var s  = x.getAttribute('name');
-  if (s.length == 2 && !x.hasAttribute("current") && !x.hasAttribute("ii")) { var s = parseInt(s.substr(1,1)); return [s,s]; }
-  return s_range(x.mask);
-}
-
-function get_ranges(x) {
-  var s  = x.getAttribute('name');
-  if (s.length == 2 && !x.hasAttribute("current") && !x.hasAttribute("ii")) { 
-    var e = parseInt(s.substr(0,1)); 
-    var s = parseInt(s.substr(1,1)); 
-    return { e: [e,e], s: [s,s] };
-  }
-  return { e: e_range(x.mask), s: s_range(x.mask) };
-}
-
-function to_id_string(a) {
-  var s ="";
-  for(var i = 0; i < a.length; i++) s += " " + a[i].id;
-  return s;
-}
-
-
-
-// -*- Inference
-function inference(x,first_pass) {
-  if (first_pass) x.mask = nomask;
-  var omask = x.mask;
-  var mask;
-  var p;
-  var tc = parseInt(x.getAttribute("nc")); // Number of children (inc. text nodes)
-  do {
-    mask = x.mask;
-
-    if (p = x.parent) {
-      var pr = get_ranges(p);
-      x.mask &= emask.max[pr.e[1]]; // Rule 1.1
-//       if (pr.s[0] == 3 && pr.e[1] > 1 && tc > 1) x.mask &= emask.max[pr.e[1]-1]; // Rule 6.1
-    }
-    
-    if (x.children) {
-      var smin = 3; var smax = 0;
-      var emin_max = 0; // Max of min(e) 
-      var s_inf_child = x, s_sup_child = x; // Only s-inf (sup) child
-      var esum_min = 0, esum_max = 0;
-      
-      // Process children (first pass)
-      for(var i = 0; i < x.children.length; i++) {
-        var child = x.children[i];
-        if (first_pass || mask != x.mask) inference(child,first_pass);
-        var r = get_ranges(child);
-        x.mask &= emask.min[r.e[0]]; // Rule 1.1
-        // Update statistics
-        esum_min += r.e[0]; 
-        esum_max += r.e[1];
-        if (smin > r.s[0]) smin = r.s[0];
-        if (smax < r.s[1]) smax = r.s[1];
-        if (emin_max < r.e[0]) emin_max = r.e[0];
-        if (s_inf_child && r.s[0] <= smax) if (s_inf_child == x) s_inf_child = child; else s_inf_child = null;
-        if (s_sup_child && r.s[1] >= smin) if (s_sup_child == x) s_sup_child = child; else s_sup_child = null;
-      }
-      
-/*      if (tc > 1) {
-        if (emin_max >= 2) x.mask &= ~(emask.val[2] & smask.val[3]); // Rule 6.2
-        if (emin_max >= 3) x.mask &= ~(emask.val[3] & smask.val[3]); // Rule 6.2
-      }*/
-      
-      // Process children (second pass) : only if we have all children in the tree
-      var c_changed = false;
-      var r = get_ranges(x);
-      if (tc == 0) {
-        x.mask &= smask.max[0];
-        x.mask &= emask.max[0];
-      } else if (tc == x.children.length) {
-        x.mask &= smask.max[smax]; // Rule 3.1
-        x.mask &= smask.min[smin]; // Rule 5.1
-        if (esum_max < 3)  x.mask &= emask.max[esum_max];  // Rule 4.1
-        var c_emin = get_exh(x)[0] - esum_max;
-//         alert("esum_min = " + esum_min + " => c_emin=" + c_emin);
-        for(var i = 0; i < x.children.length; i++) {
-          var child = x.children[i];
-          var cmask = child.mask;
-          var e = c_emin + get_exh(child)[1];
-          if (e <= 3 && e> 0) { 
-            child.mask &= emask.min[e]; 
-//              alert("Rule 4.2 for " + get_xrai_path(child) + " = " + c_emin + ", " + e + "," + esum_min); 
-          }// Rule 4.2
-          if (s_sup_child == child) { child.mask &= smask.min[r.s[0]]; /*alert(get_xrai_path(child) + " (1)");*/ }
-          if (s_inf_child == child) { child.mask &= smask.max[r.s[1]]; /*alert(get_xrai_path(child) + " (2)");*/ }
-          if (cmask != child.mask) inference(child,false);
-        } 
-      } // Has all children ?
-    } // Has one child at least
-    first_pass = false;
-  } while (mask != x.mask);
-  
-//   alert(get_xrai_path(x) + " (" + x.id + ")" + " has now mask = " + x.mask + " and " + tc + " child(ren)");
-  
-  return x.mask != omask; // Have we changed?
-}
-
-
-// update the name (assessment), ii (infered), ic (inconsistant) flags
-function update_view(x,needed) {
-  if (x == tree_root) reset_statistics();
-  var er = e_range(x.mask); var sr = s_range(x.mask);
-  
-  var s = x.getAttribute("name"); // The current assessment
-  var old_name = s;
-  var ii = null; 
-  var ic = null; // not inconsistant
-  
-  if ((x.hasAttribute("ii") || (s.length != 2))) { 
-    // Inferred or not assessed: check the infered status
-    s = "U";
-    if (er[0] == er[1] && sr[0] == sr[1]) {
-      ii = "yes";
-      s = er[0] + "" + sr[0];
-    } 
-    ic = null;
-  } else { 
-    // The element is assessed: check consistency
-    var e = parseInt(s.substr(0,1)); sp = parseInt(s.substr(1,1));
-    if (e < er[0] || e > er[1] || sp < sr[0] || sp > sr[1]) {
-      ic = "yes";
-//       dump(get_xrai_path(x) + " is ic: " + er + ", " + sr + " and " + e + "-" + sr+ "\n");
-    }
-  }
-  
-
-  // Do we need children (ie, s is assessed & highly specific & ...?)
-  var need_children = !(s.length == 1 || s== "00" || s== "13");
-  if (x.children && need_children) {
-    var esum = 0;
-    for(var i = 0; i < x.children.length; i++) {
-      var sc = x.children[i].getAttribute("name"); 
-      if (sc.length == 2) esum += parseInt(sc.substr(0,1));
-    }
-    if (esum >= parseInt(s.substr(0,1))) need_children = false;
-  }
-  
-  
-  // To assess & recursive
-  var is_todo = needed;
-//   if (needed) alert(get_xrai_path(x) + " is needed!");
-  
-  if (x.children) for(var i = 0; i < x.children.length; i++) {
-    var todo = update_view(x.children[i],need_children);
-     is_todo |= todo;
-//      if (todo) alert(get_xrai_path(x.children[i]) + " returned todo");
-   }
-  
-  var a = "";
-  if (ic == "yes")  a = "I";
-  else a = s;
-  
-   if (is_todo || x.hasAttribute("ip")) { 
-     if (s=="U") { s = "A"; a="U"; } 
-     else if (s=="A") a="U"; 
-   }
-   else { 
-     if (s == "A") { 
-       s = "U";
-       a = null; 
-     } 
-   else if (s == "U") a = null; 
-   }
-  
-   if (a) statistics[a]++;
-   
-   // Update if needed
-   if (s != x.getAttribute("name")) x.setAttribute("name",s);
-   if (ii != x.getAttribute("ii")) {
-     if (ii == "yes") x.setAttribute("ii","yes"); else x.removeAttribute("ii");
-   }
-   if (ic != x.getAttribute("ic")) if (ic == "yes") { 
-     x.setAttribute("ic","yes"); 
-   } else x.removeAttribute("ic");
-   
-//    dump(get_xrai_path(x) + ": ic=" + ic + ", ii=" + ii + ", name=" + s + "\n");
-   return (s.length == 1 && is_todo) || (s != "00" && s.length == 2) ;
-}
-
-// -*- Build the assessment tree
-var p_assessments = ['A','00','11','12','13','21','22','23'];
-var tree_root = null;
-
-
-
-function check_children(x) {
-
-  if (!x.children) {
-    x.children = [];
-  for(var y = get_xrai_first_child(x); y; y = get_xrai_next_sibling(y))  {
-      add_element_to_array(x.children,y);
-   if (!y.parent) y.parent = x;
-  } 
-  }
-}
-
-function add_to_tree(x) {
-  if (x.parent && x.children) return; // It's OK.
-
-  check_children(x);
-  
-  // Add ancestor until it is OK
-  var y = x;
-  while (x && !x.parent) {
-    y = get_xrai_parent(x);
-//     if (!y) alert(x.id);
-    x.parent = y;
-    if (y) check_children(y);
-    x = y;  
-   }
-  // Add children
-}
-
-function construct_assessment_tree() {
-  if (tree_root) return; // already constructed
-  var n = 0;
-  tree_root = document.getElementById(root_xid);
-  for(var i = 0; i < p_assessments.length; i++) {
-    var list = document.getElementsByName(p_assessments[i]);
-    for(var j = 0; j < list.length; j++) {
-      // For each element, build from element to top
-      add_to_tree(list[j]);
-    }
-  }
-}
 
 
 
@@ -700,7 +713,7 @@ var statistics = {};
 var stats_assessments = [ 'I', 'U', '00','11','12','13','21','22','23', '31', '32', '33'];
 
 function article_beforeunload(event) {
-  if (changed.length > 0) 
+  if (changed.length > 0)
     return "X-Rai warning: " + (changed.length > 1 ? changed.length + " assessment are" : "1 assessment is") + " not saved.";
 }
 
@@ -714,7 +727,7 @@ function update_stat_view() {
   for(var i = 0; i < stats_assessments.length; i++) {
         var x = document.getElementById("S_" + stats_assessments[i])
         if (x) x.firstChild.nodeValue = statistics[stats_assessments[i]];
-        else alert("No S_" +stats_assessments[i]); 
+        else alert("No S_" +stats_assessments[i]);
       }
 }
 
@@ -731,8 +744,8 @@ function saved() {
   changed = [];
    var save = document.getElementById("save");
    save.enabled = false;
-   save.src =  baseurl + "img/filenosave.png"; 
-   save.setAttribute("title","No assessment to save"); 
+   save.src =  baseurl + "img/filenosave.png";
+   save.setAttribute("title","No assessment to save");
 }
 
 
@@ -744,40 +757,16 @@ function lpad(c,s,l) {
 
 function get_time_string() {
    var d = new Date();
-   var s = String(d.getUTCFullYear() + "%2d" + lpad("0",d.getUTCMonth()+1,2) + "%2d" + lpad("0",d.getUTCDate(),2)); 
+   var s = String(d.getUTCFullYear() + "%2d" + lpad("0",d.getUTCMonth()+1,2) + "%2d" + lpad("0",d.getUTCDate(),2));
    s += "%20";
    s += lpad("0",d.getUTCHours(),2) + "%3a" + lpad("0",d.getUTCMinutes(),2)  + "%3a" + lpad("0",d.getUTCSeconds(),2);
 //    alert (s);
    return s;
 }
 
-function assess(e,a,the_event) {
-   var ts = get_time_string();
-            
-  if (e.className != "") return false;
-  for(var i = 0; i < eval_elements.length; i++) {
-    var x = eval_elements[i];
-    var old = x.getAttribute("old");
-    if (old && old == a) { 
-      x.removeAttribute("old"); 
-      remove_element_from_array(changed,x); 
-    }
-    else { 
-      if (!old) x.setAttribute("old",x.getAttribute("name"));
-      add_element_to_array(changed,x);
-    }
-    x.setAttribute("name",a);
-    x.removeAttribute("ii");
-    x.setAttribute("ts",ts);
-  }
-  var save = document.getElementById("save");
-  if (changed.length > 0) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed.length + " assessment(s) to save");  }
-  else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","No assessment to save"); }
-  
-  inference(tree_root,true); // update the view
-  update_view(tree_root);
-  update_stat_view();
-}
+var changed = false;
+
+
 
 function save_assessments() {
   if (changed.length == 0) return;
@@ -788,7 +777,7 @@ function save_assessments() {
   if (!e) alert("Hmmm. Can't retrieve the iframe 'assessing' for assessing");
    e.contentDocument.documentElement.innerHTML = "<html><head><title>Waiting</title></head><body><div style='text-align: center; font-weight: bold;'>Connecting to the server...</div></body></html>";
   e.style.visibility = "visible";
-  
+
   var paths_qs = "";
   for(var i = 0; i < changed.length; i++) {
     var a = changed[i].getAttribute("name");
@@ -806,12 +795,12 @@ function save_assessments() {
 // Todo
 var current_todo = 0;
 function check_todo(list,way) {
-	if (!list || list.length == 0) {
-		if (confirm("No more elements to assess in this view. Do you like to jump to the " + way + " view where there is an element to assess ?")) {
-			window.location = "article.php?view_jump=1&id_pool=" + id_pool + "&next=" + (way == "next" ? "1" : "0") + "&view_xid=" + view_xid;
-		}
-		return false;
-	}
+    if (!list || list.length == 0) {
+        if (confirm("No more elements to assess in this view. Do you like to jump to the " + way + " view where there is an element to assess ?")) {
+            window.location = "article.php?view_jump=1&id_pool=" + id_pool + "&next=" + (way == "next" ? "1" : "0") + "&view_xid=" + view_xid;
+        }
+        return false;
+    }
    return false;
 }
 
@@ -822,44 +811,14 @@ var current_nodes = {};
 
 function show_goto_panel(x,event) {
    current_goto = x;
-   show_div_xy(event.pageX,event.pageY,"s_nav");   
-}
-      
-function goto_next_assessment() {
-   var list = document.getElementsByName(current_goto);
-   if (list.length == 0) return;
-   if (current_nodes[current_goto] == null)
-      current_nodes[current_goto] = 0;
-   else 
-      current_nodes[current_goto] = (current_nodes[current_goto] + 1) % list.length;
-  show_focus(get_first_xml(list[current_nodes[current_goto]]));  
-}
-
-function goto_previous_assessment() {
-   var list = document.getElementsByName(current_goto);
-   if (list.length == 0) return;
-   if (current_nodes[current_goto] == null)
-         current_nodes[current_goto] = 0;
-   else 
-      current_nodes[current_goto] = (current_nodes[current_goto] + list.length - 1) % list.length;
-   show_focus(get_first_xml(list[current_nodes[current_goto]]));  
-}
-
-function todo_next() {
-  var list = document.getElementsByName("A");
-  if (list.length == 0) return check_todo(list,"next");
-  current_todo = (current_todo + 1) % list.length;
-  show_focus(get_first_xml(list[current_todo]));  
-}
-
-function todo_previous() {
-  var list = document.getElementsByName("A");
-  if (list.length == 0) return check_todo(list,"previous");
-  current_todo = (current_todo + list.length - 1) % list.length;
-  show_focus(get_first_xml(list[current_todo]));
+   show_div_xy(event.pageX,event.pageY,"s_nav");
 }
 
 
+
+
+
+// **** Check the validity of the document ****
 
 function check_valid_xml() {
    if (document.firstChild.nodeName == "parsererror") {
@@ -884,19 +843,19 @@ function check_valid_xml() {
             s = document.firstChild.childNodes[0].nodeValue + "\n\n\n" + document.firstChild.childNodes[1].firstChild.nodeValue;
          else if (document.firstChild)
             s = document.firstChild.textContent;
-         else 
+         else
             s = "???";
          var nexturl;
          if (window.id_pool)
                nexturl = "article.php?view_jump=1&amp;id_pool=" + id_pool + "&amp;view_xid=" + view_xid + "&amp;next=" ;
          // Generate the bug report
          window.location = base_url + "/bug_report.php?error=" + escape(s)
-               + "&whattodo= " 
+               + "&whattodo= "
                + (window.id_pool ? escape('Now you can: <ul><li>go to the <a href="' + nexturl + '0">previous element to assess</a>,</li>'
                + '<li>or go to the <a href="' + nexturl + '1">next element to assess</a>,</li>'
                + '<li>or go to the <a href="' + base_url + '/pool?id_pool=' +  id_pool + '">pool summary</a>.</li></ul>') : escape('You can go back to the <a href="' + base_url + '">home page</a>'));
       }
-      
+
 
       return;
    }
@@ -906,7 +865,7 @@ function check_valid_xml() {
    } else {
 //       print_xml_positions_r(document.getElementById("inex"));
    }
-   
+
 }
 setTimeout('check_valid_xml()',500);
 

@@ -1,3 +1,4 @@
+
 div.help_top {
   font-size: medium;
   font-weight: normal;
@@ -34,17 +35,23 @@ div.message_panel {
   visibility: hidden; 
 }
 
-div.warn_panel {
+div.message_error {
   position: fixed;
   background: #ffeeee;
   border: 2px solid #ff0000;
   padding: 0.5cm;
   top: 40%;
   left: 10%;  
-  visibility: hidden; 
 }
 
-
+div.message_warning {
+  position: fixed;
+  background: #ffeeee;
+  border: 2px solid #ff0000;
+  padding: 0.5cm;
+  top: 40%;
+  left: 10%;  
+}
 
 p { text-align: justify; }
 img { border: 0; }
@@ -238,25 +245,37 @@ table.list th {
 }
 
 
+/** Status */
+
 div.status {
   position: fixed;
   margin: 0;
   padding: 0;
   bottom: 0;
   left: 0;
-/*   min-height: 30px; */
-  width: 100%;
-/* IE ?
-  width: expression(document.body.clientWidth);
-  top: expression(document.body.scrollTop + this.offsetHeight - this.offsetHeight);
-  */
+  display: table;
+}
+
+div.status > div {
+  border: 0;
+  margin: 0; 
+  padding: 0px;
+  display: table-row;
+}
+
+div.status > div > span {
+  border: 1px outset #888888; 
+  background: #eeeeee; 
+  margin: 0;
+  padding: 0px;
+  display: table-cell;
 }
 
 div.status img {
   border: 1px transparent outset;
   padding: 2px;
   margin:0;
-  vertical-align: bottom;
+  vertical-align: middle;
 }
 
 div.status img:hover {
@@ -264,19 +283,6 @@ div.status img:hover {
  border: 1px solid #cccccc;
 }
 
-div.status > div {
-  border: 0;
-  margin: 0; 
-  padding: 0px;
-}
-
-div.status > div > span {
-  border: 1px outset #888888; 
-  background: #eeeeee; 
-  margin: 0;
-  margin-right: 0.2cm;
-  padding: 0px; 
-}
 
 
 

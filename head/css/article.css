@@ -1,3 +1,4 @@
+/* @namespace url(http://www.w3.org/1999/xhtml) */
 
 
 div#navigation { 
@@ -30,9 +31,11 @@ div#s_nav img, div#navigation img {
 }
 
 
+/** Eval box */
+
 div#eval_div {
   border: 1px outset #aaaaaa;
-  background: #eeeeee;
+  background: #dddddd;
   visibility: hidden; 
   padding: 4pt; 
   position: absolute; 
@@ -47,10 +50,11 @@ div#eval_div img:hover {
 }
 
 div#eval_div img {
-  background: #eeeeee;
+  background: #dddddd;
   border: 1px outset #ffffff;
   cursor: pointer;
-  padding: 5pt; 
+  padding: 5pt;
+  margin: 3pt;
   font-size: small;
 }
 
@@ -72,6 +76,8 @@ div#eval_div img.inconsistant {
   border: 1px solid red;
   cursor: default;
 }
+
+
 
 
 div#inex .xmle {

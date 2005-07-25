@@ -71,6 +71,10 @@ function evaluation_string($ev2) {
   t todo ?
 */
 function get_assessment_link($a, $i = false, $p = false, $t = true, $broken = false) {
+  if ($a == "0") return "img/a0.png";
+  if ($a == 'U') return "img/U.png";
+  return "img/a$a.png";
+
   if ($broken) return "img/I.png";
   if ($a == 'U') return ($t ? "img/U.png" : "img/na.png");
   return "img/" . ($i ? "i" : "a") . "$a.png";

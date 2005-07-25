@@ -30,16 +30,16 @@ make_header("Pool summary for topic $id_topic");
 // Retrieva assessments
 
 
-$query = "SELECT name, title, inferred, assessment, inconsistant, count(*) n FROM $db_files f LEFT JOIN $db_assessments a ON a.id_pool =  $id_pool AND a.xid >= f.xid AND a.xid <= f.post WHERE f.parent = '' GROUP BY f.name, inferred, assessment, inconsistant ORDER BY f.name, inferred, assessment, inconsistant";
+// $query = "SELECT name, title, inferred, assessment, inconsistant, count(*) n FROM $db_files f LEFT JOIN $db_assessments a ON a.id_pool =  $id_pool AND a.xid >= f.xid AND a.xid <= f.post WHERE f.parent = '' GROUP BY f.name, inferred, assessment, inconsistant ORDER BY f.name, inferred, assessment, inconsistant";
 
 //  print "<div>$query</div>";
 
 $todojs = "";
 
-$qh = sql_query($query);
+// $qh = sql_query($query);
 $text = "";
 
-while ($row = sql_fetch_array($qh)) {
+while ($qh && $row = sql_fetch_array($qh)) {
 	$a = $row["inconsistant"] == 'Y' ? "I" : $row["assessment"];
 	if ($row["assessment"] == 'U' || $row["inconsistant"] == 'Y' && !$todo[$row["name"]]) {
 		$todo[$row["name"]] = true;
@@ -57,7 +57,7 @@ while ($row = sql_fetch_array($qh)) {
 
 // Output totals
 print "<h1>Statistics</h1>";
-$s = sql_get_row("SELECT sum(if(assessment='U',1,0)),count(*) FROM $db_assessments WHERE id_pool =  $id_pool AND in_pool='Y'");
+// $s = sql_get_row("SELECT sum(if(assessment='U',1,0)),count(*) FROM $db_assessments WHERE id_pool =  $id_pool AND in_pool='Y'");
 ?>
 
 <div style="margin:0.2cm; border: 1px solid black; padding: 5px;">
@@ -102,18 +102,13 @@ if ($todojs) $todojs .= ");\n";
 
 print "<h1>Collections</h1>";
 
-mysql_data_seek($qh,0);
-$old = "";
-while ($row = sql_fetch_array($qh)) {
-  if ($old == $row["name"]) continue;
-  $old = $row["name"];
+$ch = sql_query("SELECT id, title from collections order by id");
+while ($row = sql_fetch_array($ch)) {
    print "<div>";
-   print get_stats_string($assessments[$row["name"]],false) . " <a id='$row[name]' href=\"collections/$row[name]?id_pool=$id_pool\">" . htmlspecialchars($row["title"]) . "</a>";
+   print " <a id='$row[id]' href=\"collections/$row[id]?id_pool=$id_pool\">" . htmlspecialchars($row["title"]) . "</a>";
    print "</div>";
-   
 }
-
-sql_free($qh);
+sql_free($ch);
 
 
 ?>

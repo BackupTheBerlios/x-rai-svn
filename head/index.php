@@ -18,26 +18,18 @@ make_header("Home");
 ?>
 
 
-<h1>Browse the collection</h1>
+<h1>Browse the collections</h1>
 
 
 <?php
 
-
-$query = "SELECT name, title FROM $db_files f WHERE f.parent = '' ORDER BY f.name";
-
-$qh = sql_query($query);
-while ($row = sql_fetch_array($qh)) {
-  if ($old == $row["name"]) continue;
-  $old = $row["name"];
+$ch = sql_query("SELECT id, title from collections order by id");
+while ($row = sql_fetch_array($ch)) {
    print "<div>";
-   print " <a id='$row[name]' href=\"collections/$row[name]\">" . htmlspecialchars($row["title"]) . "</a>";
+   print " <a id='$row[id]' href=\"collections/$row[id]\">" . htmlspecialchars($row["title"]) . "</a>";
    print "</div>";
-   
 }
-
-sql_free($qh);
-
+sql_free($ch);
 
 ?>
 

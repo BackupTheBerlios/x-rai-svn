@@ -21,24 +21,10 @@ $file = $_REQUEST["file"];
 
 
 
-$assessments = array(
-	"U" => "Unknown relevance",
-	"00" => "Not relevant",
-	"11" => "Marginally exhaustive, marginal specific",
-	"21" => "Fairly exhaustive, marginal specific",
-	"31" => "Highly exhaustive, marginal specific",
-	"12" => "Marginally exhaustive, fairly specific",
-	"22" => "Fairly exhaustive, fairly specific",
-	"32" => "Highly exhaustive, fairly specific",
-	"13" => "Marginally exhaustive, highly specific",
-	"23" => "Fairly exhaustive, highly specificity",
-	"33" => "Highly exhaustive, highly specificity",
-);
+$sorted_assessments = array("U","0","1","2","3");
 
-$sorted_assessments = array("U","00","11","12","13","21","22","23","31","32","33");
-
-$relevances =array(
-	0 => "not relevant", 1 => "marginally exhaustive", 2 => "fairly exhaustive", 3 => "highly exhaustive"
+$relevances = array(
+	"U" => "unknown", 0 => "not relevant", 1 => "marginally exhaustive", 2 => "fairly exhaustive", 3 => "highly exhaustive"
 );
 
 
@@ -137,7 +123,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
 if (!$gecko) print '<?xml-stylesheet type="text/xsl" href="xsl/mathml.xsl"?' . ">\n";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$base_url?>" xml:lang="en" lang="en">
 	<head>
 		<title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
@@ -278,8 +264,8 @@ require_once("./include/settings.inc");
 $is_root = $root_users[$inex_user];
 
 $db = mysql_connect($sql_host, $login, $password);
-if(!$db) abort("No database connections could be made !");
-if (!mysql_select_db($base, $db)) abort("Could not make a sql connection " . mysql_error());
+if(!$db) exit("No database connections could be made !");
+if (!mysql_select_db($base, $db)) exit("Could not make a sql connection " . mysql_error());
 
 $write_access = $can_modify = false;
 
