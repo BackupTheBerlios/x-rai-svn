@@ -1,0 +1,117 @@
+2004-10-07
+fixed
+An inference bug (server side)
+2004-09-30
+enhancement
+Possibility toggle on/off the help tips
+2004-09-30
+enhancement
+Scrolling to an hidden element now put this element at the top of the window
+2004-09-28
+enhancement
+Save assessment with POST method allows much more assessments to be saved at once...
+2004-09-07
+enhancement
+Documents with broken mathML code are now regenerated
+2004-09-06
+fixed
+some more broken mathml code
+2004-09-05
+enhancement
+Added an automatic bug report and error recovery when the generated XML is invalid
+2004-09-04
+enhancement
+Added some tips
+2004-09-02
+enhancement
+Add navigation arrows for every assessment
+2004-09-02
+fixed
+Stop to highlight keywords in MathML formulas
+2004-09-01
+fixed
+Bug in passive rules
+2004-07-02
+enhancement
+DTD independance
+2004-06-16
+enhancement
+Local inference/assessments save
+2004-06-08
+enhancement
+Bookmarks
+2004-06-03
+enhancement
+INEX'04 rules
+2004-06-04
+enhancement
+Tree view
+2004-06-01
+enhancement
+New keyword highlighting modes (background, color)
+2004-05-26
+enhancement
+XHTML and MATHML support
+2004-05-26
+information
+starting new INEX'04 branch
+2003-09-10
+enhancement
+Added the ERR metric
+2003-09-10
+enhancement
+End of big elements (like bdy, sec, ss1, ss2)
+2003-10-10
+fixed
+Panel always appears in browser view
+2003-10-09
+fixed
+Statistics in pool page
+2003-10-07
+enhancement
+Selection assessment
+2003-10-02
+enhancement
+When assessing an element and its siblings, the confirm dialog shows the list of siblings
+2003-09-30
+enhancement
+When no elements to assess are left, next and previous assessment now jump to the next view where an element is to assess
+2003-09-30
+enhancement
+"Inconsistant" (<img src='img/I.png'/>) state for assessments which are... inconsistant according to a change to the assessment rules.
+2003-09-30
+enhancement
+New inference engine
+2003-09-30
+fixed
+Whitespaces of keywords are stripped
+2003-09-26
+enhancement
+Shift-control-click on an assessment assess all the siblings
+2003-09-26
+enhancement
+Shift-click on an element toggle highliht.
+2003-09-26
+enhancement
+A parent node has a s-value less or equal to the maximum s-value of its children nodes.
+2003-09-25
+fixed
+"Relevance" changed into "exhaustive"
+2003-09-25
+fixed
+"ref" can't be assessed (because of the link)
+2003-09-25
+fixed
+Assessment panel does not appear
+2003-09-25
+fixed
+Inverted volume names in pool view. Volume names in volume view.
+2003-09-25
+fixed
+Most "parse errors" for the article view (please let me know if you still have problems)
+2003-09-25
+fixed
+When an element contains text nodes and its children are all not relevant, do not infer not-relevant.
+2003-09-12
+information
+First public release

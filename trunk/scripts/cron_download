@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# Called by cron
+# check if there are things to do
+
+# Create the directory if it does not exist
+basedir=$(dirname "$0")
+adir="$basedir/../admin/assessments"
+wdir="$adir/waiting"
+
+mkdir -p "$wdir"
+chmod o+w "$wdir"
+touch "$adir/last-check"
+
+# Check for processing files in it (each file = 1 state)
+
+for i in $(ls "$wdir" | grep -v ".lock$"); do
+  if [ -f "$wdir/$i" ] ; then
+    if lockfile -r0 "$wdir/$i.lock" 2> /dev/null; then
+      # Let's go
+#       echo "Processing $i"
+      rm -rf "$adir/$i"
+      mkdir -p "$adir/$i"
+      php-cgi -q "$basedir/download_pools.php" "$i" #> /dev/null 2>&1 
+      (cd "$adir"; tar c "$i") | gzip -c > "$adir/$i.tgz"
+      rm -f "$wdir/$i"*
+    else
+      echo -n
+#       echo "$i is already being processed"
+    fi
+  else
+    echo -n
+#     echo "$adir/waiting/$i is not a file"
+  fi
+done

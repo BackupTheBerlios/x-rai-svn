@@ -1,0 +1,352 @@
+#!/usr/bin/perl -w
+
+# Parse the INEX collection and output SQL commands
+# that will fill the database
+# B. Piwowarski / aug 2003
+
+
+use strict;
+use XML::Parser;
+use File::Basename;
+use FileHandle;
+use File::Basename;
+use Pod::Usage;
+use Getopt::Long;
+
+our %xpaths;
+our $xpaths = 1;
+
+my $VERSION="0.1";
+
+my %OPT = (
+  xraixsl => '',
+  xmlxsl => '',
+  dir => '',
+  collection => '',
+  name => 'no name'
+);
+
+GetOptions( \%OPT,
+  qw(help|usage),
+  qw(
+    dir=s
+    collection=s
+    xraixsl=s
+    xmlxsl=s
+    name=s
+    title=s
+  )
+) or pod2usage(2);
+
+pod2usage(VERBOSE => 2) if $OPT{help};
+print $VERSION, "\n" and exit if $OPT{version};
+
+
+our $xid = 1;
+my $basedir = $OPT{dir};
+my $collection = $OPT{collection};
+my $mainfile="$basedir/$collection/index.xrai";
+die "Main file ($mainfile) does not exist!\n" unless (-f $mainfile);
+my $maindir = dirname($mainfile);
+our $currentdir = dirname($mainfile);
+our $title = $OPT{title} or die "A title should be given for the collection";
+my $tables =
+<<EOM
+
+REPLACE INTO collections (id,title) values ('COLLECTION','$title');
+DROP TABLE IF EXISTS COLLECTION_files;
+DROP TABLE IF EXISTS COLLECTION_map;
+DROP TABLE IF EXISTS COLLECTION_paths;
+# Note: don't touch to assessments table!
+
+
+# --------------------------------------------------------
+
+#
+# Structure de la table files
+#
+
+CREATE TABLE COLLECTION_files (
+  name varchar(70) NOT NULL default '',
+  parent varchar(70) NOT NULL default '',
+  `type` enum('xrai','xml') NOT NULL,
+  xsl varchar(70) NOT NULL,
+  title text NOT NULL default '',
+  xid int(11) NOT NULL default '0',
+  post int(11) NOT NULL default '0',
+  PRIMARY KEY  (name),
+  KEY parent (parent),
+  KEY name (name,xid,post),
+  KEY xid (xid),
+  KEY post (post), 
+  KEY type (type)  
+) TYPE=MyISAM;
+
+# --------------------------------------------------------
+
+#
+# Structure de la table map
+#
+
+CREATE TABLE COLLECTION_map (
+  tag varchar(15) NOT NULL default '',
+  rank smallint(6) NOT NULL default '0',
+  xid int(11) NOT NULL default '0',
+--  parent int(11) NOT NULL default '0',
+--  children_count smallint(6) NOT NULL default '0',
+  post int(11) NOT NULL default '0',
+  path int(11) default NULL,
+  PRIMARY KEY  (xid),
+--  KEY parent (parent),
+  KEY rank (rank),
+  KEY tag (tag),
+  KEY post (post),
+  KEY path (path)
+) TYPE=MyISAM;
+
+# --------------------------------------------------------
+
+#
+# Structure de la table paths
+#
+
+CREATE TABLE COLLECTION_paths (
+  id int(11) NOT NULL auto_increment,
+  path varchar(255) NOT NULL default '',
+  PRIMARY KEY  (id),
+  UNIQUE KEY path (path)
+) TYPE=MyISAM;
+
+
+
+# --------------------------------------------------------
+
+#
+# Structure de la table assessments
+#
+
+CREATE TABLE IF NOT EXISTS COLLECTION_assessments (
+  id_pool smallint(4) NOT NULL default '0',
+
+  -- Start and stop XML element
+  start int(11) NOT NULL,
+  stop int(11) NOT NULL,
+
+  assessment enum('0','1','2','3') NOT NULL, -- exhaustivity level
+
+  -- unique assessment for a given pool and segment
+  -- the ideal would be to add a containment constraint but mysql cannot do it
+  -- exh. rules could also be directly enforced by the DB
+  PRIMARY KEY  (id_pool,start,stop),
+  KEY assessment (assessment),
+  KEY the_pool (id_pool)
+) TYPE=INNODB;
+EOM
+;
+
+$tables =~ s/COLLECTION/$collection/g;
+print $tables;
+
+# Read settings from PHP
+# my %settings;
+# open SETTINGS,'php-cgi -q get_settings|';
+# while ($_=<SETTINGS>) {
+#   chop($_);
+#   /^([^:]*):(.*)$/;
+#   $settings{$1}=$2;
+# }
+# close SETTINGS;
+
+
+
+#open OUT,"| bzip2 -c > $ARGV[1]";
+open OUT,">-";
+
+
+our @tags;
+our @xid;
+our @ranks;
+our @number_of_children;
+our @rankscount;
+our $current_ent_file;
+our @number_of_text_nodes;
+my $sth;
+my @record;
+my %tables = ("map" => "${collection}_map", "files" => "${collection}_files", "paths" => "${collection}_paths");
+
+#
+# --- Misc functions ---
+#
+
+sub get_name {
+  $_ = $_[0];
+  s/^$basedir\/$collection(\/|$)//;
+  s/\.\w+$//;
+  return $_;
+}
+
+#
+# --- SAX handlers ---
+#
+
+
+
+sub handle_start {
+#  	print "$_[1]" . "\n";
+
+	$xid++;
+	die if ($#rankscount < 0);
+	my $rank = (defined($rankscount[$#rankscount]{$_[1]}) ?
+					$rankscount[$#rankscount]{$_[1]} : 0) + 1;
+	$rankscount[$#rankscount]{$_[1]} = $rank;
+	push @rankscount, {};
+	push @ranks, $rank;
+	push @tags, $_[1];
+	push @xid, $xid;
+  $number_of_children[$#number_of_children]++ if ($#number_of_children >= 0);
+  push @number_of_children, 0;
+
+}
+
+sub handle_text {
+# 	if ($_[0]->in_element("atl") && $_[0]->within_element("fm")) { $article{"title"} .= "$_[1]"; }
+	if ($_[1] =~ /\w/) {
+		$number_of_children[$#number_of_children]++;
+	};
+}
+
+sub handle_end {
+	die if ($#ranks == -1);
+	pop @rankscount; # Hash map
+	my $tag_xid = pop @xid;
+   my $path = 'null';
+   
+   # Define the XPath
+   my $xpath = "";
+   for(my $i = 0; $i <= $#tags; $i++) {
+     $xpath .= "/$tags[$i]\[$ranks[$i]\]";
+   }
+   if (!defined($xpaths{$xpath})) {
+     $path = $xpaths{$xpath} = $xpaths++;
+     print OUT "INSERT INTO $tables{paths} (id,path) values ($path,'$xpath');\n";
+   }
+   else { $path  = $xpaths{$xpath}; }
+   
+ 
+ 
+	my $rank = pop @ranks;
+	my $tag = pop @tags;
+   my $children_count = pop @number_of_children;
+
+ print OUT "REPLACE INTO $tables{map}(tag,rank,xid,post,path) VALUES('$tag',$rank,$tag_xid,$xid,$path);\n"
+# 	print OUT "REPLACE INTO $tables{map}(tag,rank,xid,parent,post,children_count,path) VALUES('$tag',$rank,$tag_xid,"
+# 			. ($#xid >= 0 ? $xid[$#xid] : 0)
+# 			. ",$xid, $children_count,$path);\n"
+
+
+	# . $tag . " " . $tag_xid . " " . "$xid" . "\n";
+}
+
+
+
+### --- Parser
+
+our @files;
+push @files, {};
+
+sub index_start {
+ if ($_[1] eq "subcollection") {
+     for(my $i=2; $i < $#_; $i+=2) {
+       if ($_[$i] eq "path") {
+         my $parser = new XML::Parser(Handlers => {Start => \&index_start, End   => \&index_end, Char => \&index_text});
+          my $olddir = $currentdir;
+          my $path = "$currentdir/$_[$i+1]";
+          if (! -f $path) {
+            if (-d "$path") { $path .= "/index.xrai"; }
+          }
+          die "Can't find subcollection with path $path (search for $path\{.xrai,index,})" unless (-f $path);
+          $currentdir = dirname($path);
+          print STDERR "Parsing $path\n";
+          push @files, { "xid" => $xid+1, "title" => "", "path" => get_name("$olddir/$_[$i+1]"), "type" => "xrai", "xsl" => $OPT{xraixsl}};
+          $parser->parsefile($path);
+          $currentdir = $olddir;
+       }
+     } 
+   } elsif ($_[1] eq "document") {
+     for(my $i=2; $i < $#_; $i++) {
+       if ($_[$i] eq "path") {
+          my $parser = new XML::Parser(Handlers => {Start => \&handle_start, End   => \&handle_end, Char => \&handle_text});
+          my $path = "$currentdir/$_[$i+1].xml";
+          print STDERR "Parsing $path\n";
+          push @rankscount,{};
+          push @files, { "xid" => $xid+1, "title" => "", "path" => get_name("$path"), "type" => "xml", "xsl" => $OPT{xmlxsl}};
+          $parser->parsefile($path);
+          pop @rankscount;
+       }
+     } 
+   }
+}
+
+sub index_end {
+  if ($_[1] eq "document" || $_[1] eq "subcollection") {
+    if ($xid >= $files[$#files]{"xid"}) {
+    $files[$#files]{"title"} =~ s/'/\\'/g;
+    my $parent = '';
+    $parent = $files[$#files-1]{path} if ($#files > 0);
+    print OUT "REPLACE INTO $tables{files}(name,title,type,parent,xid,post,xsl)  VALUES('$files[$#files]{path}','$files[$#files]{title}','$files[$#files]{type}','$parent',$files[$#files]{xid},$xid,'$files[$#files]{xsl}');\n";
+    }
+    pop @files;
+  }
+}
+
+sub index_text {
+ if ($_[0]->in_element("document") || $_[0]->in_element("subcollection")) {
+   $files[$#files]{"title"} .= "$_[1]";
+ }
+}
+
+my $parser = new XML::Parser(Handlers => {Start => \&index_start, End   => \&index_end, Char => \&index_text});
+push @files, { "xid" => $xid, "xsl" => $OPT{"xraixsl"}, "title" => "$title", "path" => get_name("$basedir/$collection"), "type" => "xrai"};
+$parser->parsefile($mainfile);
+index_end("","subcollection");
+close OUT;
+
+
+
+
+__END__
+
+
+
+## ###################################################################
+## pod
+## ###################################################################
+
+=pod
+
+=head1 NAME
+
+xrai2sql - Convert an X-Rai organised database into SQL
+
+=head1 SYNOPSIS
+
+B<xrai2sql>
+  B<-xraixsl> Name (without the .xsl extension) of the XSL file used for transformation xrai documents
+  B<-xmlxsl> Name (without the .xsl extension) of the XSL file used for transformation XML documents
+  B<-dir> The XML repository used by X-Rai
+  B<-collection> Collection name (must be a valid directory inside B<dir>)
+
+=head1 DESCRIPTION
+
+This command is used to add a collection to X-Rai.
+
+=head1 OPTIONS
+
+Option names may be abbreviated to uniqueness.
+
+=head1 AUTHOR
+
+B. Piwowarski (F<Benjamin.Piwowarski@lip6.fr>)
+
+=cut
+

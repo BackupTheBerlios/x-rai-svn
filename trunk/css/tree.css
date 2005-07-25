@@ -1,0 +1,26 @@
+@namespace url(http://www.w3.org/1999/xhtml)
+
+/* Tree stylesheet */
+
+div.visible {
+  margin-left: 4px;
+  position: relative;
+}
+
+div.hidden {
+  visibility: hidden;
+  position: absolute;
+}
+
+img {
+  margin-right: 2px;
+}
+
+
+a:visited, a {
+  color: #333333;
+  text-decoration: none;
+}
+a:hover, a:active {
+  color: red;
+}

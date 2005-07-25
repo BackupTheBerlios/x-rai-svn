@@ -1,0 +1,157 @@
+#!/usr/bin/perl -w
+
+# Parse the INEX collection and a collection file
+# that will fill the database
+# B. Piwowarski / aug 2003
+
+
+# use strict;
+use XML::Parser;
+use File::Basename;
+use FileHandle;
+use IO::Handle;  
+use bytes;
+
+our %collections =
+( "an" => [ "http://computer.org/annals/","IEEE Annals of the History of Computing","1995-2001" ],
+  "cg" => ["http://computer.org/cga/","IEEE Computer Graphics and Applications","1995-2001"],
+  "co" => ["http://computer.org/computer/","Computer","1995-2001"],
+  "cs" => ["","IEEE Computational Science &amp; Engineering","1995-1998"],
+  "dt" => ["http://computer.org/dt/","IEEE Design &amp; Test of Computers","1995-2001"],
+  "ex" => ["","IEEE Expert","1995-1997"],
+  "ic" => ["http://computer.org/internet/","IEEE Internet Computing","1997-2001"],
+  "it" => ["http://computer.org/itpro/","IT Professional","1999-2001"],
+  "mi" => ["http://computer.org/micro/","IEEE Micro","1995-2001"],
+  "mu" => ["http://computer.org/multimedia/","IEEE MultiMedia","1995-2001"],
+  "pd" => ["","IEEE Parallel &amp; Distributed Technology","1995-1996"],
+  "so" => ["http://computer.org/software/","IEEE Software","1995-2001"],
+  "tc" => ["http://computer.org/tc/","IEEE Transactions on Computers","1995-2002"],
+  "td" => ["http://computer.org/tpds/","IEEE Transactions on Parallel &amp; Distributed Systems","1995-2002"],
+  "tg" => ["http://computer.org/tvcg/","IEEE Transactions on Visualization &amp; Computer Graphics","1995-2002"],
+  "tk" => ["http://computer.org/tkde/","IEEE Transactions on Knowldege and Data Engineering","1995-2002"],
+  "tp" => ["http://computer.org/tpami/","IEEE Transactions on Pattern Analysis and Machine Intelligence","1995-2002"],
+  "ts" => ["http://computer.org/tse/","IEEE Transactions on Software Engineering","1995-2002"]
+				  );
+
+our $do_update = 0;
+our %xpaths;
+our $xpaths = 1;
+if (($#ARGV == 1) && ($ARGV[0] eq "-update")) {
+	$do_update = 1;
+	shift @ARGV;
+}
+
+die "Usage: inex2xrai <directory> <output directory>" if (($#ARGV != 1) || (! -d $ARGV[0]) || (! -d $ARGV[1]));
+
+my $mainpath=$ARGV[0];
+my $outdir=$ARGV[1];
+
+my $current_out;
+our $xid = 0;
+# our $oldfh = select STD$current_out; $| = 1; select STD$current_out;
+
+my %article;
+
+
+#
+# --- SAX handlers ---
+#
+
+sub handle_start {
+	if ($_[1] =~ /^books|journal|title|publisher$/) {
+		print $current_out "<$_[1]>\n";
+	} elsif ($_[1] =~/^article$/) {
+#      print STDERR $_[0]->base();
+      my $path =  basename($_[0]->base());
+      $path =~ s/\.xml$//;
+#       print STDERR "Found article $path\n";
+		print $current_out "<document path=\"$path\">"; # $current_localisation[$#current_localisation][1]
+	} elsif ($_[1] =~ /^sec1$/) {
+		print $current_out "<section>\n";
+	}
+}
+
+sub handle_text {
+	if (($_[0]->within_element("atl") && $_[0]->within_element("fm")) || $_[0]->in_element("books") || $_[0]->in_element("journal") || $_[0]->in_element("title") || $_[0]->in_element("publisher")) {
+   
+     $_[1] =~ s/</&lt;/g;
+     $_[1] =~ s/>/&gt;/g;
+     $_[1] =~ s/&/&amp;/g;
+		print $current_out "$_[1]";
+#       print STDERR $_[1] . "\n";
+	}
+}
+
+sub handle_end {
+	if ($_[1] =~ /^books|journal|title|publisher$/) {
+		print $current_out "</$_[1]>\n";
+	} elsif ($_[1] =~/^article$/) {
+		print $current_out "</document>\n";
+	} elsif ($_[1] =~ /^sec1$/) {
+		print$current_out  "</section>\n";
+	}
+
+}
+
+
+### --- Parser
+my $parser = new XML::Parser(ParseParamEnt => 1, Handlers => {Start => \&handle_start, End   => \&handle_end, Char => \&handle_text});
+#  ExternEntFin => \&extern_ent_fin, ExternEnt => \&extern_ent, 
+sub parsedir {
+    opendir(DIR, $_[0]) || die "can't opendir $_[0]: $!";
+	print STDERR "[In] $_[0]\n";
+   my @content = grep { !/^\./ } readdir(DIR);
+	my $i;
+	my $old_out = $current_out;
+# 	print STDERR "Making $outdir/$_[1] and opening $outdir$_[1].xml\n";
+	mkdir "$outdir/$_[1]";
+	$current_out = "$outdir/$_[1]";
+	open $current_out, "> $outdir/$_[1]/index.xrai";
+	print $current_out "<?xml version=\"1.0\"?>\n";
+	print $current_out "<collection id=\"$_[1]\">\n";
+
+	
+	foreach $i (@content) {
+# 		print $i . "\n";
+		my $path="$_[0]/$i";
+		if (-d "$path") {
+			print $current_out "<subcollection path=\"$i\">";
+			if (defined($collections{$i})) {
+				print $current_out $collections{$i}[1] . " (" . $collections{$i}[2] . ")";
+			} else {
+				print $current_out "Year $i";
+			}
+			parsedir($path,"$_[1]/$i");
+			print $current_out "</subcollection>\n";
+		}
+		if (-f $path && $i eq "volume.xml") {
+			my $prexid = $xid + 1;
+			print STDERR "[Found] $path\n";
+			my $name = $path; 
+			$name =~ s²$ARGV[0]/(.*)\/volume.xml²$1²;
+#          push @current_localisation, [dirname($path), basename($path)];
+			$parser->parsefile($path);
+		} elsif (-f $path) {
+			open IN, " < $path";
+			open OUT, "> $outdir/$_[1]/$i";
+			print OUT "<?xml version=\"1.0\" ?>\n";
+			print OUT "<!DOCTYPE article PUBLIC \"-//LBIN//DTD IEEE Magazines//EN\" \"../../dtd/xmlarticle.dtd\">\n";
+
+			while (<IN>) {
+				print OUT $_;
+			}
+			close IN;
+			close OUT;
+		}
+		
+		
+	}
+	closedir(DIR);
+	print $current_out "</collection>\n";
+	close $current_out;
+	$current_out = $old_out;
+}
+
+
+parsedir($ARGV[0],"ieee");
+
