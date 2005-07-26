@@ -18,6 +18,8 @@ set_time_limit(360);
 // --- Retrieve article ---
 // ------------------------
 
+
+// Redirect to the next article to assess
 if ($_REQUEST["view_jump"] == 1) {
   $view_xid = $_REQUEST["view_xid"];
   $next = $_REQUEST["next"];
@@ -33,6 +35,8 @@ if ($_REQUEST["view_jump"] == 1) {
     }
 
 }
+
+// Retrieve information on the current file & display the current assessments
 
 $file = $_REQUEST["file"];
 $directory = dirname($file);
@@ -130,6 +134,7 @@ if ($num_keywords > 0) print "<style type='text/css'>\n@namespace url($base_url)
 *|a[*|a='1']:before { content: url(<?=get_assessment_link("1");?>); }
 *|a[*|a='2']:before { content: url(<?=get_assessment_link("2");?>); }
 *|a[*|a='3']:before { content: url(<?=get_assessment_link("3");?>); }
+*|a[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
 
 @namespace url(<?="$base_url/$collection"?>);
 @namespace xrai url(<?="$base_url"?>);
@@ -137,6 +142,18 @@ article, atl, ip1, sec, sec1, bdy, p, st, fno, tig, hdr1, abs, fig, h, bibl, vt,
 
 sec, sec1 { padding-left: 1em; }
 p, bb { padding: 1em 0 0 0; }
+
+tbl  { display: table; }
+
+tbl no:before { content: "Table "; }
+tbl no:after { content: " "; }
+tbl no { font-weight: bold; }
+tbl ti { clear: right; }
+tbl ti { display: table-caption; }
+
+tbl bdy { display: table-row-group; }
+bdy row { display: table-row; }
+bdy entry { display: table-cell; }
 
 it { font-style: italic; }
 b { font-weight: bold;}
@@ -196,7 +213,6 @@ if ($id_pool> 0) {
 
 <script language="javascript">
   debug = true;
-  view_xid = "<?=$doc_assessments->data->xid?>";
   id_pool = <?=$id_pool?>;
 </script>
 
@@ -214,7 +230,7 @@ if ($id_pool> 0) {
 
 <div id="eval_div"  onclick="hideEval()" onmouseover="window.status='Click to assess the element(s)'" onmouseout="window.status=''">
 <div id="eval_path"><div></div></div>
-<?
+<div style="white-space: nowrap;"><?
 
   foreach($relevances as $a => $t) {
   print "<img "
@@ -226,8 +242,11 @@ if ($id_pool> 0) {
     . " value=\"$a\" />";
 }
 
-?>
-<div id="eval_breakup_link"><a href="javascript:void(0)" onclick="goDown()">Assess element components</a></div>
+?></div>
+<div style="white-space: nowrap;">
+<img id="eval_breakup_link" src="<?=$base_url?>/img/down.png" href="javascript:void(0)" title="Assess subpassages" alt="down" onclick="goDown()"/>
+<img id="nobelow" src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="assess(this,'nobelow',event)" title="Below is too small to assess"/>
+</div>
 </div>
 <? } // end of if (write_access)
 
@@ -237,76 +256,6 @@ if ($id_pool> 0) {
 // Functions called by the PHP (XML+XSL) file
 // ==========================================
 
-
-
-
-// Image URL callback
-function show_art($file,$width,$height) {
-  global $directory, $year,$media_url, $collection;
-  $file = preg_replace('-\.gif$-',".png",$file);
- // Scale down figures
-  if ($width > 860) { $w = $width; $width = 860; $height *= 860/$w; }
-  print "<div><img src='$media_url/$collection/" . strtolower("$directory/$file") . "'"
-    . ($width > 0 ? " width='$width'" : "")
-    . ($height > 0 ? " height='$height'" : "")
-    . " /></div>\n";
-}
-
-
-
-
-$tags = array();
-$xids = array();
-// Callback function for a new XML element (div/span type)
-// $mode is "span" or "div"
-function print_tag($mode,$tag,$xpath,$count) {
-  global $doc_assessments, $xids;
-  global $tags, $current_xid, $in_mathml;
-  array_push($tags,$tag);
-  if ($doc_assessments) $a = $doc_assessments->get_element_by_id($current_xid);
-
-  // i:m represent the assessment values mask
-  // i:cm represent the assessment values mask for descendants without a mask
-  // i:a is the current assessed value
-  // i:p post-id value
-  print "<$mode s='' id='$current_xid' i:post='" . ($current_xid+$count)
-      . "' class='xmle' path='$xpath'"
-    . (sizeof($xids) > 0 ? " i:p='" . $xids[sizeof($xids)-1] . "'" : "")
-    . ($a ? " name='" . $a->get_assessment_wta() . "'"
-          . ($a->is_inferred() ? " ii='yes'" : "")
-          . ($a->is_inconsistant() ? " ic='yes'" : "")
-          . ($a->is_in_pool() ? " ip='yes'" : "")
-          : " name='U'")
-    . ">";
-  $xids[] = $current_xid;
-  $current_xid++;
-//   if ($mode == "tr") print "<td class='xmlp'><span class='xml'>$tag</span></td>"; else
-//   if ($mode == "tbody") print "<tr class='xmlp'><td class='xmlp'><span class='xml'>$tag</span></td></tr>";
-//   else print "<span class='xml'>$tag</span>\n";
-
-}
-
-function end_tag_up() {
-  global $tags, $xids;
-  array_pop($tags);
-  array_pop($xids);
-}
-
-function end_tag($mode,$tag,$xpath) {
-  global $doc_assessments, $in_mathml;
-  switch($tag) {
-    case "bdy": case "sec": case "ss1": case "ss2": case "bm": case "fm": case "bibl":
-      if ($doc_assessments) $a = $doc_assessments->get_element("$xpath");
-//     print "<span class='xml' title='$xpath'>";
-//       print "/$tag</span>";
-  }
-}
-
-
-
-
-// Process XML file with stylesheet (if not in cache)
-if (!$xslt) print "<div class='error'>No XSLT processor defined !</div>";
 
 print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='do_dblclick(event)' onclick='do_click(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
@@ -321,7 +270,7 @@ function startElement($parser, $name, $attrs) {
    }
    print ">";
 
-
+   // FIXME: should be DTD independant!
    if ($name == "art")
       print "<html:img src=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"/>";
 }
@@ -376,6 +325,10 @@ if ($write_access) {
 <!--           <span><img src="img/fgauche.png" title="previous assessment (shift+left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the left arrow key</div></span> -->
 
           <span><img src="img/up.png" title="Go to the container (shift+up arrow)" alt="^" onclick="goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>u</code> key</div></span>
+      
+      <span style="display: none;" id="imgMissing">
+         <img src="<?=$base_url?>/img/warning.png" alt="Missing assessments" title="Some assessments are missing in this view"/>
+      </span>
 
       <span style="display: none; font-size: small;" id="assessedPassageSpan">
          Within <xrai:a a="U"/>

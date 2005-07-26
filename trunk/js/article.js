@@ -439,19 +439,37 @@ var assessed_ranges = Array();
 // Associative array containing
 var assessed_ancestors = Array();
 
-// Contains the reference to the element being re-assessed
+// Contains the reference to the current displayed passage
+var currentPassage = null;
+// Contains the current assessed passage (or null if from selection)
 var currentAssessed = null;
 
 // Show the eval panel
 
 function show_eval_panel(px,py) {
-  document.getElementById("eval_breakup_link").style.display = currentAssessed ? "block" : "none";
   var eval = document.getElementById("eval_div");
 
    // Check for valid assessments
    // ie a >= max(children) && <= any ancestor
    var max=3; var min = 0;
+   if (currentAssessed) 
+      for(var p = currentAssessed.firstSubpassage; p != null; p = p.nextPassage) {
+         if (p.getAttribute("a") > min) min = p.getAttribute("a");
+      }
+   if (currentPassage)
+      for(var p = currentPassage; p != null; p = p.parentPassage) {
+         if (p.getAttribute("a") < max) max = p.getAttribute("a");
+      }
+   window.dump("Assessement must be in [" + min + "," + max + "]\n");
 
+   // Disable invalid assessements
+   for(var i = 0; i <= 3; i++) {
+      var x = document.getElementById("assess_" + i);
+      x.className = (i >= min && i <= max ? null : "disabled");
+   }
+
+  document.getElementById("nobelow").className = min > 0 ? "disabled" : null;
+  document.getElementById("eval_breakup_link").className = currentAssessed && currentAssessed.nobelow != 1 ? null : "disabled";
   show_div_xy(px,py,   "eval_div");
   return true;
 
@@ -511,6 +529,7 @@ function show_eval_selected(x,y) {
 
   clear_selected();
   if (highlight(range)) {
+   currentAssessed = null;
    selection.collapseToStart();
    show_eval_panel(x,y);
   }
@@ -520,14 +539,13 @@ function show_eval_selected(x,y) {
 /** Re-assess */
 function reassess(event) {
  // Display show eval panel
-  event.target.xraiParent = currentAssessed;
   currentAssessed = event.target;
   show_eval_panel(event.pageX, event.pageY);
 }
 
 
 // Structure
-// currentAssessed is a <xrai:a> element if we are already "zooming in" or null if top level
+// currentPassage is a <xrai:a> element if we are already "zooming in" or null if top level
 
 // <xrai:a>.lastElement is the last element of the highlighted passage
 // <xrai:a>.parentPassage is the containing passage (if there is any)
@@ -545,7 +563,7 @@ function setPassage(p,v) {
 }
 
 function changesSubpassages(p,v) {
-   for(var p = currentAssessed.firstSubpassage; p != null; p = p.nextPassage)
+   for(var p = currentPassage.firstSubpassage; p != null; p = p.nextPassage)
       setPassage(p,v);
 }
 
@@ -569,10 +587,10 @@ function hideSurroundings(element, flag) {
 // Update passage information
 function updatePassageInfo() {
    var info = document.getElementById("assessedPassageSpan");
-   if (currentAssessed) {
+   if (currentPassage) {
       for(var x = info.firstChild; x!=null; x=x.nextSibling) {
          if (x && x.tagName == "xrai:a") {
-            x.setAttribute("a",currentAssessed.getAttribute("a"));
+            x.setAttribute("a",currentPassage.getAttribute("a"));
             break;
          }
       }
@@ -584,19 +602,19 @@ function updatePassageInfo() {
 
 // Function called when the user wants to go "up"
 // If innermost, go to the "up" URL
-// Otherwise, go up using currentAssessed.parent
+// Otherwise, go up using currentPassage.parent
 function goUp() {
-   if (currentAssessed) {
+   if (currentPassage) {
       // Deselect current level highlighted passages
-      changesSubpassages(currentAssessed,false);
-      var p = currentAssessed;
-      currentAssessed = currentAssessed.parentPassage;
-      if (currentAssessed) changesSubpassages(currentAssessed,true);
+      changesSubpassages(currentPassage,false);
+      var p = currentPassage;
+      currentPassage = currentPassage.parentPassage;
+      if (currentPassage) changesSubpassages(currentPassage,true);
       else setPassage(p,true);
 
       // Unhide components: to optimize
       hideSurroundings(p,false);
-      if (currentAssessed) hideSurroundings(currentAssessed,true);
+      if (currentPassage) hideSurroundings(currentPassage,true);
       scrollTo(0,p.scrollY);
   }
   
@@ -604,69 +622,137 @@ function goUp() {
 }
 
 function goDown() {
+   // Sets the current passage
+   currentPassage = currentAssessed;
+
    // Save scroll position
-   currentAssessed.scrollY = scrollY;
+   currentPassage.scrollY = scrollY;
 
    var last = currentAssessed.lastElement;
    // Hide other components
-   hideSurroundings(currentAssessed,true);
+   hideSurroundings(currentPassage,true);
 
    // * Restablish the highlighting at this level
 
    // (a) Null the current highlighting of the passage
-   currentAssessed.setAttribute("hidden","");
-   var first = XRai.nextSibling(currentAssessed);
-   for(var x = currentAssessed.parentNode; x != null; x = XRai.nextElementTo(x,last))
+   currentPassage.setAttribute("hidden","");
+   var first = XRai.nextSibling(currentPassage);
+   for(var x = currentPassage.parentNode; x != null; x = XRai.nextElementTo(x,last))
       x.setAttribute("name",null);
 
    // (b) highlight subpassages 
-   changesSubpassages(currentAssessed,true);
+   changesSubpassages(currentPassage,true);
 
    updatePassageInfo();
    scrollTo(0,0);
 }
 
+
 /** Assess the current selection */
 function assess(e,a,the_event) {
+   if (the_event.target.className == "disabled") {
+      the_event.stopPropagation();
+      return true;
+   }
+   if (a == "nobelow") {
+      the_event.stopPropagation();
+      if (!currentAssessed) { alert("No current element to assess. Bug."); return; }
+      if (currentAssessed.firstSubpassage) { alert("BUG!!! Element has assessed subpassages."); return; }
+      currentAssessed.nobelow = 1;
+      checkAssess(currentAssessed);
+      return true;
+   }
+
+   
    var ts = get_time_string();
 
   window.dump("Assessing with " + a + "\n");
-
+  
   // Otherwise
   var selected = document.getElementsByName("sel");
+  if (selected.length > 0 && currentAssessed != null) {
+   alert("There is a selected passage and a current element to assess. This is a bug!");
+   return;
+  }
+  if (selected.length == 0 && currentAssessed == null) {
+   alert("There is no selected passage and no current element to assess. This is a bug!");
+   return;
+  }
+  
   if (selected.length > 0) {
      changed = true;
      if (a == "0") {
-         // The passage was not assessed
-        for(var i = 0; i < selected.length; i++) {
-            selected[i].setAttribute("name", null);
-        }
+       clear_selected();
      } else {
         // The passage was assessed
 
         // Create an xrai tag and add it to the currentPassage children
-        var xraia = document.createElementNS(xrains,"a");
-        if (currentAssessed) {
-         xraia.nextPassage = currentAssessed.firstSubpassage;
-         xraia.parentPassage = currentAssessed;
-         currentAssessed.firstSubpassage = xraia;
+        currentAssessed = document.createElementNS(xrains,"a");
+        if (currentPassage) {
+         currentAssessed.nextPassage = currentPassage.firstSubpassage;
+         currentAssessed.parentPassage = currentPassage;
+         currentPassage.firstSubpassage = currentAssessed;
         }
-        xraia.setAttribute("a",a);
+        currentAssessed.setAttribute("a",a);
 
         // Insert <xrai:a> just before the first child of the first selected element
-        xraia.lastElement = selected[selected.length-1];
-        selected[0].insertBefore(xraia,selected[0].firstChild);
+        currentAssessed.lastElement = selected[selected.length-1];
+        selected[0].insertBefore(currentAssessed,selected[0].firstChild);
 
-        setPassage(xraia,true);
-
-
+        setPassage(currentAssessed,true);
      }
+  } else {
+    if (a != "0") currentAssessed.setAttribute("a",a);
+    else {
+     // Clear selection
+     // Remove the assessment
+     if (currentPassage)
+      if (currentPassage.firstSubpassage == currentAssessed) currentPassage.firstSubpassage = currentAssessed.nextPassage;
+      else {
+       for(var p = currentPassage.firstSubpassage; p != null; p = p.nextPassage)
+         if (p.nextPassage == currentAssessed) {
+            p.nextPassage = currentAssessed.nextPassage;
+            break;
+         }
+      }
+     // Clear the passage and remove the assessment
+     setPassage(currentAssessed,false);
+     currentAssessed.parentNode.removeChild(currentAssessed);
+   }
   }
+
+  if (a != "0") checkAssess(currentAssessed);
+  
+  if (currentPassage) {
+      var f = checkAssess(currentPassage);
+      document.getElementById("imgMissing").style.display =  f ? "none" : null;
+  }
+  
+  currentAssessed = null;
 
   var save = document.getElementById("save");
   if (changed) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed.length + " assessment(s) to save");  }
   else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","No assessment to save"); }
 }
+
+// Check the current assessment of an element x
+// Put the current attribute ("missing") if assessments are not complete
+function checkAssess(x) {
+   if (x.getAttribute("a") == "U" || x.nobelow == 1) {
+      x.removeAttribute("missing");
+      return true;
+   }
+   var sum = 0;
+   for(var p = x.firstSubpassage; p != null; p = p.nextPassage) {
+      var a = p.getAttribute("a");
+      sum += parseInt(a);
+   }
+   var f = sum >= x.getAttribute("a");
+   if (!f) window.dump(XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
+   if (f) x.removeAttribute("missing"); else x.setAttribute("missing",1);
+   return f;
+}
+
 /*
    Ordered array of elements
 
