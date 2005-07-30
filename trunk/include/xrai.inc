@@ -123,7 +123,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
 if (!$gecko) print '<?xml-stylesheet type="text/xsl" href="xsl/mathml.xsl"?' . ">\n";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$base_url?>" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$base_url?>" xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="en">
 	<head>
 		<title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>

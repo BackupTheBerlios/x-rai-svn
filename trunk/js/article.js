@@ -25,7 +25,30 @@ function message_clear(id) {
    if (x) x.parentNode.removeChild(x);
 }
 
+// From http://kb.mozillazine.org/XPath
+// Evaluate an XPath against a given node and return an array of nodes
+function evaluateXPath(aNode, aExpr) {
+  var xpe = new XPathEvaluator();
+  var nsResolver = xpe.createNSResolver(aNode.ownerDocument == null ?
+    aNode.documentElement : aNode.ownerDocument.documentElement);
+  var result = xpe.evaluate(aExpr, aNode, nsResolver, 0, null);
+  var found = [];
+  while (res = result.iterateNext())
+    found.push(res);
+  return found;
+}
 
+
+function removeFromArray(a,x) {
+   for(var i = 0; i < a.length; i++) {
+      if (a[i] == x) {
+         a[i] = a[a.length-1];
+         a.pop();
+         return true;
+      }
+   }
+   return false;
+}
 
 // ==================
 // ================== Navigation in the XML document
@@ -343,8 +366,8 @@ function do_click(e) {
   if (e.ctrlKey) {
     for(var x = e.target; x != null; x = x.parentNode) {
       if (x.getAttribute && x.getAttribute("name") == "relevant" && x.reference) {
-         currentAssessed = x.reference;
-         goDown();
+            currentAssessed = x.reference;
+            goDown();
          return;
       }
     }
@@ -433,6 +456,19 @@ function toggle_bookmarks() {
 // ================== Assessments
 // ==================
 
+// Structure
+// currentPassage is a <xrai:a> element if we are already "zooming in" or null if top level
+
+// <xrai:a>.lastElement is the last element of the highlighted passage (or null if not a passage, ie a containing element)
+// <xrai:a>.parentPassage is the containing passage (if there is any)
+// <xrai.a>.nextPassage is the next passage at this level
+// <xrai:a>.firstSubpassage is the first sub-passage
+
+// The xrai:a parent is ALWAYS an XML node
+// and may contain:
+// - a "passages" array (list of relevant passages directly below this node)
+// - cAssessment which is the xrai:a element for this container
+
 
 // Sorted array containing XRange objects
 var assessed_ranges = Array();
@@ -443,23 +479,77 @@ var assessed_ancestors = Array();
 var currentPassage = null;
 // Contains the current assessed passage (or null if from selection)
 var currentAssessed = null;
+// True if the current assessed passage is too "small"
+var nobelow=0
 
-// Show the eval panel
 
+/** Get the maximum exhaustivity below */
+function getMaxExh(x,skip) {
+   // (1) Is the xrai:a element assessed ?
+   if (!skip) {
+      var a = x.getAttribute("a");
+      if (a && a != "U") return a;
+   }
+
+   // (2) Is the element a passage?
+   var max = 0;
+   if (x.lastElement) {
+      for(var c = x.firstSubpassage; c != null; c = c.nextPassage)
+         max = Math.max(max,getMaxExh(c,false));
+   } else {
+      var a = x.parentNode.passages;
+      for(var i = 0; i < a.length; i++)
+         max = Math.max(max,getMaxExh(a[i],false));
+   }
+   return max;
+}
+
+/** Get the minimum exhaustivity below
+   Return either the assessment of this xrai:a element
+   or the sum of the mimimum exhaustivity of its descendants
+*/
+function getMinExhBelow(x,skip) {
+   // (1) Is the xrai:a element assessed ?
+   if (!skip) {
+      var a = x.getAttribute("a");
+      if (a && a != "U") return a;
+   }
+
+   // (2) Is the element a passage?
+   var sum = 0;
+   if (x.lastElement) {
+      for(var c = x.firstSubpassage; c != null; c = c.nextPassage)
+         sum += getMinExhBelow(c,false);
+   } else {
+      var a = x.parentNode.passages;
+      for(var i = 0; i < a.length; i++)
+         sum += getMinExhBelow(a[i],false);
+   }
+   return sum;
+}
+
+
+/**
+    Show the eval panel
+*/
 function show_eval_panel(px,py) {
   var eval = document.getElementById("eval_div");
 
    // Check for valid assessments
    // ie a >= max(children) && <= any ancestor
    var max=3; var min = 0;
-   if (currentAssessed) 
-      for(var p = currentAssessed.firstSubpassage; p != null; p = p.nextPassage) {
-         if (p.getAttribute("a") > min) min = p.getAttribute("a");
+   if (currentAssessed) {
+      if (currentAssessed.lastElement) {
+         if (currentAssessed) min = getMaxExh(currentAssessed, true);
+         if (currentPassage)
+            for(var p = currentPassage; p != null; p = p.parentPassage) {
+               if (p.getAttribute("a") < max) max = p.getAttribute("a");
+            }
+      } else {
+         // The assessed element is an ancestor
+         min = getMaxExh(currentAssessed,true);
       }
-   if (currentPassage)
-      for(var p = currentPassage; p != null; p = p.parentPassage) {
-         if (p.getAttribute("a") < max) max = p.getAttribute("a");
-      }
+   }
    window.dump("Assessement must be in [" + min + "," + max + "]\n");
 
    // Disable invalid assessements
@@ -468,7 +558,9 @@ function show_eval_panel(px,py) {
       x.className = (i >= min && i <= max ? null : "disabled");
    }
 
-  document.getElementById("nobelow").className = min > 0 ? "disabled" : null;
+  var nb = document.getElementById("nobelow");
+  nobelow = currentAssessed && currentAssessed.nobelow ? true : false;
+  nb.className = min > 0 ? "disabled" : (nobelow ? "on" : null);
   document.getElementById("eval_breakup_link").className = currentAssessed && currentAssessed.nobelow != 1 ? null : "disabled";
   show_div_xy(px,py,   "eval_div");
   return true;
@@ -491,8 +583,18 @@ function highlight(range) {
    // Find the beginning & end elements xids
    var x = get_container(range.startContainer);
    var y = get_container(range.endContainer);
-   if (debug) window.dump(XRai.getPath(x) + " -> " + XRai.getPath(y) + "\n");
+   if (debug) {
+      window.dump(XRai.getPath(x) + " -> " + XRai.getPath(y) + "\n");
+      if (currentPassage)
+         window.dump(XRai.getPath(currentPassage.parentNode) + " -> " + XRai.getPath(currentPassage.lastElement) + "\n");
+   }
+   
 
+   if (currentPassage && currentPassage.parentNode == x && currentPassage.lastElement == y) {
+      display_message("notice","The selected passage is too big");
+      return;
+   }
+   
    var z;
 //    if (z = XRai.previous(y)) {
 //    } else if (z = XRai.next(x)) {
@@ -501,8 +603,8 @@ function highlight(range) {
    var flag = true;
    for(; x != null; x = XRai.nextElementTo(x,y)) {
       window.dump("HIGH " + XRai.getPath(x) + "\n");
-      if (x.getAttribute("name") != null && x.getAttribute("name") != "") {
-         display_message("warning","The passage overlaps with an already assessed one (" + x.getAttribute("name") + ")");
+      if ((x.getAttribute("name") != null && x.getAttribute("name") != "") || (x.passages && x.passages.length > 0)) {
+         display_message("warning","The passage overlaps with an already assessed one");
          clear_selected();
          return false;
       }
@@ -542,15 +644,6 @@ function reassess(event) {
   currentAssessed = event.target;
   show_eval_panel(event.pageX, event.pageY);
 }
-
-
-// Structure
-// currentPassage is a <xrai:a> element if we are already "zooming in" or null if top level
-
-// <xrai:a>.lastElement is the last element of the highlighted passage
-// <xrai:a>.parentPassage is the containing passage (if there is any)
-// <xrai.a>.nextPassage is the next passage at this level
-// <xrai:a>.firstSubpassage is the first sub-passage
 
 
 
@@ -622,6 +715,16 @@ function goUp() {
 }
 
 function goDown() {
+   // Check to see if we can go down
+   if (currentAssessed.nobelow) {
+      display_message("notice","The passage has been assessed as the smallest meaningfull unit");
+      return;
+   }
+   if (currentAssessed.parentNode == currentAssessed.lastElement) {
+      display_message("notice","There is no subpassage");
+      return;
+   }
+
    // Sets the current passage
    currentPassage = currentAssessed;
 
@@ -654,16 +757,25 @@ function assess(e,a,the_event) {
       the_event.stopPropagation();
       return true;
    }
+
+   // The judge clicked "too small below"
    if (a == "nobelow") {
       the_event.stopPropagation();
-      if (!currentAssessed) { alert("No current element to assess. Bug."); return; }
-      if (currentAssessed.firstSubpassage) { alert("BUG!!! Element has assessed subpassages."); return; }
-      currentAssessed.nobelow = 1;
-      checkAssess(currentAssessed);
+      if (currentAssessed && currentAssessed.firstSubpassage) { alert("BUG!!! Element has assessed subpassages."); return; }
+
+      nobelow = !nobelow;
+      var x = document.getElementById("nobelow");
+      if (nobelow) x.className = "on";
+      else x.className = null;
+
+      if (currentAssessed) {
+         currentAssessed.nobelow = nobelow;
+         checkAssess(currentAssessed);
+      }
       return true;
    }
 
-   
+   // The user assessed the element
    var ts = get_time_string();
 
   window.dump("Assessing with " + a + "\n");
@@ -698,14 +810,45 @@ function assess(e,a,the_event) {
         // Insert <xrai:a> just before the first child of the first selected element
         currentAssessed.lastElement = selected[selected.length-1];
         selected[0].insertBefore(currentAssessed,selected[0].firstChild);
-
+        currentAssessed.nobelow = nobelow;
         setPassage(currentAssessed,true);
+        // Update the container if first level
+        if (!currentPassage) {
+            // (1) Select the lowest common ancestor
+            var x = currentAssessed.parentNode;
+            while (x && !XRai.is_in(currentAssessed.lastElement,x)) x = XRai.parent(x);
+            // (2) Propagate
+            var current = currentAssessed;
+            var toremove = null;
+            window.dump("\n");
+            while (x) {
+               if (!x.passages) x.passages = new Array();
+               else if (toremove) removeFromArray(x.passages,toremove);
+               x.passages.push(current);
+               window.dump("Element " + XRai.getPath(x) + " has ref. to (" +  (!toremove ? "ntr" : XRai.getPath(toremove.parentNode)) + "):\n");
+               for(var i = 0; i < x.passages.length; i++)
+                  window.dump("==> " + XRai.getPath(x.passages[i].parentNode) + "\n");
+
+               // Change only if length is 2
+               if (x.passages.length == 2 && !toremove) {
+                  var z = document.createElementNS(xrains,"a");
+                  z.setAttribute("a","U");
+                  x.insertBefore(z,x.firstChild);
+                  x.cAssessment = z;
+                  toremove = x.passages[0];
+                  current = z;
+               } else if (x.passages.length > 2) break;
+               x = XRai.parent(x);
+            }
+        }
+        
      }
   } else {
     if (a != "0") currentAssessed.setAttribute("a",a);
     else {
      // Clear selection
-     // Remove the assessment
+     
+     // Remove the assessment from the list of passages of currentPassage
      if (currentPassage)
       if (currentPassage.firstSubpassage == currentAssessed) currentPassage.firstSubpassage = currentAssessed.nextPassage;
       else {
@@ -715,6 +858,22 @@ function assess(e,a,the_event) {
             break;
          }
       }
+
+     // Update the containers: remove the element from "passages" array of ancestors
+     var toremove = currentAssessed;
+     var toadd = null;
+     for(var x = currentAssessed.parentNode; x != null; x = XRai.parent(x)) {
+       if (x.passages && removeFromArray(x.passages, toremove)) {
+         if (toadd) x.passages.push(toadd);
+         if (x.passages.length == 1 && !toadd) {
+            x.removeChild(x.cAssessment);
+            toremove = x.cAssessment;
+            x.cAssessment = null;
+            toadd = x.passages[0];
+         }
+       }
+     }
+     
      // Clear the passage and remove the assessment
      setPassage(currentAssessed,false);
      currentAssessed.parentNode.removeChild(currentAssessed);
@@ -738,16 +897,12 @@ function assess(e,a,the_event) {
 // Check the current assessment of an element x
 // Put the current attribute ("missing") if assessments are not complete
 function checkAssess(x) {
-   if (x.getAttribute("a") == "U" || x.nobelow == 1) {
+   if (x.getAttribute("a") == "U" || x.nobelow == 1 || x.lastElement == x.parentNode) {
       x.removeAttribute("missing");
       return true;
    }
-   var sum = 0;
-   for(var p = x.firstSubpassage; p != null; p = p.nextPassage) {
-      var a = p.getAttribute("a");
-      sum += parseInt(a);
-   }
-   var f = sum >= x.getAttribute("a");
+   var sum = getMinExhBelow(x,true);
+   var f = sum >= parseInt(x.getAttribute("a"));
    if (!f) window.dump(XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
    if (f) x.removeAttribute("missing"); else x.setAttribute("missing",1);
    return f;
@@ -780,7 +935,7 @@ function remove_element_from_array(a,x) {
   var id = parseInt(x.id);
   var i = 0;
   while (i < a.length && parseInt(a[i].id) < id) i++;
-  if (a[i] = x) a.splice(i,1);
+  if (a[i] == x) a.splice(i,1);
 }
 
 

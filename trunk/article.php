@@ -268,6 +268,8 @@ function startElement($parser, $name, $attrs) {
    foreach($attrs as $aname => $value) {
       print " $aname=\"$value\"";
    }
+
+//    if ($name == "art") print " xlink:type=\"simple\" xlink:show=\"embed\"  xlink:actuate=\"onLoad\" xlink:href=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"";
    print ">";
 
    // FIXME: should be DTD independant!

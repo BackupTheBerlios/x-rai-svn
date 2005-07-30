@@ -46,8 +46,17 @@ div.message_error {
 
 div.message_warning {
   position: fixed;
-  background: #ffeeee;
-  border: 2px solid #ff0000;
+  background: #ffffee;
+  border: 2px solid #ffff00;
+  padding: 0.5cm;
+  top: 40%;
+  left: 10%;  
+}
+
+div.message_notice {
+  position: fixed;
+  background: #eeeeff;
+  border: 2px solid #0000ff;
   padding: 0.5cm;
   top: 40%;
   left: 10%;  

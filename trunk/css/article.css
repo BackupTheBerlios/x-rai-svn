@@ -58,9 +58,19 @@ div#eval_div img {
   font-size: small;
 }
 
+div#eval_div img.on {
+  background: #cccccc;
+  border: 1px inset #ffffff;
+}
+
+div#eval_div img.on:hover {
+  background: #dddddd;
+  border: 1px outset #ffffff;
+}
+
 div#eval_div img.disabled {
   cursor: default;
-  background: #cccccc;
+  background: #ffffcc;
   color: #444444;
   border: 1px solid transparent  ;
 }
