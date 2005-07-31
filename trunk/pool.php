@@ -119,17 +119,6 @@ sql_free($ch);
 </script>
 
 
-<div id="s_div" class="status">
-<div style="padding: 3pt">
- <span>
-       <img id="previous_to_assess" src="img/fgauche.png" title="Previous assessment (shift + left arrow)" onclick="todo_previous()"/>
-       <img id="next_to_assess" title="Next assessment (shift + right arrow)" src="img/fdroit.png" onclick="todo_next()"/>
- </span>
- <span>
-  <?=get_stats_string($stats["T"])?>
-  </span>
- </div>
-</div>
 <script language="javascript"  src="<?=$base_url?>/js/collection.js"/>
 <script language="javascript">
   up_url = null;

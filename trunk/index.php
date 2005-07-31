@@ -5,14 +5,18 @@ include_once("include/xrai.inc");
 make_header("Home");
 	
 	print "<h1>Choose a pool</h1>";
-	$qh = do_query("select * from $db_pools " . ($is_root ? "" : " where login='$inex_user' ") . " order by id_pool");
-	print "<ul>";
-	while ($row = mysql_fetch_array($qh)) {
-		$name = "Pool for topic $row[id_topic]" . ($is_root ? " ($row[login])" : "");
-		print "<li><a href='pool.php?id_pool=$row[id_pool]'>$name</a></li>";
-	}
-	print "</ul>";
-	mysql_free_result($qh);
+	$qh = $xrai_db->query("select * from $db_pools " . ($is_root ? "" : " where login='$inex_user' ") . " order by id");
+   if (DB::isError($qh)) {
+     print "<div class=\"warning\">Error while retrieving pools</div>";
+     if ($do_debug) print "<div>" . $qh->getUserInfo() . "</div>";
+   } else {
+      print "<ul>";
+      while ($row = $qh->fetchRow(DB_FETCHMODE_ASSOC)) {
+         $name = "Pool for topic $row[idtopic]" . ($is_root ? " ($row[login])" : "");
+         print "<li><a href='pool.php?id_pool=$row[id]'>$name</a></li>";
+      }
+      print "</ul>";
+   }
 
 
 ?>
