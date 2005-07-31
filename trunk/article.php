@@ -70,8 +70,17 @@ make_header($title);
 $force_update = $_GET["force"];
 if (!$force_update) $force_update = 0;
 $no_mathml = ($force_update == 2); // 2nd update ==> no mathml
+if ($id_pool > 0) {
+   $assessments = Assessments::create($id_pool, $collection, $file);
+   if (DB::isError($assessments)) 
+      fatal_error("Error retrieving assessments",$assessments->getUserInfo());
+   $cursor = &$assessments->getCursor();
+   if (DB::isError($cursor)) fatal_error("Could not retrieve assessments",$cursor->getUserInfo());
+
+}
 
 ?>
+
 <!-- Our own style & js -->
 <link rel="stylesheet" href="<?=$base_url?>/css/article.css" />
 <link rel="stylesheet" id="tags_css" href="<?=$base_url?>/css/tags.css" />
@@ -79,16 +88,24 @@ $no_mathml = ($force_update == 2); // 2nd update ==> no mathml
 <script language="javascript"  src="<?=$base_url?>/js/article.js"/>
 <script language="javascript">
   var baseurl = "<?=$baseurl?>";
-  var root_xid = <?=$did?>;
   var force_regeneration = <?= $force_update ?>;
   var treeview_url = "<?="$base_url/iframe/article_treeview.php?file=$file"?>";
   var xrains = "<?="$base_url"?>";
   var documentns = "<?="$base_url/$collection"?>";
-//   var assess_url = "assess.php?id_pool=<?=$id_pool?>&amp;file=<?=$file?>";
+  var xrai_file = "<?=$file?>";
+  var xrai_collection = "<?=$collection?>";
+  id_pool = <?=$id_pool?>;
+  write_access = <?=$can_modify ? "true" : "false"?>;
+  debug = <?=$do_debug ? "true": "false"?>;
   up_url = "<?=$up_url?>";
  document.onkeypress = article_keypress;
   window.onbeforeunload = article_beforeunload;
   var write_access = <?=($write_access ? "true":"false")?>;
+
+<? if ($id_pool > 0) { ?>
+   aversion = <?=$assessments->getVersion()?>;
+<? } ?>
+
 </script>
 <?
 
@@ -135,6 +152,13 @@ if ($num_keywords > 0) print "<style type='text/css'>\n@namespace url($base_url)
 *|a[*|a='2']:before { content: url(<?=get_assessment_link("2");?>); }
 *|a[*|a='3']:before { content: url(<?=get_assessment_link("3");?>); }
 *|a[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
+*|a[nobelow] { background: #DD0; }
+
+*|*[hidden] { display: none; }
+*|*[hidden]:before { display: none; }
+
+*|*[name='sel'] { background: yellow; }
+*|*[name='relevant'] { background: #FFFFA0; }
 
 @namespace url(<?="$base_url/$collection"?>);
 @namespace xrai url(<?="$base_url"?>);
@@ -161,6 +185,7 @@ super { vertical-align: text-top; font-size: smaller; }
 
 fm atl { font-size: xx-large;   }
 
+lit { white-space: pre; }
 abs { margin: 5px; border: 1px solid gray; padding: 5px; }
 abs:before { content: "Abstract"; font-size: large; }
 
@@ -177,11 +202,6 @@ l1 { display: block; padding-left: 2em; list-style: outside disc;}
 li { display: list-item; }
 
 
-*|*[hidden] { display: none; }
-*|*[hidden]:before { display: none; }
-
-*[name='sel'] { background: yellow; }
-*[name='relevant'] { background: #FFFFA0; }
 
 
 
@@ -211,23 +231,14 @@ if ($id_pool> 0) {
 //  $statistics = $doc_assessments->get_statistics();
 ?>
 
-<script language="javascript">
-  debug = true;
-  id_pool = <?=$id_pool?>;
-</script>
 
-      <form id="form_save" method="post" action="assess.php" target="xrai-assessing">
-      <input type="hidden" name="id_pool" value="<?=$id_pool?>"/>
-      <input type="hidden" name="file" value="<?=htmlspecialchars($file)?>"/>
-      <input id="form_assessments" type="hidden" name="assessments" value=""/>
-</form>
 
-<iframe id="assessing" name="xrai-assessing" align="middle" onclick="this.visibility='hide'"
+<iframe src="about:blank" id="assessing" name="xrai-assessing" align="middle" onclick="this.visibility='hide'"
   style="visibility: hidden; position: fixed; left: 10%; top: 10%; width: <?=($do_debug ? 90 : 60)?>%; height: <?=($do_debug ? 90 : 30)?>%; z-index: 1; background: white; opacity: 80%">
 </iframe>
 
 
-
+<!-- Evaluation panel -->
 <div id="eval_div"  onclick="hideEval()" onmouseover="window.status='Click to assess the element(s)'" onmouseout="window.status=''">
 <div id="eval_path"><div></div></div>
 <div style="white-space: nowrap;"><?
@@ -248,6 +259,11 @@ if ($id_pool> 0) {
 <img id="nobelow" src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="assess(this,'nobelow',event)" title="Below is too small to assess"/>
 </div>
 </div>
+
+<div id="saving_div" style='visibility: hidden; position: fixed; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; color: red; font-weight: bold; text-align: center;'>BLAHBLAH</div></div>
+      
+<!-- End of evaluation panel -->
+
 <? } // end of if (write_access)
 
 
@@ -263,7 +279,7 @@ print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection
 function startElement($parser, $name, $attrs) {
    global $depth, $base_url, $media_url, $collection, $directory;
    print "<$name";
-   if ($depth == 0) print " xmlns=\"$base_url/$collection\"";
+   if ($depth == 0) print " xmlns:xraic=\"$base_url/$collection\" xmlns=\"$base_url/$collection\"";
    $depth++;
    foreach($attrs as $aname => $value) {
       print " $aname=\"$value\"";
@@ -308,6 +324,19 @@ xml_parser_free($xml_parser);
 
 print "</div>";
 
+if ($id_pool > 0) {
+   // Display assessments
+   ?><script type="text/javascript">
+   var load = new XRaiLoad()
+   load.begin();<?
+   while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
+      ?>load.add("<?=$row[startxpath]?>","<?=$row[endxpath]?>","<?=$row[exhaustivity]?>");<?
+   }
+   ?>
+   load.end();
+   </script><?
+}
+
 if ($write_access) {
 ?>
 
@@ -337,9 +366,13 @@ if ($write_access) {
       </span>
 <!--           <span><img src="img/fdroit.png" title="Next assessment (shift+right arrow)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the right arrow key</div></span> -->
    </span>
+   <span>
+      <span>
+         <img src="<?=$base_url?>/img/ok.png" alt="Finish" title="Set this article as assessed."/>
+      </span>
+   </span>
  </div>
 </div>
-
 <?
 }
 
@@ -368,6 +401,8 @@ if ($write_access) {
 <iframe id='bookmarks' src='<?=$base_url?>/iframe/bookmarks.html' class='right_panel'/>
 <div id='navigation' onclick="this.style.visibility='hidden'">
 <div id='navigation_path'></div>
+
+<!-- Status bar -->
 <table>
 <tr><td></td><td><img id="nav_parent" onclick="nav_goto(event)" alt="parent" title="Go to parent" src="img/up.png"/></td><td></td></tr>
 <tr><td><img  id="nav_prec" onclick="nav_goto(event)" alt="previous sibling" src="img/left.png"/></td><td><img  id="nav_bookmark" onclick="nav_goto(event)" title="bookmark" alt="Add bookmark" src="img/add_bookmark.png"/></td><td><img id="nav_next" onclick="nav_goto(event)"  alt="Go to the next sibling" src="img/right.png"/></td></tr>

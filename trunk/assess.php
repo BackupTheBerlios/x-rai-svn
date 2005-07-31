@@ -1,120 +1,80 @@
 <?php
 
-header("Pragma: no-cache");
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 ignore_user_abort(false);
 
-// $paths =&$_REQUEST["paths"];
-// $assess = &$_REQUEST["assess"];
-parse_str($_REQUEST["assessments"],$assessments);
-// print nl2br(print_r($to_assess,true));
-// exit;
-$to_assess = &$assessments["assess"];
-$timestamps = &$assessments["ts"];
-// print nl2br(print_r($to_assess,true));
+$file=$_REQUEST["file"];
+$collection=$_REQUEST["collection"];
+$aversion=&$_REQUEST["aversion"];
+$toadd=&$_REQUEST["a"];
+$toremove=&$_REQUEST["r"];
+$id_pool=&$_REQUEST["id_pool"];
 
-// Variables: $id_pool, $directory, $file, $path
 ?>
 <html>
 <head><title>Assessment</title></head>
 <body>
+<script type="text/javascript">
+   var ref = <?=$do_debug ? "window.opener" : "window.parent"?>;
+   ref.setSavingMessage("Connected");
+</script>
+
 <div style="background: #eeeeef; padding: 3pt">
 <div><b>Assessing</b></div>
+<div><b>Collection:</b> <?="$collection"?></div>
 <div><b>File:</b> <?="$file"?></div>
-<div>
-<b>Path(s):</b> 
-<? foreach($to_assess as $path => $assess) print "<div style='margin-left:0.5cm;'>$path (" . get_evaluation_img($assess,false,false,true) . " " .  $doc_assessments[$assess]. ")</div>";
- if ($do_siblings == "yes") print " <i>and its siblings</i>"; 
- //print_r($to_assess);
- ?>
+<div><b>Base version:</b> <?="$aversion"?></div>
+<div><b>Stats:</b> <?=sizeof($toadd)?> element(s) to add/modify, <?=sizeof($toremove)?> to remove.</div>
 </div>
-</div>
-
-<div><a href="javascript:window.parent.document.getElementById('assessing').style.visibility = 'hidden'">Hide</a></div>
-
 <?
-$header_done = 1;
 
-// (1) Retrieve & add assessment ---------------------------
+$assessments = Assessments::create($id_pool, $collection, $file);
+if (DB::isError($assessments)) {
+?><script type="text/javascript">alert("Assessments could not be saved (database error).");</script><?
+} else if ($assessments->getVersion() != $aversion) {
+?><script type="text/javascript">alert("Assessments could not be saved: the version you assessed has been modified by someone else.");</script><?
+   if ($do_debug) print "<div>Current version is " . $assessments->getVersion() . " but base version is $aversion</div>";
+} else {
+   // Start the transaction
+   $xrai_db->autoCommit(false);
+   for($aaaa = true; $aaaa; $aaaa = false) { // useful for the breaking the process without exceptions
+      foreach($toremove as $a) {
+         $x = split(',',$a);
+         if ($do_debug) print "<div>Removing $x[1] - $x[2] ($a)</div>";
+         $res = $assessments->remove($x[1], $x[2]);
+         if (DB::isError($res)) break 2;
+      }
 
-$doc_assessments = new Assessments($id_pool, "$file", "","");
-$f = false;
-
-// if ($do_siblings == "yes") {
-// 	if (sizeof($assess) > 1) fatal_error("Sibling mode AND more than one path !");
-// 	$r = path2record("$directory/$file","$paths[0]");
-// 	if (!$r) fatal_error("No record for $paths[0] in $directory/$file");
-// 	if (!preg_match("#^(.*)/[^/]+#", $paths[0], $match)) fatal_error("Can't compute the parent path of $paths[0]");
-// 	$ppath = $match[1];
-// 	$qh = sql_query("SELECT tag, rank FROM map WHERE parent=$r[parent]");
-// 	while ($row = sql_fetch_array($qh)) {
-// 		$cpath = "$ppath/$row[0][$row[1]]";
-// 		$e = &$doc_assessments->get_element("$ppath/$row[0][$row[1]]");
-// 		if ((!$e || ($e->get_assessment() == 'U') || $assess == "U") && $paths[0] != $cpath) {
-// 			$paths[] = $cpath;
-// 		}
-// 	}
-// 	sql_free($qh);
-// 
-// }
-
-
-// (2) Update database -------------------------------------
-
-$doc_assessments->add_assessments($to_assess);
-if ($do_debug) $doc_assessments->print_debug();
-$doc_assessments->inference();
-if ($do_debug) $doc_assessments->print_changes();
-if ($do_debug) $doc_assessments->print_debug();
-
-if (!$doc_assessments->update_database(true)) {
-	?>
-	<script type="text/javascript">
-	alert("Can't assess <?=$path?>  as <?=$assessments[$assess]?>: constraints violation.");
-	window.parent.document.getElementById("assessing").style.visibility = "hidden";
-	</script>
-	<?
-	exit;
+      foreach($toadd as $a) {
+         $x = split(',',$a);
+         if ($do_debug) print "<div>" . ($x[1] == 1 ? "Modify " : "Insert ") . "$x[3] - $x[4] with $x[2] ($a)</div>";
+         if ($x[1] == 1) $res = $assessments->modify($x[2], $x[3],$x[4]);
+         else $res = $assessments->add($x[2], $x[3],$x[4]);
+         if (DB::isError($res)) break 2;
+      }
+      $res = $assessments->setNextVersion();
+      if (DB::isError($res)) break;
+      $res = $xrai_db->commit();
+   }
+   
+   if (DB::isError($res)) {
+      ?><script type="text/javascript">alert("Assessments could not be saved (database error).");</script><?
+      if ($do_debug) print "<div>" . $res->getUserInfo() ."</div>";
+   } else {
+      ?><script type="text/javascript">ref.aversion = <?=$assessments->getVersion()?></script><?
+   }
 }
 
-
-
-// (3) Update document view --------------------------------
-
-$doc_assessments->update_masks();
-$statistics = $doc_assessments->get_statistics();
-
 ?>
-<script type='text/javascript'>
-var p = window.parent;
-<?
-  print_js_stats_string("p",$statistics);
-if (!$do_debug) { ?> setTimeout('window.parent.document.getElementById("assessing").style.visibility = "hidden"',500);<? }
-
-
-?>
-
-window.parent.saved();
-
-window.parent.todo = new Array(<? for($i=0; $i < sizeof($statistics[TODO]); $i++) {
- 	print ($i > 0 ? "," : "") . "'a_" . $doc_assessments->get_relative_path($statistics["TODO"][$i]) . "'";
-    }
-   
-    ?>); 
-</script>
-<?
-      $datestring = gmstrftime("%Y-%m-%d %H:%M:%S");
-      // Save some statistics
-   foreach($timestamps as $xid => $ts) {
-   if ($do_debug) print "<div>$xid has ts = $ts</div>";
-      sql_query("INSERT INTO statistics (id_pool,client_time,server_time,xid,assessment) values"
-      . "($id_pool,\"$ts\",\"$datestring\",$xid,\"" . $to_assess[$xid] . "\")",false);
+<script type="text/javascript">
+   ref.setSavingMessage("Done");
+   if (ref.saveForm) {
+      ref.saved();
    }
-?>
+   ref.document.getElementById('saving_div').style.visibility = 'hidden'
+</script>
 
-<div style='color: blue;'>Done</div>
-<div><a href="javascript:window.parent.document.getElementById('assessing').style.visibility = 'hidden'">Hide</a></div>
 </body>
 </html>
 

@@ -7,6 +7,9 @@
 // ================== Misc
 // ==================
 
+var xpe = new XPathEvaluator();
+var nsResolver = xpe.createNSResolver(document.documentElement);
+
 
 // *** Display a message box for a short amount of time
 var message_id = 0;
@@ -25,8 +28,8 @@ function message_clear(id) {
    if (x) x.parentNode.removeChild(x);
 }
 
+// *** Evaluate an XPath against a given node and return an array of nodes
 // From http://kb.mozillazine.org/XPath
-// Evaluate an XPath against a given node and return an array of nodes
 function evaluateXPath(aNode, aExpr) {
   var xpe = new XPathEvaluator();
   var nsResolver = xpe.createNSResolver(aNode.ownerDocument == null ?
@@ -38,7 +41,9 @@ function evaluateXPath(aNode, aExpr) {
   return found;
 }
 
-
+// *** Remove an element in an array
+// A: no duplicate in the array
+// Returns true if the element was found
 function removeFromArray(a,x) {
    for(var i = 0; i < a.length; i++) {
       if (a[i] == x) {
@@ -55,7 +60,6 @@ function removeFromArray(a,x) {
 // ==================
 
 var count = 0;
-
 
 function get_container(x) {
    while (x && x.namespaceURI != documentns) x = x.parentNode;
@@ -98,7 +102,7 @@ function toggle_treeview() {
 // 2. i:post = the id of the last descendant of the node (= to id if no descendants)
 // 3. i:p = the parent id
 
-var ELEMENT_NODE = 1;
+// An element node has the code 1 (at least in gecko...)
 
 var XRai = {
    // last mouse coordinates
@@ -107,12 +111,9 @@ var XRai = {
 
    /*
       Returns true if x is in y
-      @note assume that x and y are X-Rai elements
    */
    is_in: function(x, y) {
-      for(x = x.parentNode; x; x = x.parentNode)
-         if (x==y) return true;
-      return false;
+      return x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_CONTAINS;
    },
 
    parent: function(e) {
@@ -123,19 +124,19 @@ var XRai = {
 
    nextSibling: function(e) {
       e = e.nextSibling;
-      while (e && (e.nodeType != ELEMENT_NODE || e.namespaceURI != documentns)) e = e.nextSibling;
+      while (e && (e.nodeType != Node.ELEMENT_NODE || e.namespaceURI != documentns)) e = e.nextSibling;
       return e;
    },
 
    firstChild: function(e) {
       e = e.firstChild;
-      while (e && (e.nodeType != ELEMENT_NODE || e.namespaceURI != documentns)) e = e.nextSibling;
+      while (e && (e.nodeType != Node.ELEMENT_NODE || e.namespaceURI != documentns)) e = e.nextSibling;
       return e;
    },
 
    previousSibling: function(e) {
       e = e.previousSibling;
-      while (e && (e.nodeType != ELEMENT_NODE || e.namespaceURI != documentns)) e = e.previousSibling;
+      while (e && (e.nodeType != Node.ELEMENT_NODE || e.namespaceURI != documentns)) e = e.previousSibling;
       return e;
    },
 
@@ -226,17 +227,8 @@ var XRai = {
       return s;
    },
 
-// Return the element "path" or null
-   resolveXPath: function(path) {
-      alert("Not implemented");
-      var path_array = path.match(/\w+\[\d+\]+/g);
-      var x = document.getElementById(root_xid);
-      if (!path_array || x.getAttribute("path") != path_array[0]) return false;
-      for (var i = 1;  x && i < path_array.length; i++) {
-         x = XRai.firstChild(x);
-         while (x && x.getAttribute("path") != path_array[i]) x = XRai.nextSibling(x);
-      }
-      return x;
+   getPassagePaths: function(e) {
+      return this.getPath(e.parentNode) + (e.lastElement ? " -> " + this.getPath(e.lastElement) : "");
    },
 
    /** Handlers */
@@ -453,7 +445,7 @@ function toggle_bookmarks() {
 
 
 // ==================
-// ================== Assessments
+// ================== Assess
 // ==================
 
 // Structure
@@ -482,6 +474,11 @@ var currentAssessed = null;
 // True if the current assessed passage is too "small"
 var nobelow=0
 
+// Contains the list of assessments to be removed when saving
+var passagesToRemove = new Array();
+
+// Count the number of changes since last save
+var changed = 0;
 
 /** Get the maximum exhaustivity below */
 function getMaxExh(x,skip) {
@@ -559,9 +556,9 @@ function show_eval_panel(px,py) {
    }
 
   var nb = document.getElementById("nobelow");
-  nobelow = currentAssessed && currentAssessed.nobelow ? true : false;
+  nobelow = currentAssessed && currentAssessed.hasAttribute("nobelow") ? true : false;
   nb.className = min > 0 ? "disabled" : (nobelow ? "on" : null);
-  document.getElementById("eval_breakup_link").className = currentAssessed && currentAssessed.nobelow != 1 ? null : "disabled";
+  document.getElementById("eval_breakup_link").className = currentAssessed && currentAssessed.hasAttribute("nobelow") ? null : "disabled";
   show_div_xy(px,py,   "eval_div");
   return true;
 
@@ -595,10 +592,6 @@ function highlight(range) {
       return;
    }
    
-   var z;
-//    if (z = XRai.previous(y)) {
-//    } else if (z = XRai.next(x)) {
-//    }
 
    var flag = true;
    for(; x != null; x = XRai.nextElementTo(x,y)) {
@@ -622,6 +615,7 @@ function clear_selected(event) {
 
 /** Assess the current selection */
 function show_eval_selected(x,y) {
+ if (!id_pool) return;
  var selection = window.getSelection();
  var range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
   if (range == null || range.collapsed) {
@@ -709,20 +703,32 @@ function goUp() {
       hideSurroundings(p,false);
       if (currentPassage) hideSurroundings(currentPassage,true);
       scrollTo(0,p.scrollY);
+
+      if (!currentPassage) 
+         for(var x = p.parentNode; x; x = XRai.parent(x))
+            if (x.cAssessment) x.cAssessment.removeAttribute("hidden");
+
   }
-  
+
   updatePassageInfo();
 }
 
 function goDown() {
    // Check to see if we can go down
-   if (currentAssessed.nobelow) {
+   if (currentAssessed.hasAttribute("nobelow")) {
       display_message("notice","The passage has been assessed as the smallest meaningfull unit");
       return;
    }
    if (currentAssessed.parentNode == currentAssessed.lastElement) {
       display_message("notice","There is no subpassage");
       return;
+   }
+
+   // If it is the first time we go down, turn off all ancestors
+   if (!currentPassage) {
+      for(var x = currentAssessed.parentNode; x; x = XRai.parent(x)) {
+         if (x.cAssessment) x.cAssessment.setAttribute("hidden","1");
+      }
    }
 
    // Sets the current passage
@@ -743,13 +749,67 @@ function goDown() {
    for(var x = currentPassage.parentNode; x != null; x = XRai.nextElementTo(x,last))
       x.setAttribute("name",null);
 
-   // (b) highlight subpassages 
+   // (b) highlight subpassages
    changesSubpassages(currentPassage,true);
 
    updatePassageInfo();
    scrollTo(0,0);
 }
 
+
+
+function updateContainers(element) {
+   // (1) Select the lowest common ancestor
+   var x = element.parentNode;
+   while (x && !XRai.is_in(element.lastElement,x)) x = XRai.parent(x);
+
+   // (2) Propagate
+   var current = element;
+   var toremove = null;
+   window.dump("\n");
+
+   while (x) {
+      if (!x.passages) x.passages = new Array();
+      else if (toremove) removeFromArray(x.passages,toremove);
+      x.passages.push(current);
+      if (debug) {
+         window.dump("Element " + XRai.getPath(x) + " has [" + x.passages.length + "] ref. to (remove="
+                +  (!toremove ? "null" : XRai.getPath(toremove.parentNode))
+                + ", add=" + XRai.getPath(current.parentNode) + "):\n");
+         for(var i = 0; i < x.passages.length; i++) {
+            window.dump("==> " + x.passages[i]);
+            window.dump("==> " + XRai.getPath(x.passages[i].parentNode) + "\n");
+         }
+      }
+      
+      // Change only if length is 2
+      if (x.passages.length == 2 && !toremove) {
+         if (!x.cAssessment) {
+            var z = document.createElementNS(xrains,"a");
+            z.setAttribute("a","U");
+            x.insertBefore(z,x.firstChild);
+            x.cAssessment = z;
+            current = z;
+            changed += 1;
+         } else current = x.cAssessment;
+         toremove = x.passages[0];
+      } else if (x.passages.length > 2) break;
+      x = XRai.parent(x);
+   }
+}
+
+// To be called BEFORE the passage is removed
+function removedPassage(p) {
+   // Check for changed
+
+   if (p.hasAttribute("old")) {
+      changed += 1;
+      passagesToRemove.push(p);
+      p.oldParent = p.parentNode;
+   } else {
+      changed -= 1;
+   }
+}
 
 /** Assess the current selection */
 function assess(e,a,the_event) {
@@ -769,7 +829,8 @@ function assess(e,a,the_event) {
       else x.className = null;
 
       if (currentAssessed) {
-         currentAssessed.nobelow = nobelow;
+         if (nobelow) currentAssessed.setAttribute("nobelow","");
+         else currentAssessed.removeAttribute("nobelow");
          checkAssess(currentAssessed);
       }
       return true;
@@ -792,7 +853,6 @@ function assess(e,a,the_event) {
   }
   
   if (selected.length > 0) {
-     changed = true;
      if (a == "0") {
        clear_selected();
      } else {
@@ -810,44 +870,28 @@ function assess(e,a,the_event) {
         // Insert <xrai:a> just before the first child of the first selected element
         currentAssessed.lastElement = selected[selected.length-1];
         selected[0].insertBefore(currentAssessed,selected[0].firstChild);
-        currentAssessed.nobelow = nobelow;
+        if (nobelow) currentAssessed.setAttribute("nobelow"); else currentAssessed.removeAttribute("nobelow");
         setPassage(currentAssessed,true);
         // Update the container if first level
-        if (!currentPassage) {
-            // (1) Select the lowest common ancestor
-            var x = currentAssessed.parentNode;
-            while (x && !XRai.is_in(currentAssessed.lastElement,x)) x = XRai.parent(x);
-            // (2) Propagate
-            var current = currentAssessed;
-            var toremove = null;
-            window.dump("\n");
-            while (x) {
-               if (!x.passages) x.passages = new Array();
-               else if (toremove) removeFromArray(x.passages,toremove);
-               x.passages.push(current);
-               window.dump("Element " + XRai.getPath(x) + " has ref. to (" +  (!toremove ? "ntr" : XRai.getPath(toremove.parentNode)) + "):\n");
-               for(var i = 0; i < x.passages.length; i++)
-                  window.dump("==> " + XRai.getPath(x.passages[i].parentNode) + "\n");
-
-               // Change only if length is 2
-               if (x.passages.length == 2 && !toremove) {
-                  var z = document.createElementNS(xrains,"a");
-                  z.setAttribute("a","U");
-                  x.insertBefore(z,x.firstChild);
-                  x.cAssessment = z;
-                  toremove = x.passages[0];
-                  current = z;
-               } else if (x.passages.length > 2) break;
-               x = XRai.parent(x);
-            }
-        }
-        
+        if (!currentPassage) updateContainers(currentAssessed);
+        changed += 1; // One change
      }
   } else {
-    if (a != "0") currentAssessed.setAttribute("a",a);
-    else {
+
+    // The passage is only re-assessed
+    if (a != "0") {
+      if (currentAssessed.getAttribute("a") != a) {
+         currentAssessed.setAttribute("a",a);
+         if (currentAssessed.hasAttribute("old")) {
+            alert(currentAssessed.getAttribute("old") + " and " + xraia2int(currentAssessed));
+            if (currentAssessed.getAttribute("old") == xraia2int(currentAssessed)) changed -= 1;
+            else changed += 1;
+         }
+      }
+    } else {
+     // Null assessment => remove the passage
      // Clear selection
-     
+
      // Remove the assessment from the list of passages of currentPassage
      if (currentPassage)
       if (currentPassage.firstSubpassage == currentAssessed) currentPassage.firstSubpassage = currentAssessed.nextPassage;
@@ -866,6 +910,7 @@ function assess(e,a,the_event) {
        if (x.passages && removeFromArray(x.passages, toremove)) {
          if (toadd) x.passages.push(toadd);
          if (x.passages.length == 1 && !toadd) {
+            removedPassage(x.cAssessment);
             x.removeChild(x.cAssessment);
             toremove = x.cAssessment;
             x.cAssessment = null;
@@ -876,6 +921,8 @@ function assess(e,a,the_event) {
      
      // Clear the passage and remove the assessment
      setPassage(currentAssessed,false);
+     
+     removedPassage(currentAssessed);
      currentAssessed.parentNode.removeChild(currentAssessed);
    }
   }
@@ -888,74 +935,44 @@ function assess(e,a,the_event) {
   }
   
   currentAssessed = null;
-
-  var save = document.getElementById("save");
-  if (changed) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed.length + " assessment(s) to save");  }
-  else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","No assessment to save"); }
+  updateSaveIcon();
+  updateTodo();
 }
 
 // Check the current assessment of an element x
-// Put the current attribute ("missing") if assessments are not complete
+// Put the current attribute ("missing") if assessments are not complete (or if below is not complete)
 function checkAssess(x) {
-   if (x.getAttribute("a") == "U" || x.nobelow == 1 || x.lastElement == x.parentNode) {
+   if (x.getAttribute("a") == "U" || x.hasAttribute("nobelow") || x.lastElement == x.parentNode) {
       x.removeAttribute("missing");
       return true;
    }
    var sum = getMinExhBelow(x,true);
    var f = sum >= parseInt(x.getAttribute("a"));
    if (!f) window.dump(XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
-   if (f) x.removeAttribute("missing"); else x.setAttribute("missing",1);
+
+   var hasChanged = x.hasAttribute("missing") != f;
+   if (f) {
+      x.removeAttribute("missing");
+      if (hasChanged) removeFromArray(todo,x);
+   } else {
+      x.setAttribute("missing",1);
+      if (hasChanged) todo.push(x);
+   }
    return f;
 }
 
-/*
-   Ordered array of elements
-
-   */
-
-// Add/remove an id to the array
-function toggle_from_array(a,x) {
-  var i = 0;
-  while (i < a.length && a[i] < x) i++;
-  if (a[i] == x)  { a.splice(i,1);  return false; }
-  else a.splice(i,0,x);
-  return true;
-}
-
-// Add an id to the array
-function add_element_to_array(a,x) {
-  var id = parseInt(x.id);
-  var i = 0;
-  while (i < a.length && parseInt(a[i].id) < id) i++;
-  if (a[i] != x) a.splice(i,0,x);
-}
-
-// Remove an id from the array
-function remove_element_from_array(a,x) {
-  var id = parseInt(x.id);
-  var i = 0;
-  while (i < a.length && parseInt(a[i].id) < id) i++;
-  if (a[i] == x) a.splice(i,1);
-}
-
-
-
-// *************
-// * Inference *
-// *************
 
 
 
 
 // -*- Save assessments
 
-var changed = [];
 var statistics = {};
 var stats_assessments = [ 'I', 'U', '00','11','12','13','21','22','23', '31', '32', '33'];
 
 function article_beforeunload(event) {
-  if (changed.length > 0)
-    return "X-Rai warning: " + (changed.length > 1 ? changed.length + " assessment are" : "1 assessment is") + " not saved.";
+  if (changed> 0)
+    return "X-Rai warning: " + (changed > 1 ? changed + " assessment are" : "1 assessment is") + " not saved.";
 }
 
 
@@ -978,16 +995,6 @@ function set_stat(a,i) {
 //       <?=$document?>.getElementById("S_<?=$a?>").firstChild.nodeValue = "<?=intval($stats[$a])?>";
 }
 
-function saved() {
-  for(var i = 0; i < changed.length; i++) {
-    changed[i].removeAttribute("old");
-  }
-  changed = [];
-   var save = document.getElementById("save");
-   save.enabled = false;
-   save.src =  baseurl + "img/filenosave.png";
-   save.setAttribute("title","No assessment to save");
-}
 
 
 function lpad(c,s,l) {
@@ -1001,40 +1008,22 @@ function get_time_string() {
    var s = String(d.getUTCFullYear() + "%2d" + lpad("0",d.getUTCMonth()+1,2) + "%2d" + lpad("0",d.getUTCDate(),2));
    s += "%20";
    s += lpad("0",d.getUTCHours(),2) + "%3a" + lpad("0",d.getUTCMinutes(),2)  + "%3a" + lpad("0",d.getUTCSeconds(),2);
-//    alert (s);
    return s;
 }
 
-var changed = false;
 
 
 
-function save_assessments() {
-  if (changed.length == 0) return;
-  var my_form = document.getElementById("form_save");
-  var my_assess = document.getElementById("form_assessments");
-  if (!my_assess || !my_form) { alert("Can't find the object needed to submit assessments"); return; }
-  e = document.getElementById("assessing");
-  if (!e) alert("Hmmm. Can't retrieve the iframe 'assessing' for assessing");
-   e.contentDocument.documentElement.innerHTML = "<html><head><title>Waiting</title></head><body><div style='text-align: center; font-weight: bold;'>Connecting to the server...</div></body></html>";
-  e.style.visibility = "visible";
 
-  var paths_qs = "";
-  for(var i = 0; i < changed.length; i++) {
-    var a = changed[i].getAttribute("name");
-    if (a=="A" || changed[i].getAttribute("ii") == "yes") a = "U";
-    paths_qs += "&assess[" + changed[i].id + "]=" + a
-          + "&ts[" + changed[i].id + "]=" + changed[i].getAttribute("ts");
-  }
-//   alert(paths_qs);
-  my_assess.value = paths_qs;
-//   e.src = assess_url + paths_qs  ;
-//   alert("Submitting");
-  my_form.submit();
+// ==================
+// ================== List of todos
+// ==================
+
+var todo = new Array();
+
+function updateTodo() {
 }
 
-// Todo
-var current_todo = 0;
 function check_todo(list,way) {
     if (!list || list.length == 0) {
         if (confirm("No more elements to assess in this view. Do you like to jump to the " + way + " view where there is an element to assess ?")) {
@@ -1045,7 +1034,228 @@ function check_todo(list,way) {
    return false;
 }
 
+
+
+// ==================
+// ================== Loading/saving assessments
+// ==================
+
+
+var toSave;
+
+function createHiddenInput(name,value) {
+   var x = document.createElement("input");
+   x.setAttribute("type","hidden");
+   x.setAttribute("name",name);
+   x.setAttribute("value",value);
+   return x;
+}
+
+var saveForm = null;
+
+function setSavingMessage(txt) {
+  var saving_message = document.getElementById("saving_message");
+  saving_message.replaceChild(document.createTextNode(txt), saving_message.firstChild);
+}
+
+
+function saved() {
+   saveForm.parentNode.removeChild(ref.saveForm);
+   saveForm = null;
+   passagesToRemove = new Array();
+   changed=0;
+   for (var e in toSave) e.setAttribute("old",toSave[e]);
+   updateSaveIcon();
+}
+
+function updateSaveIcon() {
+  var save = document.getElementById("save");
+  if (changed > 0) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed + " assessment(s) to save");  }
+  else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","No assessment to save"); }
+}
+
+function xraia2int(res) {
+   var aString = res.getAttribute("a");
+   if (aString == "U") a = res.hasAttribute("nobelow") ? -1 : 0;
+   else  a = !res.hasAttribute("nobelow") ? parseInt(aString) : -parseInt(aString)-1;
+   return a;
+}
+
+/*
+
+   Save assessments
+   
+*/
+function save_assessments() {
+  if (!changed) {
+   display_message("notice","Nothing to save");
+   return;
+  }
+  
+  if (saveForm != null) {
+   display_message("warning","Another save of assessments is being processed");
+   return;
+  }
+
+  var saving_div = document.getElementById("saving_div");
+  var saving_message = document.getElementById("saving_message");
+  var saving_iframe = document.getElementById("assessing");
+  if (!saving_iframe) alert("Hmmm. Bug! Can't retrieve the iframe 'assessing' for assessing");
+   
+   // Prepare the frame
+
+  setSavingMessage("Preparing assessments");
+  saving_div.style.visibility = "visible";
+
+  // Static information
+  saveForm = document.createElement("form");
+  saveForm.style.display = "none";
+  saveForm.setAttribute("target",debug ? "_blank" : "xrai-assessing");
+  saveForm.setAttribute("action",base_url + "/assess.php");
+  saveForm.setAttribute("method","post");
+  saveForm.appendChild(createHiddenInput("id_pool",id_pool));
+  saveForm.appendChild(createHiddenInput("collection",xrai_collection));
+  saveForm.appendChild(createHiddenInput("file",xrai_file));
+  saveForm.appendChild(createHiddenInput("aversion",aversion));
+
+
+  // Add assessments
+  toSave = new Array();
+  var result = xpe.evaluate(".//xrai:a", document.getElementById("inex"), nsResolver, 0, null);
+  var res;
+  while (res = result.iterateNext()) {
+     a = xraia2int(res);
+     if (res.getAttribute("old") == a) {
+      window.dump("Skipping " + s + "\n");
+     } else {
+      toSave[res] = a;
+      var s = "," + (res.getAttribute("old") ? 1 : 0) + "," + a + "," + XRai.getPath(res.parentNode);
+      if (res.lastElement) s += "," + XRai.getPath(res.lastElement);
+      window.dump("Adding " + s + "\n");
+      saveForm.appendChild(createHiddenInput("a[]",s));
+     }
+  }
+
+  // Add to remove
+  for(var i = 0; i < passagesToRemove.length; i++) {
+    res = passagesToRemove[i];
+    var s = "," + XRai.getPath(res.oldParent);
+    if (res.lastElement) s += "," + XRai.getPath(res.lastElement);
+    saveForm.appendChild(createHiddenInput("r[]",s));
+  }
+  
+  // Submit
+  document.getElementById("body").appendChild(saveForm);
+  setSavingMessage("Connecting to server...");
+  saveForm.submit();
+}
+
+/** Loads the assessment into the document */
+function XRaiLoad() {
+   this.loadErrors = 0;
+   this.root = null;
+   this.nsResolver =  null;
+   this.list = new Array();
+   
+   this.begin =  function() {
+      for(this.root = document.getElementById("inex").firstChild; this.root && this.root.nodeType != Node.ELEMENT_NODE; this.root = this.root.nextSibling) {}
+      if (!this.root) { this.loadErrors = -1; return; }
+      this.nsResolver = xpe.createNSResolver(this.root);
+      window.dump("Root node is " + XRai.getPath(this.root) + "\n");
+   };
+
+   this.add = function(start,end,exh) {
+      if (!this.root) return;
+//       alert("coucou".replace("/o/g","a"));
+      start = start.replace(/\//g,"/xraic:");
+      end = end.replace(/\//g,"/xraic:");
+      window.dump("Adding " + exh + " (" + start + " - " + end + ")\n");
+      var eStart = xpe.evaluate("." + start, this.root.parentNode, this.nsResolver, 0, null).iterateNext();
+      var eEnd = end == "" ? null : xpe.evaluate("." + end, this.root.parentNode, this.nsResolver, 0, null).iterateNext();
+      if (!eStart || (end != "" && !eEnd)) {
+         this.loadErrors++;
+      } else {
+         var a = document.createElementNS(xrains,"a");
+         a.setAttribute("old",exh);
+         if (exh < 0) a.setAttribute("nobelow","");
+         if (exh < -1) exh = -exh-1;
+         if (exh == 0 || exh == -1) exh = "U";
+         a.setAttribute("a",exh);
+         eStart.insertBefore(a, eStart.firstChild);
+         a.lastElement = eEnd;
+         this.list.push(a);
+      }
+   };
+
+   // Returns true if x is a subpassage of y
+   // A: two passages can overlap only if they are nested
+   this.is_in = function(x,y) {
+      var a = y.parentNode.compareDocumentPosition(x.parentNode);
+      var b = y.lastElement.compareDocumentPosition(x.lastElement);
+      
+      return (a == 0 || (a & Node.DOCUMENT_POSITION_FOLLOWING)) && (b == 0 || (b & Node.DOCUMENT_POSITION_PRECEDING));
+   }
+
+   this.sortF = function(x,y) {
+      var a = x.parentNode.compareDocumentPosition(y.parentNode);
+      if (a &  Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (a & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      if (!x.lastElement) return -1; if (!y.lastElement) return 1;
+
+      a = x.lastElement.compareDocumentPosition(y.lastElement);
+      if (a & Node.DOCUMENT_POSITION_FOLLOWING) return 1;
+      if (a & Node.DOCUMENT_POSITION_PRECEDING) return -1;
+   },
+   
+   this.end = function() {
+      if (this.loadErrors != 0) alert("Error while adding existing assessments to this document. You MUST NOT assess this file");
+      this.list.sort(this.sortF);
+      if (debug) {
+         window.dump("** Ordered list of passages:\n");
+         for(var i = 0; i < this.list.length; i++) {
+            window.dump(XRai.getPassagePaths(this.list[i]) + "\n");
+         }
+      }
+      var stack = new Array(); // invariant = an element is contained by its predecessor
+      for(var i = 0; i < this.list.length; i++) {
+         res = this.list[i];
+         // (1) the element is a container
+         if (!res.lastElement) res.parentNode.cAssessment = res;
+         else {
+            // (2) The element is contained by the stack top?
+            var flag = false;
+            var last = null; // Contains the last removed subpassage (ie, our predecessor)
+            var top = null;
+            while (stack.length > 0 && !this.is_in(res,top=stack[stack.length-1])) last = stack.pop();
+            if (stack.length > 0) {
+               if (top.hasAttribute("nobelow")) {
+                  window.dump("Top is " + XRai.getPassagePaths(top) + " / " + XRai.getPassagePaths(res));
+                  alert("Document assessments are corrupted. Do not assess this file and report the problem");
+                  return;
+               }
+               if (last != null) res.nextPassage = last;
+               res.parentPassage = top;
+               top.firstSubpassage = res;
+               res.setAttribute("hidden","1");
+            } else {
+               // Top level passage
+               updateContainers(res);
+               setPassage(res,true);
+            }
+            stack.push(res);
+         }
+      }
+      for(var i = 0; i < this.list.length; i++) {
+         checkAssess(this.list[i]);
+      }
+   };
+}
+
+
+
+
 // *** Quick assessment navigation
+
 
 var current_goto = "";
 var current_nodes = {};
@@ -1056,60 +1266,9 @@ function show_goto_panel(x,event) {
 }
 
 
-
-
-
-// **** Check the validity of the document ****
-
-function check_valid_xml() {
-   if (document.firstChild.nodeName == "parsererror") {
-      if (!force_regeneration) {
-//          alert(document.firstChild.textContent);
-//          return;
-         var r = confirm("X-Rai has detected that the (cached) XML was invalid. It will now try to re-generate the cached file; if this does not work, it will try to generate it again *without* including MathML formulas.");
-         if (r) window.location = window.location + "&force=1";
-         return;
-      } else if (force_regeneration == 1) {
-//          alert(document.firstChild.textContent);
-//          return;
-         var r = confirm("X-Rai has detected *again* that the XML was invalid. It will now try to re-generate the cached file without including MathML formulas; if this does not work, an email will be sent with the bug report.");
-         if (r) window.location = window.location + "&force=2";
-         return;
-      } else if (force_regeneration == 3) {
-         alert("Nothing is done (third level)");
-         return;
-      } else {
-         var s;
-         if (document.firstChild && document.firstChild.childNodes[0] && document.firstChild.childNodes[1].firstChild)
-            s = document.firstChild.childNodes[0].nodeValue + "\n\n\n" + document.firstChild.childNodes[1].firstChild.nodeValue;
-         else if (document.firstChild)
-            s = document.firstChild.textContent;
-         else
-            s = "???";
-         var nexturl;
-         if (window.id_pool)
-               nexturl = "article.php?view_jump=1&amp;id_pool=" + id_pool + "&amp;view_xid=" + view_xid + "&amp;next=" ;
-         // Generate the bug report
-         window.location = base_url + "/bug_report.php?error=" + escape(s)
-               + "&whattodo= "
-               + (window.id_pool ? escape('Now you can: <ul><li>go to the <a href="' + nexturl + '0">previous element to assess</a>,</li>'
-               + '<li>or go to the <a href="' + nexturl + '1">next element to assess</a>,</li>'
-               + '<li>or go to the <a href="' + base_url + '/pool?id_pool=' +  id_pool + '">pool summary</a>.</li></ul>') : escape('You can go back to the <a href="' + base_url + '">home page</a>'));
-      }
-
-
-      return;
-   }
-   if (!document_is_loaded) {
-      setTimeout("check_valid_xml()",500);
-      return;
-   } else {
-//       print_xml_positions_r(document.getElementById("inex"));
-   }
-
-}
-setTimeout('check_valid_xml()',500);
-
+       
+// ===================================================
+       
 // Print XML positions
 function print_xml_positions_r(x) {
    if (x.firstChild) print_xml_positions_r(x.firstChild);

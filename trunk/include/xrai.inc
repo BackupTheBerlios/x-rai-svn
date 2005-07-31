@@ -1,7 +1,10 @@
 <?
+header("Pragma: no-cache");
 
 // Report all PHP errors (bitwise 63 may be used in PHP 3)
 // error_reporting (E_ALL);
+
+require_once 'DB.php';
 
 // Report all errors except E_NOTICE
 error_reporting (E_ALL ^ E_NOTICE);
@@ -223,9 +226,11 @@ function make_footer($exit = false) {
 	if ($exit) exit;
 }
 
-function fatal_error($message) {
+function fatal_error($message, $dbg="") {
+   global $do_debug;
 	make_header("Error");
 	print "<div class='error'>$message</div>";
+   if ($do_debug) print "<div>$dbg</div>";
 	make_footer();
 	exit(1);
 }
@@ -267,14 +272,19 @@ $db = mysql_connect($sql_host, $login, $password);
 if(!$db) exit("No database connections could be made !");
 if (!mysql_select_db($base, $db)) exit("Could not make a sql connection " . mysql_error());
 
+// Connection to database
+$xrai_db = &DB::connect($xrai_dsn);
+if (DB::isError($xrai_db)) exit("Database connection failed");
+
 $write_access = $can_modify = false;
 
 if ($id_pool > 0) {
 	url_propagate("id_pool");
-	$pool = sql_get_row("select * from $db_pools where id_pool=$id_pool" . ($is_root ? "" : " and login='$inex_user'"));
+   $pool = $xrai_db->getRow("SELECT * FROM $db_pools WHERE id=?",array($id_pool),DB_FETCHMODE_ASSOC);
+   if (!$pool || DB::isError($pool)) exit("Cannot retrieve pool data" . ($do_debug ? ": " . $pool->getUserInfo() : ""));
 	$id_topic = $pool["id_topic"];
 	if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
-	$write_access = $can_modify = ($pool["enabled"] == 'Y');
+	$write_access = $can_modify = ($pool["enabled"] == 't');
  add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
  add_menu("Pool","javascript:show_colors()","Keywords","Edit keyword highlighting");
 
