@@ -240,7 +240,7 @@ var XRai = {
 
    mouseover: function(event) {
      if (event.target.tagName == "a" && event.target.namespaceURI == xrains) {
-      alert("coucou");
+//       alert("coucou");
      }
    },
      
@@ -883,7 +883,7 @@ function assess(e,a,the_event) {
       if (currentAssessed.getAttribute("a") != a) {
          currentAssessed.setAttribute("a",a);
          if (currentAssessed.hasAttribute("old")) {
-            alert(currentAssessed.getAttribute("old") + " and " + xraia2int(currentAssessed));
+//             alert(currentAssessed.getAttribute("old") + " and " + xraia2int(currentAssessed));
             if (currentAssessed.getAttribute("old") == xraia2int(currentAssessed)) changed -= 1;
             else changed += 1;
          }
