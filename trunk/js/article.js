@@ -1067,8 +1067,10 @@ function saved() {
 
    passagesToRemove = new Array();
    changed=0;
-   for (var e in toSave) e.setAttribute("old",toSave[e]);
+   for(var i = 0; i < toSave.length; i++) toSave[i][0].setAttribute("old",toSave[i][1]);
    updateSaveIcon();
+   ref.document.getElementById('saving_div').style.visibility = 'hidden'
+
 }
 
 function updateSaveIcon() {
@@ -1131,7 +1133,7 @@ function save_assessments() {
      if (res.getAttribute("old") == a) {
       window.dump("Skipping " + s + "\n");
      } else {
-      toSave[res] = a;
+      toSave.push(new Array(res, a));
       var s = "," + (res.getAttribute("old") ? 1 : 0) + "," + a + "," + XRai.getPath(res.parentNode);
       if (res.lastElement) s += "," + XRai.getPath(res.lastElement);
       window.dump("Adding " + s + "\n");

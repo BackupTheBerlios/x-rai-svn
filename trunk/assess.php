@@ -69,10 +69,7 @@ if (DB::isError($assessments)) {
 ?>
 <script type="text/javascript">
    ref.setSavingMessage("Done");
-   if (ref.saveForm) {
-      ref.saved();
-   }
-   ref.document.getElementById('saving_div').style.visibility = 'hidden'
+   ref.saved();
 </script>
 
 </body>
