@@ -275,6 +275,10 @@ if (!mysql_select_db($base, $db)) exit("Could not make a sql connection " . mysq
 // Connection to database
 $xrai_db = &DB::connect($xrai_dsn);
 if (DB::isError($xrai_db)) exit("Database connection failed");
+if ($db_schema) {
+   $res = $xrai_db->query("set search_path=$db_schema, pg_catalog");
+   if (DB::isError($res)) exit("Database connection failed");
+}
 
 $write_access = $can_modify = false;
 

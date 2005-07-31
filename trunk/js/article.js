@@ -1060,8 +1060,11 @@ function setSavingMessage(txt) {
 
 
 function saved() {
-   saveForm.parentNode.removeChild(ref.saveForm);
-   saveForm = null;
+   if (saveForm) {
+      saveForm.parentNode.removeChild(saveForm);
+      saveForm = null;
+   }
+
    passagesToRemove = new Array();
    changed=0;
    for (var e in toSave) e.setAttribute("old",toSave[e]);
