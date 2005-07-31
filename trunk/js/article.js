@@ -1069,7 +1069,7 @@ function saved() {
    changed=0;
    for(var i = 0; i < toSave.length; i++) toSave[i][0].setAttribute("old",toSave[i][1]);
    updateSaveIcon();
-   ref.document.getElementById('saving_div').style.visibility = 'hidden'
+   document.getElementById('saving_div').style.visibility = 'hidden'
 
 }
 
