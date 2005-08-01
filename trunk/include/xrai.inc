@@ -290,7 +290,7 @@ if ($id_pool > 0) {
 	url_propagate("id_pool");
    $pool = $xrai_db->getRow("SELECT * FROM $db_pools WHERE id=?",array($id_pool),DB_FETCHMODE_ASSOC);
    if (!$pool || DB::isError($pool)) exit("Cannot retrieve pool data" . ($do_debug ? ": " . $pool->getUserInfo() : ""));
-	$id_topic = $pool["id_topic"];
+	$id_topic = $pool["idtopic"];
 	if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
 	$write_access = $can_modify = ($pool["enabled"] == 't');
    add_menu("Pool","javascript:show_topic()","Topic","View topic definition");

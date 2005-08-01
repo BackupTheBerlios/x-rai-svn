@@ -260,7 +260,7 @@ if ($id_pool> 0) {
 </div>
 </div>
 
-<div id="saving_div" style='visibility: hidden; position: fixed; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; colour: red; font-weight: bold; text-align: center;'>BLAHBLAH</div></div>
+<div id="saving_div" style='visibility: hidden; position: fixed; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; color: #f00; font-weight: bold; text-align: center;'>BLAHBLAH</div></div>
       
 <!-- End of evaluation panel -->
 
