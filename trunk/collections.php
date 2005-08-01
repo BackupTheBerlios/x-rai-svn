@@ -15,37 +15,34 @@ include_once("include/assessments.inc");
 $PHP_SELF = $_SERVER["PHP_SELF"];
 set_time_limit(360); // Time limit = 6 minutes
 
-$in_volume = true;
-
 preg_match('#^/([^/]*)(?:|/(.*))$#',$_SERVER["PATH_INFO"], $matches);
 $collection = $matches[1];
 $path = $matches[2];
+if (!$path) $path ="";
 
 $basepath = "$base_url/article.php?id_pool=$id_pool&collection=$collection&file=$path";
 $xsl_params = array("basepath" => $basepath);
 
-$row = sql_get_row("SELECT * FROM ${collection}_$db_files WHERE name='$path'");
-
+$row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE collection=? AND filename=?", array($collection,$path));
+// print_r($row);
 $title = $row["title"];
-$basepath = $row["name"];
-$xslname = $row["xsl"];
-$view_xid = $row["xid"];
+$basepath = $row["filename"];
+$xslname = "xrai";
 
 if ($id_pool) 
-  $localisation[] = array("$pool[name]","$base_url/pool.php?id_pool=$id_pool", "Pool for topic $pool[id_pool]" );
+  $localisation[] = array("$pool[name]","$base_url/pool.php?id_pool=$id_pool", "Pool for topic $pool[idtopic]" );
 
 $i = sizeof($localisation);
 do {
-  array_splice($localisation,$i,0,array(array($row["name"],"$base_url/collections/$row[name]?id_pool=$id_pool",$row["title"])));
-} while ($row["name"] != "" && $row = sql_get_row("SELECT * FROM ${collection}_$db_files WHERE name='$row[parent]'",false));
+  if (DB::isError($row)) fatal_error("Database error",$row->getUserInfo());
+  array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]/$row[filename]?id_pool=$id_pool",$row["title"])));
+} while ($row["parent"] > 0 && $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE id=?",array($row["parent"])));
 $up_url = $localisation[sizeof($localisation)-2][1];
 
 
-// $localisation[] = array("$row[","$PHP_SELF?id_pool=$id_pool");
 make_header("$title");
 $xslfilename = dirname(__FILE__) . "/xsl/$xslname.xsl";
 $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
-// print "$xmlfilename";
 
 // --- Retrieve assessments ---
 
@@ -91,7 +88,8 @@ function end_subcollection() { print "</a>"; }
 
 function begin_document($path) {
   global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath, $collection;
-  $id = get_full_path($basepath, $path);
+//   print "$basepath";
+   $id = get_full_path($basepath, $path);
   print_assessments($id);
   print "<a id='$id' href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
 }
@@ -158,7 +156,6 @@ if ($write_access) {
 <script language="javascript"  src="<?=$base_url?>/js/collection.js"/>
 <script language="javascript">
   up_url = "<?=$up_url?>";
-  view_xid = <?=$view_xid?>;
   document.onkeypress = collection_keypress;
 </script>
 

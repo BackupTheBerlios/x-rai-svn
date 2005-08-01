@@ -117,13 +117,10 @@ function make_header($title = "") {
 	if ($header_done) return;
 	$header_done = 1;
 
-$gecko = preg_match("/gecko/i",$_SERVER['HTTP_USER_AGENT']);
 
-if ($gecko) header("Content-type: application/xhtml+xml");
-else header("Context-type: application/html");
+header("Content-type: application/xhtml+xml");
 header("Content-encoding: UTF-8");
 print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
-if (!$gecko) print '<?xml-stylesheet type="text/xsl" href="xsl/mathml.xsl"?' . ">\n";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$base_url?>" xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="en">
@@ -226,6 +223,12 @@ function make_footer($exit = false) {
 	if ($exit) exit;
 }
 
+function non_fatal_error($message, $dbg="") {
+   global $do_debug;
+   print "<div class='error'>$message</div>";
+   if ($do_debug) print "<div>$dbg</div>";
+}
+
 function fatal_error($message, $dbg="") {
    global $do_debug;
 	make_header("Error");
@@ -274,6 +277,7 @@ if (!mysql_select_db($base, $db)) exit("Could not make a sql connection " . mysq
 
 // Connection to database
 $xrai_db = &DB::connect($xrai_dsn);
+$xrai_db->setFetchMode(DB_FETCHMODE_ASSOC);
 if (DB::isError($xrai_db)) exit("Database connection failed");
 if ($db_schema) {
    $res = $xrai_db->query("set search_path=$db_schema, pg_catalog");
@@ -289,13 +293,13 @@ if ($id_pool > 0) {
 	$id_topic = $pool["id_topic"];
 	if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
 	$write_access = $can_modify = ($pool["enabled"] == 't');
- add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
- add_menu("Pool","javascript:show_colors()","Keywords","Edit keyword highlighting");
-
+   add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
+   add_menu("Pool","javascript:show_colors()","Keywords","Edit keyword highlighting");
 }
+
 if ($is_root) {
-    add_menu("Admin","$base_url/admin/add_pool","Add a pool","Add a new pool");
-    add_menu("Admin","$base_url/admin/manage_pools","Pools view","View pools (manage users, etc.)");
+/*    add_menu("Admin","$base_url/admin/add_pool","Add a pool","Add a new pool");
+    add_menu("Admin","$base_url/admin/manage_pools","Pools view","View pools (manage users, etc.)");*/
 }
 
 

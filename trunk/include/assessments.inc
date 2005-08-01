@@ -119,10 +119,11 @@ function get_element_img(&$e) {
 
 /** Access to the files */
 class Files {
-     function getFileId($collection,$filename) {
+     function getFileId($collection,$filename, $create = false) {
       global $xrai_db, $db_files;
       $id = $xrai_db->getOne("SELECT id FROM $db_files WHERE collection=? AND filename=?",array($collection,$filename));
       if (!$id) {
+         if (!$create) return -1;
          $id = $xrai_db->nextId("{$db_files}_id");
          if (!DB::isError($id)) {
             $res = $xrai_db->autoExecute("$db_files",array("id" => $id, "collection" => $collection, "filename" => $filename));
@@ -135,11 +136,12 @@ class Files {
 
 /** Access to the paths db */
 class Paths {
-     function getPathId($path) {
+     function getPathId($path, $create = false) {
       global $xrai_db, $db_paths;
       if (!is_string($path)) $path = "";
       $id = $xrai_db->getOne("SELECT id FROM $db_paths WHERE path=?",array($path));
       if (!$id) {
+         if (!$create) return -1;
          $id = $xrai_db->nextId("{$db_paths}_id");
          if (!DB::isError($id)) {
             $res = $xrai_db->autoExecute("$db_paths",array("path" => $path, "id" => $id));

@@ -27,13 +27,15 @@ make_header("Home");
 
 <?php
 
-$ch = sql_query("SELECT id, title from collections order by id");
-while ($row = sql_fetch_array($ch)) {
-   print "<div>";
-   print " <a id='$row[id]' href=\"collections/$row[id]\">" . htmlspecialchars($row["title"]) . "</a>";
-   print "</div>";
+$ch = $xrai_db->query("SELECT collection, title FROM $db_files WHERE parent is null ORDER BY title");
+if (DB::isError($ch)) non_fatal_error("Could not retrieve collections",$ch->getUserInfo());
+else {
+   while ($row = $ch->fetchRow(DB_FETCHMODE_ASSOC)) {
+      print "<div>";
+      print " <a id='$row[id]' href=\"collections/$row[collection]\">" . htmlspecialchars($row["title"]) . "</a>";
+      print "</div>";
+   }
 }
-sql_free($ch);
 
 ?>
 

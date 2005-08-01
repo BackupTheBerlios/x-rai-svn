@@ -41,26 +41,26 @@ if ($_REQUEST["view_jump"] == 1) {
 $file = $_REQUEST["file"];
 $directory = dirname($file);
 $collection = $_REQUEST["collection"];
-$row = sql_get_row("select title,xid,post,parent,xsl from {$collection}_$db_files where name='$file'");
+$row = $xrai_db->getRow("select title,parent from $db_files where collection=? AND filename=?",array($collection,$file));
 //print "$query";
-$title = $row[0];
-$current_xid = $did = $row[1]; // document ID
-$postid = $row[2]; // post id
-$xslfilename = dirname(__FILE__) . "/xsl/" . $row[4] . ".xsl";
+$title = $row["title"];
 $xmlfilename = "$xml_documents/$collection/$file.xml";
 
 // Begins output
 
-if ($id_pool) $localisation[] = array("$pool[name]","pool.php?id_pool=$id_pool", "Pool for topic $pool[id_pool]" );
+if ($id_pool) 
+  $localisation[] = array("$pool[name]","$base_url/pool.php?id_pool=$id_pool", "Pool for topic $pool[idtopic]" );
 
 
 $i = sizeof($localisation);
-while ($row["parent"] != $row["name"] && $row = sql_get_row("SELECT * FROM {$collection}_$db_files WHERE name='$row[parent]'",false)) {
-  array_splice($localisation,$i,0,array(array($row["name"],"$base_url/collections/$row[name]?id_pool=$id_pool",$row["title"])));
-}
-$up_url = $localisation[sizeof($localisation)-1][1];
+while ($row["parent"] > 0 && $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE id=?",array($row["parent"])))  {
+  if (DB::isError($row)) fatal_error("Database error",$row->getUserInfo());
+  array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]/$row[filename]?id_pool=$id_pool",$row["title"])));
+} 
+$up_url = $localisation[sizeof($localisation)-2][1];
+$localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=$file&amp;collection=$collection","$title");
 
-$localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=$file","$title");
+
 
 add_icon("img_treeview","$base_url/img/tree.png","Tree view (shift + T)","javascript:void(0)","toggle_treeview()",'<div class="help_top">Displays/hides the panel with the tree view of the XML document, where only tag names appear. In this panel, you can click on any tag name to view it in the main document view.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>t</code></div>');
 add_icon("img_bookmarks","$base_url/img/trombone.png","Bookmarks (shift + B)","javascript:void(0)","toggle_bookmarks()",'<div class="help_top">Displays/hides the panel with the current document bookmarks. In this panel, you can click on any displayed path to view it in the main document view.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>b</code></div>');
@@ -115,19 +115,19 @@ if ($id_pool > 0) {
 // ---------------------------------
 
 if ($id_pool > 0) {
-  $query = "select color,keywords,mode from $db_keywords where id_pool=$id_pool";
-  $result = sql_query($query);
+  $query = "select colour,keywords,mode from $db_keywords where idpool=?";
+  $result = $xrai_db->query($query,array($id_pool));
   $style="";
   $num_keywords = 0;
- while ($row = mysql_fetch_row($result)) {
+ while ($row = $result->fetchRow(DB_FETCHMODE_BOTH)) {
   $kws = preg_split("-[\n\r]+-",$row[1]);
     $num_keywords++;
    $mode = $row[2];
    $cssname = "k_${mode}_${num_keywords}";
-    $style .= " kw { ";
+   $style .= " kw[class='$cssname'] { ";
    switch($mode) {
      case "border": $style .= "border: 1pt solid #$row[0];"; break;
-     case "color": $style .= "color: #$row[0];"; break;
+     case "colour": $style .= "color: #$row[0];"; break;
      case "background": $style .= "background: #$row[0];"; break;
    }
    $style .= "padding: 1pt; }\n";
@@ -189,12 +189,12 @@ lit { white-space: pre; }
 abs { margin: 5px; border: 1px solid gray; padding: 5px; }
 abs:before { content: "Abstract"; font-size: large; }
 
-fn { border: 1px solid black; color: #444444; display: inline; }
+fn { border: 1px solid black; colour: #444444; display: inline; }
 fn p { display: inline; }
 
 bdy, bibl { border-top: 1px solid black; }
 
-st,h { font-size: xx-large; color: blue; padding: 5px 0 5px 0; }
+st,h { font-size: xx-large; colour: blue; padding: 5px 0 5px 0; }
 
 bb ti { font-style: italic; }
 
@@ -260,7 +260,7 @@ if ($id_pool> 0) {
 </div>
 </div>
 
-<div id="saving_div" style='visibility: hidden; position: fixed; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; color: red; font-weight: bold; text-align: center;'>BLAHBLAH</div></div>
+<div id="saving_div" style='visibility: hidden; position: fixed; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; colour: red; font-weight: bold; text-align: center;'>BLAHBLAH</div></div>
       
 <!-- End of evaluation panel -->
 
