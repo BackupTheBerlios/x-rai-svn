@@ -1,5 +1,9 @@
 //
 
+function goUp() {
+   if (up_url) window.location = up_url;
+}
+
 function todo_previous() {
 	if (!todo || todo.length == 0) {
 		if (confirm("No more elements to assess in this view. Do you like to jump to the previous view where there is an element to assess ?")) {

@@ -10,7 +10,6 @@
 var xpe = new XPathEvaluator();
 var nsResolver = xpe.createNSResolver(document.documentElement);
 
-
 // *** Display a message box for a short amount of time
 var message_id = 0;
 function display_message(type,msg) {
@@ -89,7 +88,7 @@ var boxed_border = "";
 
 
 function toggle_treeview() {
-  right_panel("treeview","img_treeview",treeview_url);
+//   right_panel("treeview","img_treeview",treeview_url);
 }
 
 // -*-
@@ -239,7 +238,7 @@ var XRai = {
    },
 
    mouseover: function(event) {
-     if (event.target.tagName == "a" && event.target.namespaceURI == xrains) {
+     if (event.target.tagName == xraiatag && event.target.namespaceURI == xrains) {
 //       alert("coucou");
      }
    },
@@ -313,12 +312,11 @@ function article_keypress(event) {
   // NORMAL
   if (!event.shiftKey && !event.ctrlKey) {
     switch(event.which) {
-      case 84 /* t */ : toggle_treeview(); return false;
-      case 66 /* b */: toggle_bookmarks(); return false;
+//       case 84 /* t */ : toggle_treeview(); return false;
+//       case 66 /* b */: toggle_bookmarks(); return false;
       case 97 /* a */: show_eval_selected(XRai.lastX, XRai.lastY); return false;
          //window.scrollX + window.innerWidth / 2, window.scrollY + window.innerHeight / 2); return false;
       case 73: right_panel('informations','img_informations',base_url + '/iframe/informations.php'); return false;
-      case 83: save_assessments(); return false;
     }
   }
 
@@ -329,11 +327,15 @@ function article_keypress(event) {
      }
   }
 
+  // SHIFT
+  else if (event.shiftKey && !event.ctrlKey) {
+      if (event.which == 83) { save_assessments(); return false; }
+   }
   // CTRL
   else if (!event.shiftKey && event.ctrlKey) {
      switch(event.keyCode) {
         case 38: goUp(); return false;
-     }
+   }  
   }
   
    if (debug) window.dump("Key pressed: charchode" + event.charCode
@@ -350,7 +352,7 @@ function article_keypress(event) {
 function do_click(e) {
    if (e.target.namespaceURI == xrains) {
       switch(e.target.tagName) {
-         case "a": reassess(e); break;
+         case xraiatag: reassess(e); break;
       }
   }
 
@@ -461,6 +463,11 @@ function toggle_bookmarks() {
 // - a "passages" array (list of relevant passages directly below this node)
 // - cAssessment which is the xrai:a element for this container
 
+// Elements to assess are of two types:
+// (1) Elements with unknown assessment (a = "U")
+var cardUnknownAssessment = 0;
+// (2) Elements which are not too small and have not enough assessed subpassages to explain it (missing attribute)
+var cardMissingAssessment = 0;
 
 // Sorted array containing XRange objects
 var assessed_ranges = Array();
@@ -591,8 +598,21 @@ function highlight(range) {
       display_message("notice","The selected passage is too big");
       return;
    }
-   
 
+   // Check if a start/end ancestor is highlighted
+   for(var k=0; k < 2; k++) {
+      z = k == 0 ? x : y;
+//          window.dump("Checking z=" + z  + "\n");
+      do {
+         if (z.getAttribute("name") != null && z.getAttribute("name") != "") {
+            display_message("warning","The passage overlaps with an already assessed one");
+            clear_selected();
+            return false;
+         }
+      } while (z = XRai.parent(z));
+   }
+   
+   // Highlight
    var flag = true;
    for(; x != null; x = XRai.nextElementTo(x,y)) {
       window.dump("HIGH " + XRai.getPath(x) + "\n");
@@ -707,10 +727,11 @@ function goUp() {
       if (!currentPassage) 
          for(var x = p.parentNode; x; x = XRai.parent(x))
             if (x.cAssessment) x.cAssessment.removeAttribute("hidden");
-
+     updatePassageInfo();
+  } else {
+    if (up_url) window.location = up_url;
   }
 
-  updatePassageInfo();
 }
 
 function goDown() {
@@ -785,12 +806,13 @@ function updateContainers(element) {
       // Change only if length is 2
       if (x.passages.length == 2 && !toremove) {
          if (!x.cAssessment) {
-            var z = document.createElementNS(xrains,"a");
+            var z = document.createElementNS(xrains,xraiatag);
             z.setAttribute("a","U");
             x.insertBefore(z,x.firstChild);
             x.cAssessment = z;
             current = z;
             changed += 1;
+            cardUnknownAssessment++;
          } else current = x.cAssessment;
          toremove = x.passages[0];
       } else if (x.passages.length > 2) break;
@@ -801,14 +823,14 @@ function updateContainers(element) {
 // To be called BEFORE the passage is removed
 function removedPassage(p) {
    // Check for changed
-
    if (p.hasAttribute("old")) {
-      changed += 1;
+      if (p.getAttribute("old") == xraia2int(p)) changed += 1;
       passagesToRemove.push(p);
       p.oldParent = p.parentNode;
    } else {
       changed -= 1;
    }
+   updateSaveIcon();
 }
 
 /** Assess the current selection */
@@ -829,135 +851,226 @@ function assess(e,a,the_event) {
       else x.className = null;
 
       if (currentAssessed) {
+         var oldA = xraia2int(currentAssessed);
          if (nobelow) currentAssessed.setAttribute("nobelow","");
          else currentAssessed.removeAttribute("nobelow");
          checkAssess(currentAssessed);
+
+         var newA = xraia2int(currentAssessed);
+         var savedA = currentAssessed.getAttribute("old");
+
+         if (currentAssessed.hasAttribute("old")) {
+            window.dump("Below update: " + oldA + " - " + newA + " / " + savedA + "\n");
+            if (oldA == savedA && newA != savedA) changed += 1;
+            else if (oldA != savedA && newA == savedA) changed -= 1;
+        }
       }
-      return true;
    }
 
    // The user assessed the element
-   var ts = get_time_string();
-
-  window.dump("Assessing with " + a + "\n");
-  
-  // Otherwise
-  var selected = document.getElementsByName("sel");
-  if (selected.length > 0 && currentAssessed != null) {
-   alert("There is a selected passage and a current element to assess. This is a bug!");
-   return;
-  }
-  if (selected.length == 0 && currentAssessed == null) {
-   alert("There is no selected passage and no current element to assess. This is a bug!");
-   return;
-  }
-  
-  if (selected.length > 0) {
-     if (a == "0") {
-       clear_selected();
-     } else {
-        // The passage was assessed
-
-        // Create an xrai tag and add it to the currentPassage children
-        currentAssessed = document.createElementNS(xrains,"a");
-        if (currentPassage) {
-         currentAssessed.nextPassage = currentPassage.firstSubpassage;
-         currentAssessed.parentPassage = currentPassage;
-         currentPassage.firstSubpassage = currentAssessed;
-        }
-        currentAssessed.setAttribute("a",a);
-
-        // Insert <xrai:a> just before the first child of the first selected element
-        currentAssessed.lastElement = selected[selected.length-1];
-        selected[0].insertBefore(currentAssessed,selected[0].firstChild);
-        if (nobelow) currentAssessed.setAttribute("nobelow"); else currentAssessed.removeAttribute("nobelow");
-        setPassage(currentAssessed,true);
-        // Update the container if first level
-        if (!currentPassage) updateContainers(currentAssessed);
-        changed += 1; // One change
-     }
-  } else {
-
-    // The passage is only re-assessed
-    if (a != "0") {
-      if (currentAssessed.getAttribute("a") != a) {
-         currentAssessed.setAttribute("a",a);
-         if (currentAssessed.hasAttribute("old")) {
-//             alert(currentAssessed.getAttribute("old") + " and " + xraia2int(currentAssessed));
-            if (currentAssessed.getAttribute("old") == xraia2int(currentAssessed)) changed -= 1;
-            else changed += 1;
-         }
-      }
-    } else {
-     // Null assessment => remove the passage
-     // Clear selection
-
-     // Remove the assessment from the list of passages of currentPassage
-     if (currentPassage)
-      if (currentPassage.firstSubpassage == currentAssessed) currentPassage.firstSubpassage = currentAssessed.nextPassage;
-      else {
-       for(var p = currentPassage.firstSubpassage; p != null; p = p.nextPassage)
-         if (p.nextPassage == currentAssessed) {
-            p.nextPassage = currentAssessed.nextPassage;
-            break;
-         }
-      }
-
-     // Update the containers: remove the element from "passages" array of ancestors
-     var toremove = currentAssessed;
-     var toadd = null;
-     for(var x = currentAssessed.parentNode; x != null; x = XRai.parent(x)) {
-       if (x.passages && removeFromArray(x.passages, toremove)) {
-         if (toadd) x.passages.push(toadd);
-         if (x.passages.length == 1 && !toadd) {
-            removedPassage(x.cAssessment);
-            x.removeChild(x.cAssessment);
-            toremove = x.cAssessment;
-            x.cAssessment = null;
-            toadd = x.passages[0];
-         }
-       }
-     }
-     
-     // Clear the passage and remove the assessment
-     setPassage(currentAssessed,false);
-     
-     removedPassage(currentAssessed);
-     currentAssessed.parentNode.removeChild(currentAssessed);
+   else {
+      var ts = get_time_string();
+   
+   window.dump("Assessing with " + a + "\n");
+   
+   // Otherwise
+   var selected = document.getElementsByName("sel");
+   if (selected.length > 0 && currentAssessed != null) {
+      alert("There is a selected passage and a current element to assess. This is a bug!");
+      return;
    }
-  }
+   if (selected.length == 0 && currentAssessed == null) {
+      alert("There is no selected passage and no current element to assess. This is a bug!");
+      return;
+   }
+   
+   if (selected.length > 0) {
+      if (a == "0") {
+         clear_selected();
+      } else {
+         // The passage was assessed
+   
+         // Create an xrai tag and add it to the currentPassage children
+         currentAssessed = document.createElementNS(xrains,xraiatag);
+         if (currentPassage) {
+            currentAssessed.nextPassage = currentPassage.firstSubpassage;
+            currentAssessed.parentPassage = currentPassage;
+            currentPassage.firstSubpassage = currentAssessed;
+         }
+         currentAssessed.setAttribute("a",a);
+   
+         // Insert <xrai:a> just before the first child of the first selected element
+         currentAssessed.lastElement = selected[selected.length-1];
+         selected[0].insertBefore(currentAssessed,selected[0].firstChild);
+         if (nobelow) currentAssessed.setAttribute("nobelow"); else currentAssessed.removeAttribute("nobelow");
+         setPassage(currentAssessed,true);
+         // Update the container if first level
+         if (!currentPassage) updateContainers(currentAssessed);
+         if (a == "U") cardUnknowAssessment++;
+         changed += 1; // One change
+      }
+   } else {
+   
+      // The passage is only re-assessed
+      if (a != "0") {
+         setAssessment(currentAssessed, a);
+         checkAssess(currentAssessed);
+      } else {
+         // Null assessment => remove the passage
+         // Clear selection
+      
+         // Remove the assessment from the list of passages of currentPassage
+         if (currentPassage)
+            if (currentPassage.firstSubpassage == currentAssessed) currentPassage.firstSubpassage = currentAssessed.nextPassage;
+            else {
+            for(var p = currentPassage.firstSubpassage; p != null; p = p.nextPassage)
+               if (p.nextPassage == currentAssessed) {
+                  p.nextPassage = currentAssessed.nextPassage;
+                  break;
+               }
+            }
+      
+         // Update the containers: remove the element from "passages" array of ancestors
+         var toremove = currentAssessed;
+         var toadd = null;
+         for(var x = currentAssessed.parentNode; x != null; x = XRai.parent(x)) {
+            if (x.passages && removeFromArray(x.passages, toremove)) {
+               if (toadd) x.passages.push(toadd);
+               if (x.passages.length == 1 && !toadd) {
+                  removedPassage(x.cAssessment);
+                  x.removeChild(x.cAssessment);
+                  toremove = x.cAssessment;
+                  x.cAssessment = null;
+                  toadd = x.passages[0];
+               }
+            }
+         }
+         
+         // Clear the passage and remove the assessment
+         setPassage(currentAssessed,false);
+         
+         removedPassage(currentAssessed);
+         currentAssessed.parentNode.removeChild(currentAssessed);
+      } // End of remove passage
+   }
 
-  if (a != "0") checkAssess(currentAssessed);
-  
-  if (currentPassage) {
+   // Check for parent passage
+   if (currentPassage) {
       var f = checkAssess(currentPassage);
       document.getElementById("imgMissing").style.display =  f ? "none" : null;
+   }
+
+   currentAssessed = null;
   }
-  
-  currentAssessed = null;
+
   updateSaveIcon();
   updateTodo();
+  updateAssessedDocument();
+}
+
+function setText(x,t) {
+   if (typeof x == "string") x = document.getElementById(x);
+   x.replaceChild(document.createTextNode(t), x.firstChild);
+}
+
+
+
+// Set the image
+// v = -1 => disabled
+// v = 1 => nok
+// v = 2 => ok
+function setFinished(v) {
+   v = parseInt(v);
+   var t = document.getElementById("finishImg");
+   docStatus = v;
+   switch(v) {
+      case -1:
+         t.setAttribute("src",base_url + "/img/disabled_nok.png");
+         break;
+      case 1:
+         t.setAttribute("src",base_url + "/img/nok.png");
+         break;
+      case 2:
+         t.setAttribute("src",base_url + "/img/ok.png");
+         break;
+      default: alert("Bug. setFinished called with invalid argument: " + v);
+   }
+}
+
+// Called when the user clicked on "finish"
+function onFinishClick() {
+   var t = document.getElementById("finishImg");
+   if (!docStatus) return;
+   setFinished(3 - docStatus);
+   updateSaveIcon();
+}
+
+function updateAssessedDocument() {
+   setText("MissingA",cardMissingAssessment);
+   setText("UnknownA",cardUnknownAssessment);
+   var t = document.getElementById("finishImg");
+   if (!t.status) t.status = docStatus;
+   if (cardUnknownAssessment + cardMissingAssessment != 0) {
+      setFinished(-1);
+   } else {
+      if (docStatus != 2) setFinished(1); else setFinished(2);
+   }
+}
+
+function setMissing(x,b) {
+   var old = x.hasAttribute("missing");
+   if (b == old) return;
+   if (b) {
+      x.setAttribute("missing",1);
+      cardMissingAssessment += 1;
+      // Propagate up
+      for(x = x.parentPassage; x; x = x.parentPassage) {
+         if (!x.deepmissing) { x.deepmissing = 1; x.setAttribute("deepmissing",1); }
+         x.deepmissing++;
+      }
+   } else {
+      x.removeAttribute("missing");
+      cardMissingAssessment -= 1;
+      for(x = x.parentPassage; x; x = x.parentPassage) {
+         if (--x.deepmissing == 0) x.removeAttribute("deepmissing");
+      }
+   }
+   if (cardMissingAssessment < 0) alert("Bug: # of missing assessments is < 0. You should reload the view (after saving if necessary).");
+}
+
+function setAssessment(x,a) {
+   var oldA = x.getAttribute("a");
+   if (oldA != a) {
+      var oldintA = xraia2int(x);
+      x.setAttribute("a",a);
+      var savedA = x.getAttribute("old");
+      var newA = xraia2int(x);
+      window.dump("olda=" + oldintA + ", newA=" + newA + ", savedA=" + savedA + "\n");
+      if (x.hasAttribute("old")) {
+         if (oldintA == savedA && newA != savedA) changed += 1;
+         else if (oldintA != savedA && newA == savedA) changed -= 1;
+      }
+
+      if (a == "U") cardUnknownAssessment++;
+      else if (oldA == "U") cardUnknownAssessment--;
+      if (cardUnknownAssessment < 0) alert("Bug: # of unknown assessments is < 0. You should reload the view (after saving if necessary).");
+   }
 }
 
 // Check the current assessment of an element x
 // Put the current attribute ("missing") if assessments are not complete (or if below is not complete)
 function checkAssess(x) {
    if (x.getAttribute("a") == "U" || x.hasAttribute("nobelow") || x.lastElement == x.parentNode) {
-      x.removeAttribute("missing");
+      setMissing(x,false);
       return true;
    }
    var sum = getMinExhBelow(x,true);
    var f = sum >= parseInt(x.getAttribute("a"));
-   if (!f) window.dump(XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
+   
+//    if (!f) window.dump(XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
 
-   var hasChanged = x.hasAttribute("missing") != f;
-   if (f) {
-      x.removeAttribute("missing");
-      if (hasChanged) removeFromArray(todo,x);
-   } else {
-      x.setAttribute("missing",1);
-      if (hasChanged) todo.push(x);
-   }
+   if (f) setMissing(x,false);
+   else setMissing(x,true);
    return f;
 }
 
@@ -965,34 +1078,10 @@ function checkAssess(x) {
 
 
 
-// -*- Save assessments
-
-var statistics = {};
-var stats_assessments = [ 'I', 'U', '00','11','12','13','21','22','23', '31', '32', '33'];
 
 function article_beforeunload(event) {
   if (changed> 0)
     return "X-Rai warning: " + (changed > 1 ? changed + " assessment are" : "1 assessment is") + " not saved.";
-}
-
-
-function reset_statistics() {
-  for(var i = 0; i < stats_assessments.length; i++)
-      statistics[stats_assessments[i]] = 0;
-}
-
-function update_stat_view() {
-  for(var i = 0; i < stats_assessments.length; i++) {
-        var x = document.getElementById("S_" + stats_assessments[i])
-        if (x) x.firstChild.nodeValue = statistics[stats_assessments[i]];
-        else alert("No S_" +stats_assessments[i]);
-      }
-}
-
-function set_stat(a,i) {
-  document.getElementById("S_" + a).firstChild.nodeValue = i;
-  statistics[a] = i;
-//       <?=$document?>.getElementById("S_<?=$a?>").firstChild.nodeValue = "<?=intval($stats[$a])?>";
 }
 
 
@@ -1053,6 +1142,10 @@ function createHiddenInput(name,value) {
 
 var saveForm = null;
 
+function hasChanged() {
+   return changed > 0 || docStatus != oldDocStatus;
+}
+
 function setSavingMessage(txt) {
   var saving_message = document.getElementById("saving_message");
   saving_message.replaceChild(document.createTextNode(txt), saving_message.firstChild);
@@ -1067,6 +1160,7 @@ function saved() {
 
    passagesToRemove = new Array();
    changed=0;
+   oldDocStatus = docStatus;
    for(var i = 0; i < toSave.length; i++) toSave[i][0].setAttribute("old",toSave[i][1]);
    updateSaveIcon();
    document.getElementById('saving_div').style.visibility = 'hidden'
@@ -1075,7 +1169,7 @@ function saved() {
 
 function updateSaveIcon() {
   var save = document.getElementById("save");
-  if (changed > 0) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed + " assessment(s) to save");  }
+  if (hasChanged()) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title",changed + " assessment(s) to save");  }
   else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","No assessment to save"); }
 }
 
@@ -1092,7 +1186,7 @@ function xraia2int(res) {
    
 */
 function save_assessments() {
-  if (!changed) {
+  if (!hasChanged()) {
    display_message("notice","Nothing to save");
    return;
   }
@@ -1115,18 +1209,19 @@ function save_assessments() {
   // Static information
   saveForm = document.createElement("form");
   saveForm.style.display = "none";
-  saveForm.setAttribute("target",debug ? "_blank" : "xrai-assessing");
+  saveForm.setAttribute("target","xrai-assessing");
   saveForm.setAttribute("action",base_url + "/assess.php");
   saveForm.setAttribute("method","post");
   saveForm.appendChild(createHiddenInput("id_pool",id_pool));
   saveForm.appendChild(createHiddenInput("collection",xrai_collection));
   saveForm.appendChild(createHiddenInput("file",xrai_file));
   saveForm.appendChild(createHiddenInput("aversion",aversion));
+  saveForm.appendChild(createHiddenInput("docstatus",docStatus));
 
 
   // Add assessments
   toSave = new Array();
-  var result = xpe.evaluate(".//xrai:a", document.getElementById("inex"), nsResolver, 0, null);
+  var result = xpe.evaluate(".//xrai:" + xraiatag, document.getElementById("inex"), nsResolver, 0, null);
   var res;
   while (res = result.iterateNext()) {
      a = xraia2int(res);
@@ -1180,7 +1275,7 @@ function XRaiLoad() {
       if (!eStart || (end != "" && !eEnd)) {
          this.loadErrors++;
       } else {
-         var a = document.createElementNS(xrains,"a");
+         var a = document.createElementNS(xrains,xraiatag);
          a.setAttribute("old",exh);
          if (exh < 0) a.setAttribute("nobelow","");
          if (exh < -1) exh = -exh-1;
@@ -1188,6 +1283,7 @@ function XRaiLoad() {
          a.setAttribute("a",exh);
          eStart.insertBefore(a, eStart.firstChild);
          a.lastElement = eEnd;
+         if (exh == "U") cardUnknownAssessment++;
          this.list.push(a);
       }
    };
@@ -1253,6 +1349,7 @@ function XRaiLoad() {
       for(var i = 0; i < this.list.length; i++) {
          checkAssess(this.list[i]);
       }
+     updateAssessedDocument();
    };
 }
 

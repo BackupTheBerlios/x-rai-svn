@@ -36,10 +36,7 @@ else {
 // Output totals
 print "<h1>Statistics</h1>";
 
-function getPercentage($x,$y) {
-   return $y > 0 ? intval(10000*($x / $y))/100 : 0;
-}
-
+      
 $p1=getPercentage($t["1"] + $t["-1"],$t["1"]+$t["2"]+$t["-1"]+$t["-2"]);
 $p2=getPercentage($t[1],$t[1]+$t[2]);
 ?>
@@ -53,6 +50,7 @@ $p2=getPercentage($t[1],$t[1]+$t[2]);
 if ($todojs) $todojs .= ");\n";
 
 
+
 // Print the volumes
 
 print "<h1>Collections</h1>";
@@ -61,8 +59,7 @@ if (DB::isError($ch)) non_fatal_error("Could not retrieve collections",$ch->getU
 else {
    while ($row = $ch->fetchRow(DB_FETCHMODE_ASSOC)) {
       print "<div>";
-      $td = &$a[$row["collection"]];
-      if ($td["1"] > 0) print "* ";
+      printStatus($a[$row["collection"]]);
       print " <a id='$row[collection]' href=\"collections/$row[collection]?id_pool=$id_pool\">" . htmlspecialchars($row["title"]) . "</a>";
       print "</div>";
    }

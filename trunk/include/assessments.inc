@@ -208,7 +208,10 @@ class Assessments {
       return $xrai_db->query("DELETE FROM $db_assessments WHERE idpool=? AND idfile=? AND startpath=? AND endpath=?", array($this->idPool, $this->idFile, $startid, $endid));
    }
 
-
+   function getDone() {
+      return $this->status;
+   }
+         
    function setDone($flag) {
       global $xrai_db, $db_toassess;
       $new_status = 0;
@@ -220,8 +223,11 @@ class Assessments {
          if ($this->status == -2 || $this->status == 0) $new_status = -1;
       }
       if ($new_status != $status) {
-         return $xrai_db->query("UPDATE $db_toassess SET status=? WHERE idpool=? AND idfile=?",array($this->idPool, $this->idFile));
+         $res = $xrai_db->query("DELETE FROM $db_toassess WHERE idpool=? AND idfile=?",array($this->idPool, $this->idFile));
+         if (DB::isError($res)) return $res;
+         return $xrai_db->query("UPDATE $db_toassess SET status=? WHERE idpool=? AND idfile=?",array($this->status,$this->idPool, $this->idFile));
       }
+      return true;
    }
 
    function setNextVersion() {

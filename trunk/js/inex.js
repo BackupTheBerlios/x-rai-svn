@@ -306,6 +306,14 @@ function toggle_right_panel(element, image) {
   if (image) image.className = "selected"; 
 }
 
+function toggle_panel(id, imageId) {
+  var x = document.getElementById(id);
+  var b = x.style.visibility == "visible";
+  x.style.visibility = b ? "hidden" : "visible";
+  var image = document.getElementById(imageId);
+  if (image) image.className = b ? null : "selected";
+}
+
 function collection_keypress(event) {
     if (!event.shiftKey && event.ctrlKey) {
 //     alert(event.keyCode + "!!!");

@@ -88,10 +88,13 @@ function getFileId($path) {
 }
 
 $status = 0; // 1 when in "subcollection" or "document"
+$pre = 0; // pre-order index
+
 function startElement($parser, $name, $attrs) {
-   global $currentdir, $files, $paths, $rankcounts, $status;
+   global $currentdir, $files, $paths, $rankcounts, $status, $pre;
    switch($name) {
       case "subcollection":
+         $pre++;
          $olddir = $currentdir;
          $path = "$currentdir/$attrs[path]";
           if (!is_file($path)) {
@@ -101,18 +104,19 @@ function startElement($parser, $name, $attrs) {
           $currentdir = dirname($path);
           print "Parsing $path\n";
           $name = get_name("$olddir/$attrs[path]");
-          array_push($files, array("id" => getFileId($name), "title" => "", "path" => $name, "type" => "xrai"));
+          array_push($files, array("id" => getFileId($name), "title" => "", "path" => $name, "type" => "xrai", "pre" => $pre));
           parse($path);
           $currentdir = $olddir;
           $status = 1;
          break;
       case "document":
+          $pre++;
           $path = "$currentdir/$attrs[path].xml";
           print "Parsing $path\n";
           array_push($rankcounts,array());
           array_push($paths,"");
           $name = get_name("$path");
-          array_push($files, array("id" => getFileId($name), "title" => "", "path" => $name, "type" => "xml"));
+          array_push($files, array("id" => getFileId($name), "title" => "", "path" => $name, "type" => "xml", "pre" => $pre));
           parseXML($path);
           array_pop($rankcounts);
           array_pop($paths);
@@ -125,11 +129,11 @@ function startElement($parser, $name, $attrs) {
 }
 
 function endElement($parser, $name) {
-   global $files, $xrai_db, $db_files, $collection;
+   global $files, $pre, $xrai_db, $db_files, $collection;
    if ($name == "subcollection" || $name == "document") {
       $file = array_pop($files);
       $parent = $files[sizeof($files)-1]["id"];
-      $res = $xrai_db->autoExecute($db_files, array("title" => $file["title"], "type" => $file["type"], "parent" => $parent),DB_AUTOQUERY_UPDATE,"id=$file[id]");
+      $res = $xrai_db->autoExecute($db_files, array("title" => $file["title"], "type" => $file["type"], "parent" => $parent, "pre" => $file["pre"], "post" => $pre),DB_AUTOQUERY_UPDATE,"id=$file[id]");
       if (DB::isError($res)) die($res->getUserInfo() . "\n");
 //       print_r($file);
    }

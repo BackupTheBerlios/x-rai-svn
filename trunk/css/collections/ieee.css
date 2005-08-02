@@ -1,0 +1,41 @@
+@namespace url(xrai:collections:ieee);
+article, atl, ip1, sec, sec1, bdy, p, st, fno, tig, hdr1, abs, fig, h, bibl, vt, bb { display: block; }
+
+sec, sec1 { padding-left: 1em; }
+p, bb { padding: 1em 0 0 0; }
+
+tbl  { display: table; }
+
+tbl no:before { content: "Table "; }
+tbl no:after { content: " "; }
+tbl no { font-weight: bold; }
+tbl ti { clear: right; }
+tbl ti { display: table-caption; }
+
+tbl bdy { display: table-row-group; }
+bdy row { display: table-row; }
+bdy entry { display: table-cell; }
+
+it { font-style: italic; }
+b { font-weight: bold;}
+super { vertical-align: text-top; font-size: smaller; }
+
+fm atl { font-size: xx-large;   }
+
+lit { white-space: pre; }
+abs { margin: 5px; border: 1px solid gray; padding: 5px; }
+abs:before { content: "Abstract"; font-size: large; }
+
+fn { border: 1px solid black; colour: #444444; display: inline; }
+fn p { display: inline; }
+
+bdy, bibl { border-top: 1px solid black; }
+
+st,h { font-size: xx-large; colour: blue; padding: 5px 0 5px 0; }
+
+bb ti { font-style: italic; }
+
+l1, l2, l3, l4, l5, l6, l7, l8, l9, la, lb, lc, ld, le, list, list-numeric, numeric-rbrace, bullet-list {
+    display: block; padding-left: 2em; list-style: outside disc;
+}
+li { display: list-item; }

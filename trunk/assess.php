@@ -10,13 +10,14 @@ $aversion=&$_REQUEST["aversion"];
 $toadd=&$_REQUEST["a"];
 $toremove=&$_REQUEST["r"];
 $id_pool=&$_REQUEST["id_pool"];
+$docstatus=&$_REQUEST["docstatus"];
 
 ?>
 <html>
 <head><title>Assessment</title></head>
 <body>
 <script type="text/javascript">
-   var ref = <?=$do_debug ? "window.opener" : "window.parent"?>;
+   var ref = window.parent;
    ref.setSavingMessage("Connected");
 </script>
 
@@ -25,6 +26,7 @@ $id_pool=&$_REQUEST["id_pool"];
 <div><b>Collection:</b> <?="$collection"?></div>
 <div><b>File:</b> <?="$file"?></div>
 <div><b>Base version:</b> <?="$aversion"?></div>
+<div><b>Doc status:</b> <?="$docstatus"?></div>
 <div><b>Stats:</b> <?=sizeof($toadd)?> element(s) to add/modify, <?=sizeof($toremove)?> to remove.</div>
 </div>
 <?
@@ -55,6 +57,10 @@ if (DB::isError($assessments)) {
       }
       $res = $assessments->setNextVersion();
       if (DB::isError($res)) break;
+      if ($docstatus != 0) {
+         $res = $assessments->setDone($docstatus == 2);
+         if (DB::isError($res)) break;
+      }
       $res = $xrai_db->commit();
    }
    
@@ -70,6 +76,7 @@ if (DB::isError($assessments)) {
 <script type="text/javascript">
    ref.setSavingMessage("Done");
    ref.saved();
+   ref.display_message("notice","<?=sizeof($toadd)?> assessent(s) added/modified, <?=sizeof($toremove)?> assessment(s) removed");
 </script>
 
 </body>

@@ -23,10 +23,13 @@ if (!$path) $path ="";
 $basepath = "$base_url/article.php?id_pool=$id_pool&collection=$collection&file=$path";
 $xsl_params = array("basepath" => $basepath);
 
+// SELECT root.id, anc.collection, anc.filename, ta.status,count(*) FROM toassess ta, files anc, files f, files root WHERE anc.pre>=f.pre AND anc.post <= f.post AND ta.idfile=f.id AND root.id=f.parent GROUP BY root.id, anc.id, anc.filename, anc.collection, ta.status
+
 $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE collection=? AND filename=?", array($collection,$path));
 // print_r($row);
 $title = $row["title"];
 $basepath = $row["filename"];
+$rootid = $row["id"];
 $xslname = "xrai";
 
 if ($id_pool) 
@@ -47,10 +50,21 @@ $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-   // TODO: print stats
+   $res = &$xrai_db->query("SELECT * FROM $db_view_toassess WHERE rootid=?",array($rootid));
+   if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
+   else {
+      while ($row = $res->fetchRow()) {
+         $assessments[$row["filename"]][$row["status"]] = $row["count"];
+         $all_assessments[$row["status"]] = $row["count"];
+         $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+      }
+      $res->free();
+   }
 }
-
-
+if ($todojs) {
+   $todojs .= ");\n";
+   ?><script type="text/javascript">todo = <?=$todojs?></script><?
+}
 
 
 // Process XML file with stylesheet (if not in cache)
@@ -58,21 +72,16 @@ if ($id_pool) {
 
 
 function get_full_path($base,$path) {
-  return $base . "/" . $path;
+  if ($base) return $base . "/" . $path;
+  return $path;
 }
 
 function print_assessments($id) {
 global $assessments, $id_pool;
   if ($id_pool >0) {
-		$a = $assessments[$id];
-  		if (is_array($a)) {
-			print "<span style='border: 1px dashed #bbbbbb; margin-right: 3pt;'>";
-			foreach($a as $k => $v) {
-			 print  get_evaluation_img($k,false,false,true,$k == 'I') . " $v ";
-
-      		}
-			print "</span>";
-		}
+// 		print_r($assessments[$id]);
+      printStatus($assessments[$id]);
+      print " ";
 
 	}
 }
@@ -153,6 +162,17 @@ print "</div>\n";
 
 if ($write_access) {
 ?>
+<div id="s_div" class="status">
+  <div>
+  <span>
+      <span><img src="<?=$base_url?>/img/left.png" title="Go to the container (control + left arrow)" alt="^" onclick="todo_previous()"/><div class="help_bottom">Go to the previous collection or document to assess.<br/><b>Shortcut</b>: <code>u</code> key</div></span>
+      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/right.png" title="Go to the container (control + right arrow)" alt="->" onclick="todo_next()"/><div class="help_bottom">Go to the NEXTlection or document to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code></div></span>
+ </span>
+</div>
+</div>
+
+
 <script language="javascript"  src="<?=$base_url?>/js/collection.js"/>
 <script language="javascript">
   up_url = "<?=$up_url?>";

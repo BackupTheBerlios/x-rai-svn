@@ -12,6 +12,8 @@ error_reporting (E_ALL ^ E_NOTICE);
 // Initializations
 // ---------------
 
+$xrains = "xrai:base";
+
 if (!headers_sent()) header("Pragma: no-cache");
 // include_once("assessments.php");
 
@@ -63,44 +65,17 @@ function hasCache($src1,$src2,$dest) {
 
 
 
-
-
-
-
-/* SQL related functions
-   ------------------------ */
-
-function sql_query($query,$abort=true) {
-  $qh = @mysql_query($query);
-  if (!$qh) {
-	 print "<div style='color:red'>Error in '" . htmlentities($query . "' : " . mysql_error()) . "</div>";
-	 if ($abort) { print "<p>Aborting</p>$abort"; make_footer(); exit(); }
-  }
-  return $qh;
+function getPercentage($x,$y) {
+   return $y > 0 ? intval(10000*($x / $y))/100 : 0;
 }
-function do_query($query,$abort=true) { return sql_query($query, $abort); }
-function sql_num_rows($qh) { return mysql_num_rows($qh); }
-function sql_get_row($query,$abort=true) {
-	$qh = do_query($query,$abort);
-	if (mysql_num_rows($qh) != 1) {
-		$message = "Error in '" . htmlentities($query)
-                . "' : " . mysql_num_rows($qh) . " row(s) retrieved (1 required)";
-		if ($abort) fatal_error($message . " - aborting");
-// 		print "<div style='color:red'>$message</div>";
-		return false;
-	}
-	$row = mysql_fetch_array($qh);
-	mysql_free_result($qh);
-	return $row;
+function printStatus($t) {
+   global $base_url;
+   $p1 = getPercentage($t[1],$t[1]+$t[2]);
+   $p2 = getPercentage($t[-1],$t[-1]+$t[-2]);
+   $status = ($t["1"] > 0 ? "0" : "1") . ($t["-1"] > 0 ? "0" : "1");
+   print "<img alt=\"[$status]\" title=\"$p1% of pool and $p2% of non-pool documents to assess\" src=\"$base_url/img/status-$status.png\"/>";
 }
 
-function sql_fetch_array($qh) {
-	return mysql_fetch_array($qh);
-}
-
-function sql_free($qh) {
-	mysql_free_result($qh);
-}
 
 /*
 
@@ -112,7 +87,7 @@ function sql_free($qh) {
 function make_header($title = "") {
 	  global $menu, $is_root;
   global $no_topic, $id_topic, $url_add, $id_pool, $pool, $login;
-  global $base_url;
+  global $base_url, $xrains;
 	global $header_done, $inex_user, $message;
 	if ($header_done) return;
 	$header_done = 1;
@@ -123,7 +98,7 @@ header("Content-encoding: UTF-8");
 print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$base_url?>" xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$xrains?>" xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="en">
 	<head>
 		<title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
