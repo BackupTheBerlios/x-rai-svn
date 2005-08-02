@@ -246,10 +246,6 @@ function check_valid_pool() {
 require_once("./include/settings.inc");
 $is_root = $root_users[$inex_user];
 
-$db = mysql_connect($sql_host, $login, $password);
-if(!$db) exit("No database connections could be made !");
-if (!mysql_select_db($base, $db)) exit("Could not make a sql connection " . mysql_error());
-
 // Connection to database
 $xrai_db = &DB::connect($xrai_dsn);
 $xrai_db->setFetchMode(DB_FETCHMODE_ASSOC);
