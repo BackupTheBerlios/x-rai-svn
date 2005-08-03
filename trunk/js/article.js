@@ -7,6 +7,7 @@
 // ================== Misc
 // ==================
 
+var max_exhaustivity = 2;
 var xpe = new XPathEvaluator();
 var nsResolver = xpe.createNSResolver(document.documentElement);
 
@@ -541,23 +542,25 @@ function show_eval_panel(px,py) {
 
    // Check for valid assessments
    // ie a >= max(children) && <= any ancestor
-   var max=3; var min = 0;
+   var max=max_exhaustivity; var min = 0;
    if (currentAssessed) {
       if (currentAssessed.lastElement) {
          if (currentAssessed) min = getMaxExh(currentAssessed, true);
          if (currentPassage)
             for(var p = currentPassage; p != null; p = p.parentPassage) {
-               if (p.getAttribute("a") < max) max = p.getAttribute("a");
+               var a = p.getAttribute("a");
+               window.dump("Passage " + XRai.getPath(p.parentNode) + " has a=" + a  + "\n");
+               if (a != "U" && parseInt(a) < max) max = parseInt(a);
             }
       } else {
-         // The assessed element is an ancestor
+         // The assessed element is a container
          min = getMaxExh(currentAssessed,true);
       }
    }
    window.dump("Assessement must be in [" + min + "," + max + "]\n");
 
    // Disable invalid assessements
-   for(var i = 0; i <= 3; i++) {
+   for(var i = 0; i <= 2; i++) {
       var x = document.getElementById("assess_" + i);
       x.className = (i >= min && i <= max ? null : "disabled");
    }
@@ -600,7 +603,7 @@ function highlight(range) {
    }
 
    // Check if a start/end ancestor is highlighted
-   for(var k=0; k < 2; k++) {
+   for(var k=0; k < max_exhaustivity; k++) {
       z = k == 0 ? x : y;
 //          window.dump("Checking z=" + z  + "\n");
       do {
@@ -807,12 +810,16 @@ function updateContainers(element) {
       if (x.passages.length == 2 && !toremove) {
          if (!x.cAssessment) {
             var z = document.createElementNS(xrains,xraiatag);
-            z.setAttribute("a","U");
             x.insertBefore(z,x.firstChild);
+            var min = getMaxExh(z);
+            if (min == max_exhaustivity) z.setAttribute("a",max_exhaustivity);
+            else {
+               z.setAttribute("a","U");
+               changed += 1;
+               cardUnknownAssessment++;
+            }
             x.cAssessment = z;
             current = z;
-            changed += 1;
-            cardUnknownAssessment++;
          } else current = x.cAssessment;
          toremove = x.passages[0];
       } else if (x.passages.length > 2) break;
@@ -908,6 +915,7 @@ function assess(e,a,the_event) {
          if (!currentPassage) updateContainers(currentAssessed);
          if (a == "U") cardUnknowAssessment++;
          changed += 1; // One change
+         checkAssess(currentAssessed);
       }
    } else {
    
@@ -1026,13 +1034,16 @@ function setMissing(x,b) {
       // Propagate up
       for(x = x.parentPassage; x; x = x.parentPassage) {
          if (!x.deepmissing) { x.deepmissing = 1; x.setAttribute("deepmissing",1); }
-         x.deepmissing++;
+         else x.deepmissing++;
       }
    } else {
       x.removeAttribute("missing");
       cardMissingAssessment -= 1;
       for(x = x.parentPassage; x; x = x.parentPassage) {
-         if (--x.deepmissing == 0) x.removeAttribute("deepmissing");
+         if (debug) window.dump("deepmissing is " + x.deepmissing + " for " + XRai.getPath(x.parentNode) + "\n");
+         if (--x.deepmissing == 0) {
+            x.removeAttribute("deepmissing");
+         }
       }
    }
    if (cardMissingAssessment < 0) alert("Bug: # of missing assessments is < 0. You should reload the view (after saving if necessary).");
@@ -1067,7 +1078,7 @@ function checkAssess(x) {
    var sum = getMinExhBelow(x,true);
    var f = sum >= parseInt(x.getAttribute("a"));
    
-//    if (!f) window.dump(XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
+   window.dump("Check assess => " + XRai.getPath(x.parentNode) + " has a=" + x.getAttribute("a") + " > sum = " + sum + "\n");
 
    if (f) setMissing(x,false);
    else setMissing(x,true);
@@ -1143,7 +1154,7 @@ function createHiddenInput(name,value) {
 var saveForm = null;
 
 function hasChanged() {
-   return changed > 0 || docStatus != oldDocStatus;
+   return (changed > 0) || docStatus != oldDocStatus;
 }
 
 function setSavingMessage(txt) {
@@ -1152,17 +1163,18 @@ function setSavingMessage(txt) {
 }
 
 
-function saved() {
+function saved(b) {
    if (saveForm) {
       saveForm.parentNode.removeChild(saveForm);
       saveForm = null;
    }
-
-   passagesToRemove = new Array();
-   changed=0;
-   oldDocStatus = docStatus;
-   for(var i = 0; i < toSave.length; i++) toSave[i][0].setAttribute("old",toSave[i][1]);
-   updateSaveIcon();
+   if (b) {
+      passagesToRemove = new Array();
+      changed=0;
+      oldDocStatus = docStatus;
+      for(var i = 0; i < toSave.length; i++) toSave[i][0].setAttribute("old",toSave[i][1]);
+      updateSaveIcon();
+   }
    document.getElementById('saving_div').style.visibility = 'hidden'
 
 }
@@ -1356,19 +1368,6 @@ function XRaiLoad() {
 
 
 
-// *** Quick assessment navigation
-
-
-var current_goto = "";
-var current_nodes = {};
-
-function show_goto_panel(x,event) {
-   current_goto = x;
-   show_div_xy(event.pageX,event.pageY,"s_nav");
-}
-
-
-       
 // ===================================================
        
 // Print XML positions

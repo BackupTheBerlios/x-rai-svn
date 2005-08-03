@@ -65,17 +65,17 @@ if (DB::isError($assessments)) {
    }
    
    if (DB::isError($res)) {
-      ?><script type="text/javascript">alert("Assessments could not be saved (database error).");</script><?
+      ?><script type="text/javascript">saveOK = false; alert("Assessments could not be saved (database error).");</script><?
       if ($do_debug) print "<div>" . $res->getUserInfo() ."</div>";
    } else {
-      ?><script type="text/javascript">ref.aversion = <?=$assessments->getVersion()?></script><?
+      ?><script type="text/javascript">saveOK = true; ref.aversion = <?=$assessments->getVersion()?></script><?
    }
 }
 
 ?>
 <script type="text/javascript">
    ref.setSavingMessage("Done");
-   ref.saved();
+   ref.saved(saveOK);
    ref.display_message("notice","<?=sizeof($toadd)?> assessent(s) added/modified, <?=sizeof($toremove)?> assessment(s) removed");
 </script>
 

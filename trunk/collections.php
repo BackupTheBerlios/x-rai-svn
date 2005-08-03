@@ -56,14 +56,10 @@ if ($id_pool) {
       while ($row = $res->fetchRow()) {
          $assessments[$row["filename"]][$row["status"]] = $row["count"];
          $all_assessments[$row["status"]] = $row["count"];
-         $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         if (abs($row["status"]) == 1 && $row["count"] > 0) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
       }
       $res->free();
    }
-}
-if ($todojs) {
-   $todojs .= ");\n";
-   ?><script type="text/javascript">todo = <?=$todojs?></script><?
 }
 
 
@@ -144,7 +140,7 @@ if (!hasCache($xmlfilename,$xslfilename,$phpfilename) || filesize($phpfilename) 
   //print nl2br(htmlentities("$xmlcontent"));
   
   $tmpfile = "$phpfilename.tmp";
-//   print "\n($xmlfilename to $tmpfile)";
+//  print "\n($xmlfilename to $tmpfile)";
   if (!@xslt_process($xslt,$xmlfilename,"$xslfilename",$tmpfile,null,$xsl_params)) {
       @unlink($phpfilename);
       fatal_error("xslt error: " . xslt_error($xslt) . "</div>");

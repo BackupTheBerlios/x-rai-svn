@@ -215,7 +215,7 @@ if ($id_pool> 0) {
 
 ?></div>
 <div style="white-space: nowrap;">
-<img id="eval_breakup_link" src="<?=$base_url?>/img/down.png" href="javascript:void(0)" title="Assess subpassages" alt="down" onclick="goDown()"/>
+<img id="eval_breakup_link" src="<?=$base_url?>/img/down.png" href="javascript:void(0)" title="Assess subpassages" alt="down" onclick="if (this.class!='disabled') goDown()"/>
 <img id="nobelow" src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="assess(this,'nobelow',event)" title="Below is too small to assess"/>
 </div>
 </div>
@@ -287,10 +287,6 @@ print "</div>";
 if ($write_access) {
 ?>
 
-<div id="s_nav" onclick="this.style.visibility='hidden'">
-          <img src="img/left.png" alt="&lt;-" onclick="goto_previous_assessment()"/>
-          <img src="img/right.png" alt="-&gt;" onclick="goto_next_assessment()"/>
-</div>
 
 <div id="s_div" class="status">
   <div>

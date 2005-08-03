@@ -141,7 +141,10 @@ class Paths {
       if (!is_string($path)) $path = "";
       $id = $xrai_db->getOne("SELECT id FROM $db_paths WHERE path=?",array($path));
       if (!$id) {
-         if (!$create) return -1;
+         if (!$create) {
+            print "<div>Path $path not found</div>\n";
+            return -1;
+         }
          $id = $xrai_db->nextId("{$db_paths}_id");
          if (!DB::isError($id)) {
             $res = $xrai_db->autoExecute("$db_paths",array("path" => $path, "id" => $id));
@@ -225,7 +228,8 @@ class Assessments {
       if ($new_status != $status) {
          $res = $xrai_db->query("DELETE FROM $db_toassess WHERE idpool=? AND idfile=?",array($this->idPool, $this->idFile));
          if (DB::isError($res)) return $res;
-         return $xrai_db->query("UPDATE $db_toassess SET status=? WHERE idpool=? AND idfile=?",array($this->status,$this->idPool, $this->idFile));
+         $this->status = $new_status;
+         return $xrai_db->query("INSERT INTO $db_toassess (status,idpool,idfile) VALUES(?,?,?)",array($this->status,$this->idPool, $this->idFile));
       }
       return true;
    }

@@ -47,8 +47,7 @@ function startElementXML($parser, $name, $attrs) {
    $rank = $ranks[$name] = $ranks[$name] + 1;
    $path = $paths[$depth-1] . "/{$name}[$rank]";
    if (!$knownpaths[$path]) {
-//       print "$path\n";
-//       Paths::getPathId($path, true);
+      Paths::getPathId($path, true);
    }
    array_push($paths, $path);
    array_push($rankcounts, array());
