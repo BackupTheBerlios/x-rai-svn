@@ -159,7 +159,7 @@ var XRai = {
       return null;
    },
 
-   /** Return the previous element (document order): previous sibling or parent */
+   /** Return the previous element (document order): previous sibling or ancestor first previous sibling*/
    noDirectPrevious: function(x) {
       var y;
       if (y= XRai.previousSibling(x)) return y;
@@ -170,7 +170,7 @@ var XRai = {
       return null;
    },
 
-   /** Return the next element: first child, next sibling or the first ancestor next sibling */
+   /** Return the no direct next element:  next sibling or the first ancestor next sibling */
    noDirectNext: function(x) {
       var y;
       while (x != null) {
@@ -196,13 +196,16 @@ var XRai = {
 
    nextElementTo: function(x,y) {
       if (x == y) return null;
+      if (y == null) return XRai.noDirectNext(x);
       var z = null;
-      while (x && z == null) {
-         z = XRai.nextSibling(x);
-         if (z == null) x = XRai.parent(x);
-         if (debug) window.dump("Current x is = " + XRai.getPath(x) + " / z is " + XRai.getPath(z) + "\n");
+      if (!XRai.is_in(y,x)) {
+         while (x && z == null) {
+            z = XRai.nextSibling(x);
+            if (z == null) x = XRai.parent(x);
+            if (debug) window.dump("Current x is = " + XRai.getPath(x) + " / z is " + XRai.getPath(z) + "\n");
+         } 
+         x = z;
       }
-      x = z;
       while (x != null && XRai.is_in(y,x)) {
          if (debug) window.dump("  Loop " + XRai.getPath(y) + " is in " + XRai.getPath(x) + "\n");
          x = XRai.firstChild(x);
@@ -229,6 +232,12 @@ var XRai = {
 
    getPassagePaths: function(e) {
       return this.getPath(e.parentNode) + (e.lastElement ? " -> " + this.getPath(e.lastElement) : "");
+   },
+
+   getRoot : function() {
+      var root;
+      for(root = document.getElementById("inex").firstChild; root && root.nodeType != Node.ELEMENT_NODE; root = root.nextSibling) {}
+      return root;
    },
 
    /** Handlers */
@@ -533,6 +542,14 @@ function getMinExhBelow(x,skip) {
    return sum;
 }
 
+// Get relevant subpassages of container x
+// and put them in array t
+function getRelevantSubpassages(x, t) {
+   for(var i = 0; i < x.passages.length; i++) {
+      if (x.passages[i].lastElement) t.push(x.passages[i]);
+      else getRelevantSubpassages(x.passages[i],t);
+   }
+}
 
 /**
     Show the eval panel
@@ -555,6 +572,21 @@ function show_eval_panel(px,py) {
       } else {
          // The assessed element is a container
          min = getMaxExh(currentAssessed,true);
+         // Get all subpassages
+         var t = new Array();
+         getRelevantSubpassages(currentAssessed.parentNode,t);
+         t.sort(sortF);
+         currentAssessed.parentNode.setAttribute("root",1);
+         // Hide all intervals
+         for(var i = 0; i <= t.length; i++) {
+            var y = i == 0 ? XRai.getRoot() : t[i-1].parentNode;
+            var to = i < t.length ? t[i].parentNode : null;
+            window.dump(y + " -> " + to + "\n");
+            while ((y = XRai.nextElementTo(y,to)) && (y != to)) {
+               y.setAttribute("hidden","1");
+            }
+         }
+//          alert(XRai.getPath(currentAssessed.parentNode) + " -> " + XRai.getPath(y) + " -> "+XRai.getPath(t[0].parentNode));
       }
    }
    window.dump("Assessement must be in [" + min + "," + max + "]\n");
@@ -1262,6 +1294,19 @@ function save_assessments() {
   saveForm.submit();
 }
 
+
+// Sort function for a list of xrai:a elements
+function sortF (x,y) {
+   var a = x.parentNode.compareDocumentPosition(y.parentNode);
+   if (a &  Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+   if (a & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+   if (!x.lastElement) return -1; if (!y.lastElement) return 1;
+
+   a = x.lastElement.compareDocumentPosition(y.lastElement);
+   if (a & Node.DOCUMENT_POSITION_FOLLOWING) return 1;
+   if (a & Node.DOCUMENT_POSITION_PRECEDING) return -1;
+}
+
 /** Loads the assessment into the document */
 function XRaiLoad() {
    this.loadErrors = 0;
@@ -1307,22 +1352,12 @@ function XRaiLoad() {
       var b = y.lastElement.compareDocumentPosition(x.lastElement);
       
       return (a == 0 || (a & Node.DOCUMENT_POSITION_FOLLOWING)) && (b == 0 || (b & Node.DOCUMENT_POSITION_PRECEDING));
-   }
+   };
 
-   this.sortF = function(x,y) {
-      var a = x.parentNode.compareDocumentPosition(y.parentNode);
-      if (a &  Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-      if (a & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-      if (!x.lastElement) return -1; if (!y.lastElement) return 1;
-
-      a = x.lastElement.compareDocumentPosition(y.lastElement);
-      if (a & Node.DOCUMENT_POSITION_FOLLOWING) return 1;
-      if (a & Node.DOCUMENT_POSITION_PRECEDING) return -1;
-   },
    
    this.end = function() {
       if (this.loadErrors != 0) alert("Error while adding existing assessments to this document. You MUST NOT assess this file");
-      this.list.sort(this.sortF);
+      this.list.sort(sortF);
       if (debug) {
          window.dump("** Ordered list of passages:\n");
          for(var i = 0; i < this.list.length; i++) {
