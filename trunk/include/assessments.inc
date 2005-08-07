@@ -3,65 +3,11 @@
 // Assessments library
 
 
-// ---------------------
-// - XID <-> FILE,PATH -
-// ---------------------
-
-
-// --- id2path($file, $path) ---
-// Retrieve the xid of an element given its path
-// (volume or article relative)
-// ----------------------
-
-function path2record($file,$xpath) {
-//    print "<b>$xpath</b><br>";
-  if (empty($xpath)) $qh = mysql_query("SELECT m.* FROM map m, files f WHERE f.name = '$file'  AND m.xid = f.xid");
-   else $qh = mysql_query("SELECT m.* FROM map m, files f, paths p WHERE f.name = '$file' AND p.path = '$xpath' AND m.path = p.id AND m.xid >= f.xid AND m.xid <= f.post");
-   
-   if (!$qh) return false;
-   if (mysql_num_rows($qh) > 1) {
-      print "<div class='error'>" . mysql_num_rows($qh)
-      . " results for one path ($file#$xpath) : <br/>SELECT m$n.xid as xid $q_from $q_where</div>";
-      make_footer(1);
-   }
-   $row = sql_fetch_array($qh);
-   sql_free($qh);
-   return $row;
-}
-
-function path2id($file,$xpath) {
-    $a = path2record($file,$xpath);
-    if (is_array($a)) return $a["xid"];
-    return false;
-}
-
-// --- id2path($xid) ---
-// Retrieve the file & the xpath of any element given its xid
-// Returns an array of two elements (file, xpath)
-// ----------------------
-
-function id2path($xid) {
-   $qh = do_query("select * from files WHERE xid <= $xid AND post >= $xid ORDER BY xid DESC LIMIT 0,1");
-   $file = mysql_fetch_array($qh);
-   sql_free($qh);
-   if (!$file) return false;
-
-   $qh = do_query("SELECT p.path FROM paths p, map m WHERE m.xid = $xid and p.id = m.path");
-   $path = mysql_fetch_row($qh);
-   sql_free($qh);
-   return array($file["name"],$path);
-}
-
-
-
-
 
 function evaluation_string($ev2) {
   global $relevances, $coverages;
   return ($ev2 ? $relevances[$ev2[0]] . " - " . $coverages[$ev2[1]] . '"' : "No assessment");
 }
-
-
 
 
 /* Return the assessment link

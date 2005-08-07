@@ -411,7 +411,11 @@ function fixDate(date) {
 }
 
 
-// Help management
+
+// =========
+// ========= Help management
+// =========
+
 var help_stylesheet = null;
 for(var i = 0; i < document.styleSheets.length; i++) {
    if (document.styleSheets[i].title == "help") {
@@ -426,7 +430,7 @@ function toggle_help() {
    var now = new Date();
    fixDate(now);
    now.setTime(now.getTime() + 15 * 24 * 60 * 60 * 1000)
-         
+
    var value = getCookie("no_help");
    if (value == null) value = 1;
    value = 1 - value;
@@ -437,3 +441,34 @@ function toggle_help() {
    else x.setAttribute("class",value ? "" : "on"); 
    if (help_stylesheet) help_stylesheet.disabled = value ? true : false;
 }
+
+
+
+// =========
+// ========= Message
+// =========
+
+var Message = {
+   // Unique message id generator
+   message_id: 0,
+
+   show: function (type,msg) {
+      Message.showDuring(type,msg,1200);
+   },
+   
+   showDuring: function (type,msg, time) {
+      var div = document.createElement("div");
+      div.appendChild(document.createTextNode(msg));
+      div.setAttribute("class","message_" + type);
+      Message.message_id++;
+      div.id = "message_" + Message.message_id;
+      document.getElementById("body").appendChild(div);
+      setTimeout('Message.clear("' + div.id + '")',time);
+   },
+   
+   clear: function (id) {
+      var x = document.getElementById(id);
+      if (x) x.parentNode.removeChild(x);
+   }
+}
+

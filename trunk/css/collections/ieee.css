@@ -1,5 +1,5 @@
 @namespace url(xrai:collections:ieee);
-article, atl, ip1, sec, sec1, bdy, p, st, fno, tig, hdr1, abs, fig, h, bibl, vt, bb { display: block; }
+article, bq, atl, ip1, sec, sec1, bdy, p, st, fno, tig, hdr1, abs, fig, h, bibl, vt, bb { display: block; }
 
 sec, sec1 { padding-left: 1em; }
 p, bb { padding: 1em 0 0 0; }

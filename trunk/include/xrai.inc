@@ -26,10 +26,13 @@ $file = $_REQUEST["file"];
 
 
 
-$sorted_assessments = array("U","0","1","2");
+$sorted_assessments = array("U","TS","1","2");
 
 $relevances = array(
-	"U" => "unknown", 0 => "not relevant", 1 => "partially exhaustive", 2 => "highly exhaustive"
+	"U" => array("U","unknown"),
+   "TS" => array("TS","too small"),
+    1 => array("a1","partially exhaustive"),
+    2 => array("a2","highly exhaustive")
 );
 
 

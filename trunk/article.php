@@ -13,7 +13,7 @@ require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 set_time_limit(360);
 
-$xraiatag = "xa";
+$xraiptag = "xraip";
 
 // ------------------------
 // --- Retrieve article ---
@@ -92,6 +92,7 @@ if ($id_pool > 0) {
 
 <script language="javascript"  src="<?=$base_url?>/js/article.js"/>
 <script language="javascript">
+  var max_exhaustivity = 2;
   var baseurl = "<?=$baseurl?>";
   var force_regeneration = <?= $force_update ?>;
   var treeview_url = "<?="$base_url/iframe/article_treeview.php?file=$file"?>";
@@ -103,12 +104,13 @@ if ($id_pool > 0) {
   write_access = <?=$can_modify ? "true" : "false"?>;
   debug = <?=$do_debug ? "true": "false"?>;
   up_url = "<?=$up_url?>";
- document.onkeypress = article_keypress;
-  window.onbeforeunload = article_beforeunload;
+ document.onkeypress = XRai.keypressed;
+  window.onbeforeunload = XRai.beforeunload;
   var write_access = <?=($write_access ? "true":"false")?>;
-  var xraiatag = "<?=$xraiatag?>";
+  var xraiptag = "<?=$xraiptag?>";
 
 <? if ($id_pool > 0) { ?>
+   var writeAccess = true;
    aversion = <?=$assessments->getVersion()?>;
    var docStatus = "<?=abs($assessments->getDone())?>";
    var oldDocStatus = docStatus;
@@ -117,23 +119,25 @@ if ($id_pool > 0) {
 </script>
 <style>
 @namespace url(<?=$xrains?>);
-<?=$xraiatag?>[a='U']:before { content: url(<?=get_assessment_link("U");?>); }
+<?=$xraiptag?>:before { background: red; color: white; content: "[error]"; }
 
-<?=$xraiatag?>[a='1']:before { content: url(<?=get_assessment_link("1");?>); }
-<?=$xraiatag?>[a='2']:before { content: url(<?=get_assessment_link("2");?>); }
-<?=$xraiatag?>[a='3']:before { content: url(<?=get_assessment_link("3");?>); }
+<?=$xraiptag?>[a='U']:before { background: inherit; content: url(<?=get_assessment_link("U");?>); }
+<?=$xraiptag?>[a='1']:before { background: inherit; content: url(<?=get_assessment_link("1");?>); }
+<?=$xraiptag?>[a='2']:before { background: inherit; content: url(<?=get_assessment_link("2");?>); }
+<?=$xraiptag?>[a='3']:before { background: inherit; content: url(<?=get_assessment_link("3");?>); }
 
-<?=$xraiatag?>[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
-<?=$xraiatag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
-<?=$xraiatag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
+<?=$xraiptag?>[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
+<?=$xraiptag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
+<?=$xraiptag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
 
-<?=$xraiatag?>[nobelow] { background: #DD0; }
+<?=$xraiptag?>[nobelow] { background: #DD0; }
+<?=$xraiptag?>:after { background: blue; color: white; content : "[start]"; font-size: small; font-weight: bold; }
 
 *|*[hidden] { display: none; }
 *|*[hidden]:before { display: none; }
 
-*|*[name='sel'] { background: yellow; }
-*|*[name='relevant'] { background: #FFFFA0; }
+*|*[marked='1'] { background: yellow; }
+*|*[marked='1'] *|*[marked='1'] { background: red; }
 </style>
 <?
 
@@ -205,18 +209,18 @@ if ($id_pool> 0) {
 
   foreach($relevances as $a => $t) {
   print "<img "
-    . " src='" . get_assessment_link($a,false) . "'"
-    . " alt='$t'"
-    . " id=\"assess_$a\" onclick=\"assess(this,'$a',event); return false;\" "
-    . " title=\"$t\" "
+    . " src='$base_url/img/" . $t[0] . "'"
+    . " alt='$t[1]'"
+    . " id=\"assess_$a\" onclick=\"return XRai.assess(this,'$a',event);\" "
+    . " title=\"$t[1]\" "
     . " name=\"assess\" "
     . " value=\"$a\" />";
 }
 
 ?></div>
 <div style="white-space: nowrap;">
-<img id="eval_breakup_link" src="<?=$base_url?>/img/down.png" href="javascript:void(0)" title="Assess subpassages" alt="down" onclick="if (this.class!='disabled') goDown()"/>
-<img id="nobelow" src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="assess(this,'nobelow',event)" title="Below is too small to assess"/>
+<img id="eval_breakup_link" src="<?=$base_url?>/img/down.png" href="javascript:void(0)" title="Assess subpassages" alt="down" onclick="if (this.className!='disabled') goDown()"/>
+<img id="nobelow" src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.assess(this,'nobelow',event)" title="Below is too small to assess"/>
 </div>
 </div>
 
@@ -233,7 +237,7 @@ if ($id_pool> 0) {
 // ==========================================
 
 
-print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='do_dblclick(event)' onclick='do_click(event)' onmousemove='XRai.mousemoved(event)'>\n";
+print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
 
 function startElement($parser, $name, $attrs) {
@@ -311,6 +315,9 @@ if ($write_access) {
    </span>
    <span>
       <span>
+         <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/highlight.png" alt="Finish" title="Switch between highlighting mode and exhaustivity mode"/>
+      </span>
+      <span>
          <img id="finishImg" onclick="onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
          &#8226;
          <span title="Unkown assessments" id="UnknownA">0</span>
@@ -367,11 +374,15 @@ if ($write_access) {
        }
     }
     if (tags_css) tags_css.disabled = true;
+
+    // Create variables for element
+
+    
 ]]>
 </script>
 
 <?
-if ($id_pool > 0) {
+if ($id_pool > 0 && false) {
    // Display assessments
    ?><script type="text/javascript">
    var load = new XRaiLoad()
