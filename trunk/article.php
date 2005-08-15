@@ -13,7 +13,7 @@ require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 set_time_limit(360);
 
-$xraiptag = "xraip";
+$xraiatag = "j";
 
 // ------------------------
 // --- Retrieve article ---
@@ -51,7 +51,7 @@ $xmlfilename = "$xml_documents/$collection/$file.xml";
 
 // Begins output
 
-if ($id_pool) 
+if ($id_pool)
   $localisation[] = array("$pool[name]","$base_url/pool.php?id_pool=$id_pool", "Pool for topic $pool[idtopic]" );
 
 
@@ -59,7 +59,7 @@ $i = sizeof($localisation);
 while ($row["parent"] > 0 && $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE id=?",array($row["parent"])))  {
   if (DB::isError($row)) fatal_error("Database error",$row->getUserInfo());
   array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]/$row[filename]?id_pool=$id_pool",$row["title"])));
-} 
+}
 $up_url = $localisation[sizeof($localisation)-1][1];
 $localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=$file&amp;collection=$collection","$title");
 
@@ -67,8 +67,11 @@ $localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=$file&
 
 // add_icon("img_treeview","$base_url/img/tree.png","Tree view (shift + T)","javascript:void(0)","toggle_treeview()",'<div class="help_top">Displays/hides the panel with the tree view of the XML document, where only tag names appear. In this panel, you can click on any tag name to view it in the main document view.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>t</code></div>');
 // add_icon("img_bookmarks","$base_url/img/trombone.png","Bookmarks (shift + B)","javascript:void(0)","toggle_bookmarks()",'<div class="help_top">Displays/hides the panel with the current document bookmarks. In this panel, you can click on any displayed path to view it in the main document view.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>b</code></div>');
-if ($do_debug) add_icon("img_eyes","$base_url/img/eyes.png","Debug view","javascript:void(0)",'toggle_panel("assessing","img_eyes")','');
-     
+if ($do_debug) {
+   add_icon("img_eyes","$base_url/img/eyes.png","Debug view","javascript:void(0)",'toggle_panel("assessing","img_eyes")','');
+   add_icon("img_log","$base_url/img/log.png","Log view","javascript:void(0)",'toggle_panel("log","img_log")','');
+}
+
 make_header($title);
 
 $force_update = $_GET["force"];
@@ -76,7 +79,7 @@ if (!$force_update) $force_update = 0;
 $no_mathml = ($force_update == 2); // 2nd update ==> no mathml
 if ($id_pool > 0) {
    $assessments = Assessments::create($id_pool, $collection, $file);
-   if (DB::isError($assessments)) 
+   if (DB::isError($assessments))
       fatal_error("Error retrieving assessments",$assessments->getUserInfo());
    $cursor = &$assessments->getCursor();
    if (DB::isError($cursor)) fatal_error("Could not retrieve assessments",$cursor->getUserInfo());
@@ -107,7 +110,7 @@ if ($id_pool > 0) {
  document.onkeypress = XRai.keypressed;
   window.onbeforeunload = XRai.beforeunload;
   var write_access = <?=($write_access ? "true":"false")?>;
-  var xraiptag = "<?=$xraiptag?>";
+  var xraiatag = "<?=$xraiatag?>";
 
 <? if ($id_pool > 0) { ?>
    var writeAccess = true;
@@ -118,26 +121,48 @@ if ($id_pool > 0) {
 
 </script>
 <style>
+
+/** Used to display part of document */
+/*
+*[hidden]:not([umbrella]) > *:not([hidden]) { display: none; }
+*[hidden]:not([umbrella]) { border: none; margin: 0; padding: 0; }
+*[hidden]:not([umbrella]):before { content: ""; }
+*[hidden]:not([umbrella]):after { content: ""; }
+
+<?=$xraiatag?>[intersection] { display: none; }
+*[umbrella]  > <?=$xraiatag?>[intersection] { display: inline; }
+*[umbrella]  > <?=$xraiatag?>[type="in"] { display: inline; }
+*[umbrella]  <?=$xraiatag?>[type="passage"] { display: none; }
+<?=$xraiatag?>[type="in"] { display: none; }
+*/
+
+div#inex *[boxit] { border: 1px solid red !important; }
+div#inex * { border: 1px solid transparent; }
+
+div#inex [selected] { background: #8f8; }
+div#inex *[selected] *[marked] { background: #ff8; }
+*[marked] { background: yellow; }
+*[marked] *[marked] { background: red !important; }
+
 @namespace url(<?=$xrains?>);
-<?=$xraiptag?>:before { background: red; color: white; content: "[error]"; }
+<?=$xraiatag?>:before { background: red; color: white; content: "[error]"; }
+<?=$xraiatag?>[type="passage"] { background: blue; }
 
-<?=$xraiptag?>[a='U']:before { background: inherit; content: url(<?=get_assessment_link("U");?>); }
-<?=$xraiptag?>[a='1']:before { background: inherit; content: url(<?=get_assessment_link("1");?>); }
-<?=$xraiptag?>[a='2']:before { background: inherit; content: url(<?=get_assessment_link("2");?>); }
-<?=$xraiptag?>[a='3']:before { background: inherit; content: url(<?=get_assessment_link("3");?>); }
+/* *|html[xraimode='passages'] <?=$xraiatag?>[type='container'] { display: none; } */
 
-<?=$xraiptag?>[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
-<?=$xraiptag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
-<?=$xraiptag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
 
-<?=$xraiptag?>[nobelow] { background: #DD0; }
-<?=$xraiptag?>:after { background: blue; color: white; content : "[start]"; font-size: small; font-weight: bold; }
+<?=$xraiatag?>[a='-1']:before { background: inherit; content: url(<?=get_assessment_link("-1");?>); }
+<?=$xraiatag?>[a='0']:before { background: inherit; content: url(<?=get_assessment_link("0");?>); }
+<?=$xraiatag?>[a='1']:before { background: inherit; content: url(<?=get_assessment_link("1");?>); }
+<?=$xraiatag?>[a='2']:before { background: inherit; content: url(<?=get_assessment_link("2");?>); }
 
-*|*[hidden] { display: none; }
-*|*[hidden]:before { display: none; }
+<?=$xraiatag?>[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
+<?=$xraiatag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
+<?=$xraiatag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
 
-*|*[marked='1'] { background: yellow; }
-*|*[marked='1'] *|*[marked='1'] { background: red; }
+*|*[first]:before { background: blue; color: white; content : "["; font-size: small; font-weight: bold; }
+*|*[last]:after { background: blue; color: white; content : "]"; font-size: small; font-weight: bold; }
+
 </style>
 <?
 
@@ -218,14 +243,17 @@ if ($id_pool> 0) {
 }
 
 ?></div>
-<div style="white-space: nowrap;">
-<img id="eval_breakup_link" src="<?=$base_url?>/img/down.png" href="javascript:void(0)" title="Assess subpassages" alt="down" onclick="if (this.className!='disabled') goDown()"/>
-<img id="nobelow" src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.assess(this,'nobelow',event)" title="Below is too small to assess"/>
+
+<div id="nobelow" style="white-space: nowrap;">
+<div style="font-size: small; font-weight: bold;">For children</div>
+<img src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,true,false)" title="Assess remaining children elements as too small"/>
+<img src="<?=$base_url?>/img/nobelow-f.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,true,true)" title="Assess all children elements as too small"/>
+<img src="<?=$base_url?>/img/nonobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,false)" title="Unassess children elements previously assessed as '&quot;too small&quot;"/>
 </div>
 </div>
 
 <div id="saving_div" style='visibility: hidden; position: fixed; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; color: #f00; font-weight: bold; text-align: center;'>BLAHBLAH</div></div>
-      
+
 <!-- End of evaluation panel -->
 
 <? } // end of if (write_access)
@@ -237,7 +265,7 @@ if ($id_pool> 0) {
 // ==========================================
 
 
-print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
+print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
 
 function startElement($parser, $name, $attrs) {
@@ -295,14 +323,14 @@ if ($write_access) {
 <div id="s_div" class="status">
   <div>
   <span>
-          <span><img onclick="save_assessments();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shift+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
+          <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shift+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
           <span><img src="<?=$base_url?>/img/greenled.png" alt="[S]"  title="Assess selected elements (control+g)" onclick="show_eval_selected(event.pageX,event.pageY)"/><div class="help_bottom">Assess the selected elements. Elements can be (de)selected by clicking on the <span class="xml">[tag</span> name while pressing the key <code>control</code>. It is also possible to select all the siblings (which are in the same state: assessed or not assessed) with a double-clic.<br/><b>Shortcut</b>: hold the key <code>shift</code> and press <code>g</code></div></span>
           <span><img src="<?=$base_url?>/img/redled.png" alt="[C]"  title="Clear selection (control+shift+g)" onclick="clear_selected()"/><div class="help_bottom">Clear the current element selection (put the mouse over the green disc for more help on selection).<br/><b>Shortcut</b>: hold the key <code>shift</code> and <code>control</code> and press <code>g</code></div></span>
   </span>
   <span>
 <!--           <span><img src="img/fgauche.png" title="previous assessment (shift+left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the left arrow key</div></span> -->
       <span><img src="<?=$base_url?>/img/left.png" title="Go to the container (control + left arrow)" alt="^" onclick="todo_previous()"/><div class="help_bottom">Go to the previous collection or document to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code> keys</div></span>
-      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
       <span><img src="<?=$base_url?>/img/right.png" title="Go to the container (control + right arrow)" alt="->" onclick="todo_next()"/><div class="help_bottom">Go to the next section or document to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code></div></span>
       <span style="display: none;" id="imgMissing">
          <img src="<?=$base_url?>/img/warning.png" alt="Missing assessments" title="Some assessments are missing in this view"/>
@@ -321,8 +349,6 @@ if ($write_access) {
          <img id="finishImg" onclick="onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
          &#8226;
          <span title="Unkown assessments" id="UnknownA">0</span>
-         &#8226;
-         <span title="Missing assessments" id="MissingA">0</span>
       </span>
    </span>
  </div>
@@ -377,23 +403,29 @@ if ($write_access) {
 
     // Create variables for element
 
-    
+
 ]]>
 </script>
 
 <?
-if ($id_pool > 0 && false) {
+if ($id_pool > 0) {
    // Display assessments
    ?><script type="text/javascript">
    var load = new XRaiLoad()
-   load.begin();<?
+   <?
    while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
       ?>load.add("<?=$row[startxpath]?>","<?=$row[endxpath]?>","<?=$row[exhaustivity]?>");<?
    }
    ?>
    load.end();
    </script><?
+   if ($do_debug) {
+      ?><iframe src="<?=$base_url?>/log.html" id="log" align="middle" onclick="this.visibility='hide'"
+  style="visibility: hidden; position: fixed; left: 10%; top: 10%; bottom: 10%; right: 10%; z-index: 1; background: white">
+   </iframe><?
+   }
 }
+
 
 make_footer();
 

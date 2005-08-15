@@ -26,11 +26,11 @@ $file = $_REQUEST["file"];
 
 
 
-$sorted_assessments = array("U","TS","1","2");
+$sorted_assessments = array("0","-1","1","2");
 
 $relevances = array(
-	"U" => array("U","unknown"),
-   "TS" => array("TS","too small"),
+   "0" => array("a0","unknown"),
+   "-1" => array("a-1","too small"),
     1 => array("a1","partially exhaustive"),
     2 => array("a2","highly exhaustive")
 );
@@ -38,18 +38,18 @@ $relevances = array(
 
 
 $REVIEW = array(
-		"id" => 0,
-		"url" => 1,
-		"title" => 2,
-		"years" => 3
-	);
+      "id" => 0,
+      "url" => 1,
+      "title" => 2,
+      "years" => 3
+   );
 
 
 function find_byid($id) {
-	global $inex_documents;
-	for($i=0; $i < sizeof($inex_documents); $i++)
-		if ($inex_documents[$i][0] == "$id") return $inex_documents[$i];
-	return false;
+   global $inex_documents;
+   for($i=0; $i < sizeof($inex_documents); $i++)
+      if ($inex_documents[$i][0] == "$id") return $inex_documents[$i];
+   return false;
 }
 
 
@@ -88,12 +88,12 @@ function printStatus($t) {
 
 
 function make_header($title = "") {
-	  global $menu, $is_root;
+     global $menu, $is_root;
   global $no_topic, $id_topic, $url_add, $id_pool, $pool, $login;
   global $base_url, $xrains;
-	global $header_done, $inex_user, $message;
-	if ($header_done) return;
-	$header_done = 1;
+   global $header_done, $inex_user, $message;
+   if ($header_done) return;
+   $header_done = 1;
 
 
 header("Content-type: application/xhtml+xml");
@@ -102,36 +102,36 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$xrains?>" xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="en">
-	<head>
-		<title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
+   <head>
+      <title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
-		<link rel="stylesheet" href="<?=$base_url?>/css/style.css" />
-	</head>
+      <link rel="stylesheet" href="<?=$base_url?>/css/style.css" />
+   </head>
       <body id="body" onload="document_loaded()">
    <table id="menubar" class="localisation">
      <tr>
       <td><span style="color: #333333; ">User <b<? if ($is_root) print " style='color:red'"; ?>><?=$inex_user?> </b> </span> |
-      <? 
-          
+      <?
+
           // Menus
      if (is_array($menu)) {
        print "<span class='menubar'>";
        foreach($menu as $name => $items) {
        print "<a  id='a_menu_$name' class='menu' href='javascript:void(0)  ' onmouseover='show_menu(this,\"menu_$name\")'>$name</a> ";
-       
+
      print "<div id='menu_$name' class='menu' onmouseout='menuout(event); return false;'>";
-     foreach($items as $m) 
+     foreach($items as $m)
        print "<div id='href $m[0]'><a onclick='hide_menu_id(\"menu_$name\")' href='$m[0]' title=\"" . htmlspecialchars($m[2]) . "\">$m[1]</a></div>";
-         
+
      print "</div>";
      print " | ";
    }
    print "</span>";
-   
+
    // Localisation
-      $first = true; foreach($GLOBALS["localisation"] as $l) { 
+      $first = true; foreach($GLOBALS["localisation"] as $l) {
         if ($first) $first = false;  else print " <b>&gt;</b>   ";
-        print " <a href='$l[1]' title=\"" 
+        print " <a href='$l[1]' title=\""
         . htmlspecialchars($l[2]) . "\">" . htmlspecialchars($l[0]) . "</a> "; }
 
   }
@@ -148,13 +148,13 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
     }
   ?>
         <a onclick="right_panel('informations','img_informations','<?=$base_url?>/iframe/informations.php')"><span><img src="<?=$base_url?>/img/info" id="img_informations" alt="Informations (shift+i)"/><div class="help_top">Displays some information and the changelog of X-Rai.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>i</code></div></span></a>
-        
-       <a title="Help panel on/off" onclick="toggle_help()" class="<?=$_COOKIE["no_help"] > 0 ? "": "on"?>" id="a_help"><img src="<?=$base_url?>/img/question"/><div class="help_top">Toggle on or off the help tips</div></a> 
+
+       <a title="Help panel on/off" onclick="toggle_help()" class="<?=$_COOKIE["no_help"] > 0 ? "": "on"?>" id="a_help"><img src="<?=$base_url?>/img/question"/><div class="help_top">Toggle on or off the help tips</div></a>
       <iframe id="informations" class="right_panel"/>
       </td></tr>
    </table>
-	<? if ($message) print "<div class='message'>$message</div>"; ?>
-	<script type="text/javascript" language="javascript"><![CDATA[
+   <? if ($message) print "<div class='message'>$message</div>"; ?>
+   <script type="text/javascript" language="javascript"><![CDATA[
 var base_url = "<?=$base_url?>";
 function popup_window(uri,w,h) {
 window.open("<?=$base_url?>/" + uri,"inex-xrai-popup","toolbar=no,location=no,  directories=no,status=no,scrollbars=yes,menubar=no,copyhistory=no,width=" + w + ",height=" + h);
@@ -187,8 +187,8 @@ window.open("<?=$base_url?>/show_topic.php?id_topic=<?=$id_topic?>","inex_topic"
 
 
 function add_menu($menubar, $url, $title, $comment = "") {
-	global $menu;
-	$menu[$menubar][] = array($url,$title,$comment);
+   global $menu;
+   $menu[$menubar][] = array($url,$title,$comment);
 }
 function add_icon($id, $url, $title, $href, $onclick, $helpstring) {
   global $icons;
@@ -197,8 +197,8 @@ function add_icon($id, $url, $title, $href, $onclick, $helpstring) {
 
 
 function make_footer($exit = false) {
-	print "</body></html>\n";
-	if ($exit) exit;
+   print "</body></html>\n";
+   if ($exit) exit;
 }
 
 function non_fatal_error($message, $dbg="") {
@@ -209,38 +209,38 @@ function non_fatal_error($message, $dbg="") {
 
 function fatal_error($message, $dbg="") {
    global $do_debug;
-	make_header("Error");
-	print "<div class='error'>$message</div>";
+   make_header("Error");
+   print "<div class='error'>$message</div>";
    if ($do_debug) print "<div>$dbg</div>";
-	make_footer();
-	exit(1);
+   make_footer();
+   exit(1);
 }
 
 function error($message) {
-	fatal_error($message);
+   fatal_error($message);
 }
 
 
 
 function url_propagate($varname) {
-	global $url_add;
-	$url_add .= ($url_add ? "&amp;" : "") . rawurlencode("$varname") . "=" . rawurlencode($GLOBALS[$varname]);
+   global $url_add;
+   $url_add .= ($url_add ? "&amp;" : "") . rawurlencode("$varname") . "=" . rawurlencode($GLOBALS[$varname]);
 }
 
 
 /* Form specific functions */
 function form_export($name) {
-	  print "<input type='hidden' name='$name' value='" . htmlentities($$name) . "'/>";
+     print "<input type='hidden' name='$name' value='" . htmlentities($$name) . "'/>";
 }
 function form_hidden($name, $value) {
-	  print "<input type='hidden' name='$name' value='" . htmlentities($value) . "'/>";
+     print "<input type='hidden' name='$name' value='" . htmlentities($value) . "'/>";
 }
 
 function check_valid_pool() {
-	global $id_pool;
-	if ($id_pool > 0) return;
-	header("Location: index.php");
-	exit;
+   global $id_pool;
+   if ($id_pool > 0) return;
+   header("Location: index.php");
+   exit;
 }
 
 // OUTPUT BEGINS HERE !
@@ -261,12 +261,12 @@ if ($db_schema) {
 $write_access = $can_modify = false;
 
 if ($id_pool > 0) {
-	url_propagate("id_pool");
+   url_propagate("id_pool");
    $pool = $xrai_db->getRow("SELECT * FROM $db_pools WHERE id=?",array($id_pool),DB_FETCHMODE_ASSOC);
    if (!$pool || DB::isError($pool)) exit("Cannot retrieve pool data" . ($do_debug ? ": " . $pool->getUserInfo() : ""));
-	$id_topic = $pool["idtopic"];
-	if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
-	$write_access = $can_modify = ($pool["enabled"] == 't');
+   $id_topic = $pool["idtopic"];
+   if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
+   $write_access = $can_modify = ($pool["enabled"] == 't');
    add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
    add_menu("Pool","javascript:show_colors()","Keywords","Edit keyword highlighting");
 }

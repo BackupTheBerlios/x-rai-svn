@@ -1,17 +1,17 @@
 <?
 
-	/** Show a query pool (or everything within) 
+   /** Show a query pool (or everything within)
 
-		 (c) B. Piwowarski, 2003
-	*/
+       (c) B. Piwowarski, 2003
+   */
 
 
 include_once("include/xrai.inc");
 include_once("include/assessments.inc");
 
 if (!$id_pool) {
-	header("Location: index.php");
-	exit;
+   header("Location: index.php");
+   exit;
 }
 
 if ($id_pool) $localisation[] = array("$pool[name]","$PHP_SELF", "Pool for topic $pool[idtopic]" );
@@ -21,12 +21,14 @@ make_header("Pool summary for topic $id_topic");
 
 
 $todojs = "";
-$res = &$xrai_db->query("SELECT collection, status, count(*) as c FROM toassess, files WHERE idfile=id GROUP BY collection, status");
+$res = &$xrai_db->query("SELECT sv.*,f.collection FROM $db_files f, $db_statusview sv WHERE f.parent is null AND f.id=sv.rootid");
 if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
 else {
    while ($row = $res->fetchRow()) {
-      $a[$row["collection"]][$row["status"]] = $row["c"];
-      $t[$row["status"]] = $row["c"];
+      $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
+//       print "$row[collection] / $s / $row[inpool] $db_true / $row[count]<br/>";
+      $a[$row["collection"]][$s] = $row["count"];
+      $t[$s] = $row["count"];
       $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[collection]'";
    }
    $res->free();
@@ -36,7 +38,6 @@ else {
 // Output totals
 print "<h1>Statistics</h1>";
 
-      
 $p1=getPercentage($t["1"] + $t["-1"],$t["1"]+$t["2"]+$t["-1"]+$t["-2"]);
 $p2=getPercentage($t[1],$t[1]+$t[2]);
 ?>

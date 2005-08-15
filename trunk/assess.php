@@ -11,6 +11,7 @@ $toadd=&$_REQUEST["a"];
 $toremove=&$_REQUEST["r"];
 $id_pool=&$_REQUEST["id_pool"];
 $docstatus=&$_REQUEST["docstatus"];
+$hist=&$_REQUEST["hist"];
 
 ?>
 <html>
@@ -41,29 +42,29 @@ if (DB::isError($assessments)) {
    // Start the transaction
    $xrai_db->autoCommit(false);
    for($aaaa = true; $aaaa; $aaaa = false) { // useful for the breaking the process without exceptions
-      foreach($toremove as $a) {
+      $res = $assessments->setNextVersion();
+      if (DB::isError($res)) break;
+      $res = $assessments->setStatus($docstatus);
+      if (DB::isError($res)) break;
+
+      if (is_array($toremove)) foreach($toremove as $a) {
          $x = split(',',$a);
-         if ($do_debug) print "<div>Removing $x[1] - $x[2] ($a)</div>";
-         $res = $assessments->remove($x[1], $x[2]);
+         if ($do_debug) print "<div>Removing $x[0] - $x[1] ($a)</div>";
+         $res = $assessments->remove($x[0], $x[1]);
          if (DB::isError($res)) break 2;
       }
 
-      foreach($toadd as $a) {
+      if (is_array($toadd)) foreach($toadd as $a) {
          $x = split(',',$a);
-         if ($do_debug) print "<div>" . ($x[1] == 1 ? "Modify " : "Insert ") . "$x[3] - $x[4] with $x[2] ($a)</div>";
-         if ($x[1] == 1) $res = $assessments->modify($x[2], $x[3],$x[4]);
-         else $res = $assessments->add($x[2], $x[3],$x[4]);
+         if ($do_debug) print "<div>" . ($x[0] == 1 ? "Modify " : "Insert ") . "$x[2] - $x[3] with $x[1] ($a)</div>";
+         if ($x[0] == 1) $res = $assessments->modify($x[1], $x[2],$x[3]);
+         else $res = $assessments->add($x[1], $x[2],$x[3]);
          if (DB::isError($res)) break 2;
-      }
-      $res = $assessments->setNextVersion();
-      if (DB::isError($res)) break;
-      if ($docstatus != 0) {
-         $res = $assessments->setDone($docstatus == 2);
-         if (DB::isError($res)) break;
       }
       $res = $xrai_db->commit();
    }
-   
+
+
    if (DB::isError($res)) {
       ?><script type="text/javascript">saveOK = false; alert("Assessments could not be saved (database error).");</script><?
       if ($do_debug) print "<div>" . $res->getUserInfo() ."</div>";
@@ -75,10 +76,37 @@ if (DB::isError($assessments)) {
 ?>
 <script type="text/javascript">
    ref.setSavingMessage("Done");
-   ref.saved(saveOK);
-   ref.display_message("notice","<?=sizeof($toadd)?> assessent(s) added/modified, <?=sizeof($toremove)?> assessment(s) removed");
+   ref.XRai.saved(saveOK);
+   if (saveOK) ref.Message.show("notice","<?=sizeof($toadd)?> assessent(s) added/modified, <?=sizeof($toremove)?> assessment(s) removed");
 </script>
+
+<?
+   if (!DB::isError($res)) {
+      // Save history (non blocking process)
+      $xrai_db->autoCommit(true);
+      $error=false;
+      foreach($hist as $h) {
+         if ($do_debug) print "<div>Saving hist $h</div>\n";
+         $h = split(',',$h);
+         while (true) {
+            $res = $startid = Paths::getPathId($h[2]); if (DB::isError($startid)) break;
+            $res = $endid = Paths::getPathId($h[3]); if (DB::isError($endid)) break;
+            $res = $xrai_db->autoExecute($db_history, array("idpool" => $assessments->idPool, "idfile" => $assessments->idFile,
+                     "startpath" => $startid, "endpath" => $endid, "action" => $h[0], "time" => $h[1]));
+            break;
+         }
+         if (DB::isError($res)) {
+            if ($do_debug) print "<div>" . $res->getUserInfo() ."</div>";
+            $error = true;
+         }
+      }
+      if ($error) {
+         ?><script type="text/javascript">
+            ref.Message.show("warning","Error while saving history.");
+         </script><?
+      }
+   }
+?>
 
 </body>
 </html>
-

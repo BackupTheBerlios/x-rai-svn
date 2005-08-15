@@ -1,5 +1,8 @@
 @namespace url(xrai:collections:ieee);
-article, bq, atl, ip1, sec, sec1, bdy, p, st, fno, tig, hdr1, abs, fig, h, bibl, vt, bb { display: block; }
+article, bq, atl, ip1, sec, sec1, ss1, ss2, bdy, p, st, fno, tig, hdr, hdr1, abs, fig, h, bibl, vt, bb, fm {
+   display: block;
+   padding-left: 5px;
+}
 
 sec, sec1 { padding-left: 1em; }
 p, bb { padding: 1em 0 0 0; }
@@ -39,3 +42,9 @@ l1, l2, l3, l4, l5, l6, l7, l8, l9, la, lb, lc, ld, le, list, list-numeric, nume
     display: block; padding-left: 2em; list-style: outside disc;
 }
 li { display: list-item; }
+ref { color: #88b; font-weight: bold;}
+
+
+*:before { color: #88f; font-size: small; content: "<"; }
+*:after { color: #88f; font-size: small; content: ">"; }
+

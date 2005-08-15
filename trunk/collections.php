@@ -2,7 +2,7 @@
 
 /*
 
-	Displays a volume file
+   Displays a volume file
 
 
 */
@@ -32,7 +32,7 @@ $basepath = $row["filename"];
 $rootid = $row["id"];
 $xslname = "xrai";
 
-if ($id_pool) 
+if ($id_pool)
   $localisation[] = array("$pool[name]","$base_url/pool.php?id_pool=$id_pool", "Pool for topic $pool[idtopic]" );
 
 $i = sizeof($localisation);
@@ -50,13 +50,14 @@ $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-   $res = &$xrai_db->query("SELECT * FROM $db_view_toassess WHERE rootid=?",array($rootid));
+   $res = &$xrai_db->query("SELECT * FROM $db_statusview WHERE rootid=?",array($rootid));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
       while ($row = $res->fetchRow()) {
-         $assessments[$row["filename"]][$row["status"]] = $row["count"];
-         $all_assessments[$row["status"]] = $row["count"];
-         if (abs($row["status"]) == 1 && $row["count"] > 0) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
+         $assessments[$row["filename"]][$s] = $row["count"];
+         $all_assessments[$s] = $row["count"];
+         if (abs($row["status"]) != 2 && $row["count"] > 0) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
       }
       $res->free();
    }
@@ -75,11 +76,11 @@ function get_full_path($base,$path) {
 function print_assessments($id) {
 global $assessments, $id_pool;
   if ($id_pool >0) {
-// 		print_r($assessments[$id]);
+//       print_r($assessments[$id]);
       printStatus($assessments[$id]);
       print " ";
 
-	}
+   }
 }
 
 function begin_subcollection($path) {
@@ -120,14 +121,14 @@ xslt_set_encoding($xslt,"UTF-8");
 // Has no cache
  if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";
 if (!is_dir("$xml_cache/$path")) {
-  
+
   $result = xslt_process($xslt,$xmlfilename,"$xslfilename")  ;
-  	if ($result) {
+   if ($result) {
     print "<div class='warning'>No cache directory was found</div>\n";
-	  	eval("?>" . $result . "<?");
-	} else {
-	  	exit("xslt error: " . xslt_error($xslt));
-	}
+      eval("?>" . $result . "<?");
+   } else {
+      exit("xslt error: " . xslt_error($xslt));
+   }
 }
 
 // We do have cache
@@ -138,7 +139,7 @@ if (!hasCache($xmlfilename,$xslfilename,$phpfilename) || filesize($phpfilename) 
   @unlink($phpfilename);
   flush();
   //print nl2br(htmlentities("$xmlcontent"));
-  
+
   $tmpfile = "$phpfilename.tmp";
 //  print "\n($xmlfilename to $tmpfile)";
   if (!@xslt_process($xslt,$xmlfilename,"$xslfilename",$tmpfile,null,$xsl_params)) {
