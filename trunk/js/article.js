@@ -510,7 +510,8 @@ Passage = function(x,y,savedValue) {
 //             window.dump("  In " + XRai.getPath(y) + "\n");
             if (!y.cAssessment) {
                y.cAssessment = XRai.newAssessment(y,"0",false);
-               if (y.hasAttribute("type")) throw Error("The element assessment " + XRai.getPath(y) + " has already a type");
+/*               if (y.cAssessment.hasAttribute("type"))
+                  throw Error("The element assessment " + XRai.getPath(y) + " has already a type (" + y.getAttribute("type"));*/
                y.cAssessment.setAttribute("type","in");
             }
          }
@@ -901,7 +902,6 @@ XRai.switchToAssess = function() {
       for(var p = XRai.firstPassage; p; p = p.next)
          if (!p.validated) p.validate();
 
-      XRai.checkAssessMode();
       docStatus = 1;
       XRai.updateSaveIcon();
    } catch(error) {
@@ -912,13 +912,6 @@ XRai.switchToAssess = function() {
    return true;
 }
 
-XRai.checkAssessMode = function() {
-   if (XRai.passagesToAssess > 0) {
-      document.documentElement.setAttribute("xraimode","passages");
-   } else {
-      document.documentElement.setAttribute("xraimode","all");
-   }
-}
 
 
 /** Show the eval panel */
@@ -1006,11 +999,10 @@ XRai.upwardCheck = function(x,olda, newa, ca,updateOnly) {
 XRai.upwardUpdate = function(x, olda, newa, updateOnly, skip) {
    if (!skip) {
       window.dump("Updating (upward) " + XRai.getPath(x) + ": " + olda + " -> "  + newa + "\n");
-      XRai.updateCheck(x, olda, newa, x.cAssessment, updateOnly);
+      XRai.upwardCheck(x, olda, newa, x.cAssessment, updateOnly);
    }
 
    // Go up
-   if (x.passages
    x = XRai.parent(x,1);
    if (x) XRai.upwardUpdate(x, olda, newa, updateOnly, false);
 }
@@ -1155,8 +1147,14 @@ XRai.setAssessment = function(e, a, automatic) {
 
 XRai.updateStatusIcon = function() {
    var img = document.getElementById("switchImg");
-   if (docStatus > 0) img.src = base_url + "/img/unhighlight.png";
-   else img.src = base_url + "/img/highlight.png";
+   var divinex = document.getElementById("inex");
+   if (docStatus > 0) {
+      img.src = base_url + "/img/unhighlight.png";
+      divinex.setAttribute("mode","assess");
+   } else {
+      img.src = base_url + "/img/highlight.png";
+      divinex.setAttribute("mode","highlight");
+   }
 }
 
 function setSavingMessage(txt) {

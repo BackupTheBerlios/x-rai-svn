@@ -137,7 +137,6 @@ if ($id_pool > 0) {
 */
 
 div#inex *[boxit] { border: 1px solid red !important; }
-div#inex * { border: 1px solid transparent; }
 
 div#inex [selected] { background: #8f8; }
 div#inex *[selected] *[marked] { background: #ff8; }
@@ -146,8 +145,18 @@ div#inex *[selected] *[marked] { background: #ff8; }
 *|*[error='1'] { background: red; }
 
 @namespace url(<?=$xrains?>);
+
+div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
+
 <?=$xraiatag?>:before { background: red; color: white; content: "[error]"; }
+
 <?=$xraiatag?>[type="passage"] { background: blue; }
+
+<? if ($do_debug) { ?>
+<?=$xraiatag?>[type="in"] { background: #00F; }
+<?=$xraiatag?>[type="container"] { background: #0F0 !important; }
+<?=$xraiatag?>[intersection] { border: 2px solid #F00 !important;  }
+<? } ?>
 
 /* *|html[xraimode='passages'] <?=$xraiatag?>[type='container'] { display: none; } */
 
