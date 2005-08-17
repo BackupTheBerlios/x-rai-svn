@@ -143,6 +143,7 @@ div#inex [selected] { background: #8f8; }
 div#inex *[selected] *[marked] { background: #ff8; }
 *[marked] { background: yellow; }
 *[marked] *[marked] { background: red !important; }
+*|*[error='1'] { background: red; }
 
 @namespace url(<?=$xrains?>);
 <?=$xraiatag?>:before { background: red; color: white; content: "[error]"; }
@@ -246,9 +247,9 @@ if ($id_pool> 0) {
 
 <div id="nobelow" style="white-space: nowrap;">
 <div style="font-size: small; font-weight: bold;">For children</div>
-<img src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,true,false)" title="Assess remaining children elements as too small"/>
-<img src="<?=$base_url?>/img/nobelow-f.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,true,true)" title="Assess all children elements as too small"/>
-<img src="<?=$base_url?>/img/nonobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,false)" title="Unassess children elements previously assessed as '&quot;too small&quot;"/>
+<img src="<?=$base_url?>/img/nobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,-1,false)" title="Assess remaining children elements as too small"/>
+<img src="<?=$base_url?>/img/nobelow-f.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,-1,true)" title="Assess all children elements as too small"/>
+<img src="<?=$base_url?>/img/nonobelow.png" alt="No below" href="javascript:void(0)" onclick="XRai.nobelow(XRai.currentAssessed,0)" title="Unassess children elements previously assessed as '&quot;too small&quot;"/>
 </div>
 </div>
 
@@ -268,8 +269,11 @@ if ($id_pool> 0) {
 print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
 
+$stack = Array();
+$load_errors = 0;
+
 function startElement($parser, $name, $attrs) {
-   global $depth, $base_url, $media_url, $collection, $directory, $documentns;
+   global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors;
    print "<$name";
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns=\"$documentns\"";
    $depth++;
@@ -278,23 +282,39 @@ function startElement($parser, $name, $attrs) {
    }
 
 //    if ($name == "art") print " xlink:type=\"simple\" xlink:show=\"embed\"  xlink:actuate=\"onLoad\" xlink:href=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"";
+   if (sizeof($stack) > 0)
+      if ($stack[sizeof($stack)-1] < 0) { $load_errors++; print " error=\"1\""; }
+      else $stack[sizeof($stack)-1]++;
    print ">";
 
    // FIXME: should be DTD independant!
    if ($name == "art")
       print "<html:img src=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"/>";
+
+   array_push($stack,0);
 }
 
 function endElement($parser, $name) {
+   global $depth, $stack;
    $depth--;
+   array_pop($stack);
    print "</$name>";
 }
 
 function cdata($parser, $data) {
-  global $keywords, $colours, $in_mathml;
+  global $keywords, $colours, $stack, $in_mathml, $load_errors;
+
+  if ($stack[sizeof($stack)-1] > 0 && !preg_match('/^\s+$/',$data)) {
+    $load_errors++;
+    $stack[sizeof($stack)-1] = -1;
+    $error = true;
+    print "<html:span error=\"1\">";
+  }
+
   $data = preg_replace(array("/&/"),array("&amp;"),$data);
   if ($in_mathml == 1 || !$keywords) print $data;
   else print preg_replace($keywords,$colours,$data);
+  if ($error) print "</html:span>";
 }
 
 $xml_parser = xml_parser_create();
@@ -315,6 +335,15 @@ while ($data = fread($fp, 4096)) {
 xml_parser_free($xml_parser);
 
 print "</div>";
+
+if ($load_errors) {
+   ?>
+   <script language="javascript">
+      alert("There <?= $load_errors > 1 ? "are $load_errors errors" : "1 error"?> in the structure of this file; you MUST not assess it!");
+      // TODO fordbid editing
+   </script>
+   <?
+}
 
 if ($write_access) {
 ?>
