@@ -93,7 +93,6 @@ if ($id_pool > 0) {
 <link rel="stylesheet" href="<?=$base_url?>/css/article.css" />
 <link rel="stylesheet" id="tags_css" href="<?=$base_url?>/css/tags.css" />
 
-<script language="javascript"  src="<?=$base_url?>/js/article.js"/>
 <script language="javascript">
   var max_exhaustivity = 2;
   var baseurl = "<?=$baseurl?>";
@@ -107,8 +106,6 @@ if ($id_pool > 0) {
   write_access = <?=$can_modify ? "true" : "false"?>;
   debug = <?=$do_debug ? "true": "false"?>;
   up_url = "<?=$up_url?>";
- document.onkeypress = XRai.keypressed;
-  window.onbeforeunload = XRai.beforeunload;
   var write_access = <?=($write_access ? "true":"false")?>;
   var xraiatag = "<?=$xraiatag?>";
 
@@ -120,6 +117,12 @@ if ($id_pool > 0) {
 <? } ?>
 
 </script>
+<script language="javascript"  src="<?=$base_url?>/js/article.js"/>
+<script language="javascript">
+  document.onkeypress = XRai.keypressed;
+  window.onbeforeunload = XRai.beforeunload;
+</script>
+
 <style>
 
 /** Used to display part of document */
