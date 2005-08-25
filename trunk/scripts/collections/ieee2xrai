@@ -127,7 +127,7 @@ sub parsedir {
       if (-f $path && $i eq "volume.xml") {
          my $prexid = $xid + 1;
          print STDERR "[Found] $path\n";
-         my $name = $p ath;
+         my $name = $path;
          $name =~ s²$ARGV[0]/(.*)\/volume.xml²$1²;
 #          push @current_localisation, [dirname($path), basename($path)];
          $parser->parsefile($path);
