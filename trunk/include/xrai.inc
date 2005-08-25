@@ -251,8 +251,8 @@ $is_root = $root_users[$inex_user];
 
 // Connection to database
 $xrai_db = &DB::connect($xrai_dsn);
-$xrai_db->setFetchMode(DB_FETCHMODE_ASSOC);
-if (DB::isError($xrai_db)) exit("Database connection failed");
+if (!DB::isError($xrai_db)) $xrai_db->setFetchMode(DB_FETCHMODE_ASSOC);
+if (DB::isError($xrai_db)) exit("Database connection failed: " . $xrai_db->getUserMsg());
 if ($db_schema) {
    $res = $xrai_db->query("set search_path=$db_schema, pg_catalog");
    if (DB::isError($res)) exit("Database connection failed");
