@@ -135,7 +135,7 @@ sub parsedir {
          open IN, " < $path";
          open OUT, "> $outdir/$_[1]/$i";
          print OUT "<?xml version=\"1.0\" ?>\n";
-         print OUT "<!DOCTYPE article PUBLIC \"-//LBIN//DTD IEEE Magazines//EN\" \"../../dtd/xmlarticle.dtd\">\n";
+         print OUT "<!DOCTYPE article PUBLIC \"-//LBIN//DTD IEEE Magazines//EN\" \"../../../dtd/xmlarticle.dtd\">\n";
 
          while (<IN>) {
             print OUT $_;

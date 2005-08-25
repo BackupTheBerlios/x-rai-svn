@@ -153,7 +153,7 @@ div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
 
 <?=$xraiatag?>:before { background: red; color: white; content: "[error]"; }
 
-<?=$xraiatag?>[type="passage"] { background: blue; }
+<?=$xraiatag?>[type="passage"] { background: yellow; }
 
 <? if ($do_debug) { ?>
 <?=$xraiatag?>[type="in"] { background: #00F; }
@@ -364,34 +364,30 @@ if ($write_access) {
 <div id="s_div" class="status">
   <div>
   <span>
-          <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shift+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
-          <span><img src="<?=$base_url?>/img/greenled.png" alt="[S]"  title="Assess selected elements (control+g)" onclick="show_eval_selected(event.pageX,event.pageY)"/><div class="help_bottom">Assess the selected elements. Elements can be (de)selected by clicking on the <span class="xml">[tag</span> name while pressing the key <code>control</code>. It is also possible to select all the siblings (which are in the same state: assessed or not assessed) with a double-clic.<br/><b>Shortcut</b>: hold the key <code>shift</code> and press <code>g</code></div></span>
-          <span><img src="<?=$base_url?>/img/redled.png" alt="[C]"  title="Clear selection (control+shift+g)" onclick="clear_selected()"/><div class="help_bottom">Clear the current element selection (put the mouse over the green disc for more help on selection).<br/><b>Shortcut</b>: hold the key <code>shift</code> and <code>control</code> and press <code>g</code></div></span>
-  </span>
-  <span>
-<!--           <span><img src="img/fgauche.png" title="previous assessment (shift+left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the left arrow key</div></span> -->
-      <span><img src="<?=$base_url?>/img/left.png" title="Go to the container (control + left arrow)" alt="^" onclick="todo_previous()"/><div class="help_bottom">Go to the previous collection or document to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code> keys</div></span>
-      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
-      <span><img src="<?=$base_url?>/img/right.png" title="Go to the container (control + right arrow)" alt="->" onclick="todo_next()"/><div class="help_bottom">Go to the next section or document to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code></div></span>
-      <span style="display: none;" id="imgMissing">
-         <img src="<?=$base_url?>/img/warning.png" alt="Missing assessments" title="Some assessments are missing in this view"/>
-      </span>
+          <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shift+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>control</code> and press <code>s</code></div></span>
+   </span>
 
-      <span style="display: none; font-size: small;" id="assessedPassageSpan">
-         Within <xrai:a a="U"/>
-      </span>
-<!--           <span><img src="img/fdroit.png" title="Next assessment (shift+right arrow)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next Assessment. <br/><b>Shortcut</b>: hold <code>shift</code> and press the right arrow key</div></span> -->
+  <span>
+      <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (control + left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous element to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code> keys</div></span>
+      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (control + right arrow)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next element to assess.<br/><b>Shortcut</b>: <code>control + right arrow</code></div></span>
    </span>
    <span>
       <span>
-         <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/highlight.png" alt="Finish" title="Switch between highlighting mode and exhaustivity mode"/>
+         <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and exhaustivity mode"/>
       </span>
       <span>
-         <img id="finishImg" onclick="onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
+         <img id="finishImg" onclick="XRai.onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
          &#8226;
          <span title="Unkown assessments" id="UnknownA">0</span>
       </span>
    </span>
+
+   <span id="highlight">
+          <span><img src="<?=$base_url?>/img/highlight.png" alt="[h]"  title="Highlight" onclick="XRai.highlight()"/><div class="help_bottom">Highlight the selected region<br/><b>Shortcut</b>: press the key <code>h</code></div></span>
+          <span><img src="<?=$base_url?>/img/unhighlight.png" alt="[u]"  title="Unhighlight" onclick="XRai.unhighlight()"/><div class="help_bottom">Remove the current highlighting of the selected region<br/><b>Shortcut</b>: press the key <code>u</code></div></span>
+  </span>
+
  </div>
 </div>
 <?
@@ -459,6 +455,7 @@ if ($id_pool > 0) {
    }
    ?>
    load.end();
+   load = null;
    </script><?
    if ($do_debug) {
       ?><iframe src="<?=$base_url?>/log.html" id="log" align="middle" onclick="this.visibility='hide'"

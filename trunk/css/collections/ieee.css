@@ -5,7 +5,7 @@ border: 1px solid transparent;
 display: inline;
 }
 
-article, bq, atl, ip1, sec, sec1, ss1, ss2, bdy, p, st, fno, tig, hdr, hdr1, abs, fig, h, bibl, vt, bb, fm, doi {
+article, fn, bq, atl, ip1, sec, sec1, ss1, ss2, bdy, p, st, fno, tig, hdr, hdr1, abs, fig, h, bibl, vt, bb, fm, doi {
    display: block;
    padding-left: 5px;
 }
@@ -36,12 +36,13 @@ lit { white-space: pre; }
 abs { margin: 5px; border: 1px solid gray; padding: 5px; }
 abs:before { content: "Abstract"; font-size: large; }
 
-fn { border: 1px solid black; colour: #444444; display: inline; }
-fn p { display: inline; }
+fn:before { color: gray; content: "footnote"; padding-right: 3px; text-decoration: underline; font-size: smaller; }
+fn { border: 1px dashed gray; colour: #444444; }
+/* fn p { display: inline; } */
 
 bdy, bibl { border-top: 1px solid black; }
 
-st,h { font-size: xx-large; colour: blue; padding: 5px 0 5px 0; }
+st,h { font-size: xx-large; color: blue; padding: 5px 0 5px 0; }
 
 bb ti { font-style: italic; }
 
