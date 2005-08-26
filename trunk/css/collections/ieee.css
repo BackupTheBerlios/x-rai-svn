@@ -5,7 +5,7 @@ border: 1px solid transparent;
 display: inline;
 }
 
-article, fn, bq, atl, ip1, sec, sec1, ss1, ss2, bdy, p, st, fno, tig, hdr, hdr1, abs, fig, h, bibl, vt, bb, fm, doi {
+hdr, hdr1, hdr2, item, li, f, fn, bq, figw, fig, index, index-entry, vt, entry, question, doi, answer, article, bib, tbl, brief, tig, ti, l1, kwd, fno, edintro, bdy, fm, sec, ss1, ss2,ip1, ip2, ip2, ip3, ip4, ip5, p, p1, p2, p3, lc, bm, apt, abs, app, bb, ack, list, bibl, hdr, hdr1, hdr2, footnote, edinfo, fgc, bullet-list, list, la, lb, lc, ld, ul, l1, l2, l3, l4, l5, l6, l7, l8, l9, numeric-list {
    display: block;
    padding-left: 5px;
 }
