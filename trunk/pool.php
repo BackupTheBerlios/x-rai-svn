@@ -21,7 +21,7 @@ make_header("Pool summary for topic $id_topic");
 
 
 $todojs = "";
-$res = &$xrai_db->query("SELECT sv.*,f.collection FROM $db_files f, $db_statusview sv WHERE f.parent is null AND f.id=sv.rootid");
+$res = &$xrai_db->query("SELECT sv.*,f.collection FROM $db_files f, $db_statusview sv WHERE f.parent is null AND f.id=sv.rootid AND idpool=?",array($id_pool));
 if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
 else {
    while ($row = $res->fetchRow()) {

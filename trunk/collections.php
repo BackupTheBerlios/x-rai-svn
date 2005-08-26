@@ -50,7 +50,7 @@ $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-   $res = &$xrai_db->query("SELECT * FROM $db_statusview WHERE rootid=?",array($rootid));
+   $res = &$xrai_db->query("SELECT * FROM $db_statusview WHERE rootid=? AND idpool=$id_pool",array($rootid));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
       while ($row = $res->fetchRow()) {
