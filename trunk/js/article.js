@@ -231,9 +231,9 @@ XRai.keypressed = function (event) {
   if (N && event.which == 104) XRai.highlight();
   else if (N && event.which == 117) XRai.unhighlight();
   else if (N && event.which == 109) XRai.switchMode();
-  else if (C && event.which == 115) XRai.save();
+  else if (S && event.which == 115) XRai.save();
   else {
-     if (debug) XRai.debug("Key pressed: charchode" + event.charCode
+     if (debug) XRai.debug("Key pressed: charchode=" + event.charCode
         + ", keycode=" + event.keyCode
       + ", which=" + event.which + ", shiftKey=" + event.shiftKey + ", ctrlKey=" + event.ctrlKey
       + ", x= " + event.pageX + "\n");

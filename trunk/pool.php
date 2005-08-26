@@ -17,6 +17,7 @@ if (!$id_pool) {
 if ($id_pool) $localisation[] = array("$pool[name]","$PHP_SELF", "Pool for topic $pool[idtopic]" );
 make_header("Pool summary for topic $id_topic");
 
+
 // Retrieve assessments
 
 
