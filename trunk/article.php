@@ -44,9 +44,10 @@ $directory = dirname($file);
 $collection = $_REQUEST["collection"];
 $documentns = "xrai:collections:$collection";
 
-$row = $xrai_db->getRow("select title,parent from $db_files where collection=? AND filename=?",array($collection,$file));
+$row = $xrai_db->getRow("select id,title,parent from $db_files where collection=? AND filename=?",array($collection,$file));
 //print "$query";
 $title = $row["title"];
+$fileid = $row["id"];
 $xmlfilename = "$xml_documents/$collection/$file.xml";
 
 // Begins output
@@ -125,19 +126,6 @@ if ($id_pool > 0) {
 
 <style>
 
-/** Used to display part of document */
-/*
-*[hidden]:not([umbrella]) > *:not([hidden]) { display: none; }
-*[hidden]:not([umbrella]) { border: none; margin: 0; padding: 0; }
-*[hidden]:not([umbrella]):before { content: ""; }
-*[hidden]:not([umbrella]):after { content: ""; }
-
-<?=$xraiatag?>[intersection] { display: none; }
-*[umbrella]  > <?=$xraiatag?>[intersection] { display: inline; }
-*[umbrella]  > <?=$xraiatag?>[type="in"] { display: inline; }
-*[umbrella]  <?=$xraiatag?>[type="passage"] { display: none; }
-<?=$xraiatag?>[type="in"] { display: none; }
-*/
 
 div#inex *[boxit] { border: 1px solid red !important; }
 
@@ -146,6 +134,7 @@ div#inex *[selected] *[marked] { background: #ff8; }
 *[marked] { background: yellow; }
 *[marked] *[marked] { background: red !important; }
 *|*[error='1'] { background: red; }
+div#inex[support] *[support='1'] { border: 1px dashed blue; }
 
 @namespace url(<?=$xrains?>);
 
@@ -278,7 +267,7 @@ if ($id_pool> 0) {
 // ==========================================
 
 
-print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
+print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
 
 $stack = Array();
@@ -374,6 +363,9 @@ if ($write_access) {
    </span>
    <span>
       <span>
+         <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]" title="Show/hide the support elements"/>
+      </span>
+      <span>
          <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and exhaustivity mode"/>
       </span>
       <span>
@@ -427,7 +419,7 @@ if ($write_access) {
 </table>
 </div>
 
-<script language="javascript">
+<!--<script language="javascript">
 <![CDATA[
    var tags_css = null;
     for(var i = 0; i < document.styleSheets.length; i++) {
@@ -442,17 +434,30 @@ if ($write_access) {
 
 
 ]]>
-</script>
+</script>-->
 
 <?
 if ($id_pool > 0) {
    // Display assessments
    ?><script type="text/javascript">
-   var load = new XRaiLoad()
+   XRai.init();
+   var load = new XRaiLoad();
    <?
    while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
       ?>load.add("<?=$row[startxpath]?>","<?=$row[endxpath]?>","<?=$row[exhaustivity]?>");<?
    }
+
+   // Add topic elements
+   $res = $xrai_db->query("SELECT path FROM $db_topicelementsview WHERE idfile=? and idtopic=?",array($fileid,$id_topic));
+   if (DB::isError($res)) print "Message.show(\"warning\",\"Could not retrieve support elements\");\n";
+   else {
+/*      print "alert(\"$fileid, $id_topic\");";
+      print "Message.show(\"notice\",\"Retrieved " . $res->numRows() . " support elements\");\n";*/
+      while ($row=&$res->fetchRow(DB_FETCHMODE_ROW)) {
+         ?>load.addSupport("<?=$row[0]?>");<?
+      }
+   }
+
    ?>
    load.end();
    load = null;

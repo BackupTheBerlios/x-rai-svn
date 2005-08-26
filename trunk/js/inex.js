@@ -1,6 +1,6 @@
 /**
-	INEX javascript code
-	B. Piwowarski, 2003
+   INEX javascript code
+   B. Piwowarski, 2003
 */
 
 var is_gecko = true;
@@ -15,51 +15,51 @@ function document_loaded() {
 
 function findPosX(obj)
 {
-	var curleft = 0;
-	if (obj.offsetParent)
-	{
-		while (obj.offsetParent)
-		{
-			curleft += obj.offsetLeft
-			obj = obj.offsetParent;
-		}
-	}
-	else if (obj.x)
-		curleft += obj.x;
-	return curleft;
+   var curleft = 0;
+   if (obj.offsetParent)
+   {
+      while (obj.offsetParent)
+      {
+         curleft += obj.offsetLeft
+         obj = obj.offsetParent;
+      }
+   }
+   else if (obj.x)
+      curleft += obj.x;
+   return curleft;
 }
 
 function findPosY(obj)
 {
-	var curtop = 0;
-	if (obj.offsetParent)
-	{
-		while (obj.offsetParent)
-		{
-			curtop += obj.offsetTop
-			obj = obj.offsetParent;
-		}
-	}
-	else if (obj.y)
-		curtop += obj.y;
-	return curtop;
+   var curtop = 0;
+   if (obj.offsetParent)
+   {
+      while (obj.offsetParent)
+      {
+         curtop += obj.offsetTop
+         obj = obj.offsetParent;
+      }
+   }
+   else if (obj.y)
+      curtop += obj.y;
+   return curtop;
 }
 function contains(a, b) {
   // Return true if node a contains node b.
-  while (b != a) 
-    if (b == null) return false; 
+  while (b != a)
+    if (b == null) return false;
     else b = b.parentNode;
   return true;
 }
 
-function _isMouseInside(obj,event) { 
-  // determine if mouse is over object 
-  var mouseX = event.clientX; 
-  var mouseY = event.clientY; 
-  var objTop = obj.offsetTop; 
-  var objBottom = obj.offsetTop + obj.offsetHeight; 
-  var objLeft = obj.offsetLeft; 
-  var objRight = obj.offsetLeft + obj.offsetWidth; 
+function _isMouseInside(obj,event) {
+  // determine if mouse is over object
+  var mouseX = event.clientX;
+  var mouseY = event.clientY;
+  var objTop = obj.offsetTop;
+  var objBottom = obj.offsetTop + obj.offsetHeight;
+  var objLeft = obj.offsetLeft;
+  var objRight = obj.offsetLeft + obj.offsetWidth;
 //   alert(mouseX + "," + mouseY + " : x=(" + objLeft + ", " + objRight + ") y=("+ objTop + ", " + objBottom + ")");
   return (mouseX > objLeft && mouseX < objRight &&  mouseY > objTop && mouseY < objBottom);
 }
@@ -69,18 +69,18 @@ function _isMouseInside(obj,event) {
 
 var current_menu;
 
-function hide_menu(menu) {  
-  menu.style.visibility = "hidden"; 
+function hide_menu(menu) {
+  menu.style.visibility = "hidden";
   if (current_menu == menu) current_menu = 0;
-  document.getElementById("a_" + menu.id).style.background = ""; 
+  document.getElementById("a_" + menu.id).style.background = "";
 }
 
-function hide_menu_id(id) {  
+function hide_menu_id(id) {
 //   alert(id + " " + document.getElementById(id));
   hide_menu(document.getElementById(id));
   return true;
 }
-     
+
 function menuout(event) {
   var current, related;
   if (window.event) {
@@ -106,30 +106,30 @@ function show_menu(x,y) {
     if (current_menu) {
       var id = current_menu.id;
       hide_menu(current_menu);
-//       if (id == y) return; 
+//       if (id == y) return;
     }
     var menu = document.getElementById(y);
     menu.style.left = findPosX(x)  + "px";
     menu.style.top = findPosY(x) + x.scrollHeight + "px";
     menu.style.visibility = "visible";
     current_menu = menu;
-    x.style.background = "yellow"; 
+    x.style.background = "yellow";
  }
- 
- 
+
+
 // Returns the absolute minimum position
 function get_inner_top() {
-	var menu = document.getElementById("menubar");
-	return window.scrollY + menu.offsetTop + menu.offsetHeight;
+   var menu = document.getElementById("menubar");
+   return window.scrollY + menu.offsetTop + menu.offsetHeight;
 }
 
 function get_inner_bottom() {
-	var s_div = document.getElementById("s_div");
-	if (!s_div) return window.innerHeight + window.scrollY;
-	return window.scrollY + s_div.offsetTop;
-// 	if (s_div) bottom -= window.innerHeight + window.scrollY
-} 
- 
+   var s_div = document.getElementById("s_div");
+   if (!s_div) return window.innerHeight + window.scrollY;
+   return window.scrollY + s_div.offsetTop;
+//    if (s_div) bottom -= window.innerHeight + window.scrollY
+}
+
 function show_div_xy(x,y,id) {
     var e = document.getElementById(id);
     var s_div = document.getElementById("stat_div");
@@ -137,16 +137,16 @@ function show_div_xy(x,y,id) {
     if (y + e.scrollHeight > b) y = b - e.scrollHeight;
     var t = get_inner_top();
     if (y < t) y = t;
-    
-    if ((x + e.scrollWidth) > (window.innerWidth + window.scrollX)) 
+
+    if ((x + e.scrollWidth) > (window.innerWidth + window.scrollX))
           x = window.innerWidth + window.scrollX - e.scrollWidth - 15;
     if  (x<0) x = 5;
-    
+
     e.style.left = x + "px";
     e.style.top = y + "px";
    e.style.visibility = "visible";
 }
- 
+
 function show_div(event,id) {
    e = document.getElementById(id);
    if (is_gecko) {
@@ -155,16 +155,16 @@ function show_div(event,id) {
     var s_div = document.getElementById("stat_div");
     if ((y + e.scrollHeight + (s_div ? s_div.scrollHeight: 0)) > (window.innerHeight + window.scrollY)) y = y - e.scrollHeight - 15;
     if ((x + e.scrollWidth) > (window.innerWidth + window.scrollX)) x = x - e.scrollWidth - 15;
-    
+
     if (y < 0) y = 5;
     if  (x<0) x = 5;
     e.style.left = x + "px";
     e.style.top = (y+5) + "px";
-// 	alert("Pos=" + event.pageX + "," + event.pageY + ", E style of " + e + "," + e.style.top);
+//    alert("Pos=" + event.pageX + "," + event.pageY + ", E style of " + e + "," + e.style.top);
    } else {
-   	alert(event.y + "," + document.body.offsetTop + "," + document.body.clientHeight);
-   	e.style.left = (event.x + document.body.scrollLeft + 5) + "px";
-   	e.style.top = (event.y + document.body.scrollTop + document.body.clientHeight + 5) + "px";
+      alert(event.y + "," + document.body.offsetTop + "," + document.body.clientHeight);
+      e.style.left = (event.x + document.body.scrollLeft + 5) + "px";
+      e.style.top = (event.y + document.body.scrollTop + document.body.clientHeight + 5) + "px";
    }
    e.style.visibility = "visible";
 }
@@ -196,13 +196,13 @@ function get_position (e) {
 function scroll_to_element(e,top) {
   var coords = get_position(e);
   var y_min = get_inner_top(), y_max = get_inner_bottom();
-  
+
   var y_top = coords.y;
   var y_bottom = coords.y + e.offsetHeight;
 //   alert("object=" + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max);
   if (y_top < y_min || y_bottom > y_max) { scrollTo(0,y_top - (y_min - window.scrollY)); }
 //   else if (y_bottom > y_max) {
-// 	    var y = y_bottom + window.scrollY - y_max ;
+//        var y = y_bottom + window.scrollY - y_max ;
 //      scrollTo(0,y);
 //   }
 
@@ -214,28 +214,28 @@ var todo_index = -1;
 
 /* Todo list */
 function restore_focus(id) {
-	var e=document.getElementById(id);
-	if (e)  {
-// 		alert(e + " and " + id);
-	  get_first_xml(e).style.border = "0";
-	}
+   var e=document.getElementById(id);
+   if (e)  {
+//       alert(e + " and " + id);
+     get_first_xml(e).style.border = "0";
+   }
 }
 
 function show_focus(e) {
-	scroll_to_element(e,20);
-	if (e.focus) e.focus();
-	else {
-	  	// article view
-		e.style.border = "2pt solid red";
-	   setTimeout('restore_focus("'+ get_xmle(e).id + '")',700);
-	}
+   scroll_to_element(e,20);
+   if (e.focus) e.focus();
+   else {
+      // article view
+      e.style.border = "2pt solid red";
+      setTimeout('restore_focus("'+ get_xmle(e).id + '")',700);
+   }
 }
 
 
 
 function hideEval(){
 //      document.onmousemove="";
-	 hide_div("eval_div");
+    hide_div("eval_div");
      return false;
 }
 
@@ -254,40 +254,40 @@ function get_parent_id(path) {
 }
 
 function find_child(e, path) {
-	if (!e.firstChild) return;
-	if (e.firstChild.nodeType == 1 && e.firstChild.getAttribute("class") == "xml") {
-		var id =  e.getAttribute("id");
-		if (id == sibling_path) return;
-		var i = id.lastIndexOf('/');
-		if (i != -1) id = id.substr(i+1);
-		if (!sibling_list) sibling_list = ""; else sibling_list += ", ";
-		sibling_list += id;
-		return;
-	}
-	var children = e.childNodes;
-	for (var i = 0; i < children.length; i++) find_child(children[i]);
+   if (!e.firstChild) return;
+   if (e.firstChild.nodeType == 1 && e.firstChild.getAttribute("class") == "xml") {
+      var id =  e.getAttribute("id");
+      if (id == sibling_path) return;
+      var i = id.lastIndexOf('/');
+      if (i != -1) id = id.substr(i+1);
+      if (!sibling_list) sibling_list = ""; else sibling_list += ", ";
+      sibling_list += id;
+      return;
+   }
+   var children = e.childNodes;
+   for (var i = 0; i < children.length; i++) find_child(children[i]);
 }
 
 function find_siblings(path) {
-	// Find parent
-	sibling_path = "a_" + path;
+   // Find parent
+   sibling_path = "a_" + path;
     var s = get_parent_id(sibling_path);
-	if (!s) return false;
+   if (!s) return false;
     var e = document.getElementById(s);
     if (!e) return "???";
 
-	// Find children
-	sibling_list = false;
-	var children = e.childNodes;
-	for (var i = 1; i < children.length; i++) find_child(children[i]);
-	return sibling_list;
+   // Find children
+   sibling_list = false;
+   var children = e.childNodes;
+   for (var i = 1; i < children.length; i++) find_child(children[i]);
+   return sibling_list;
 
 }
 
 
 function show_element(path) {
-	var e = document.getElementById("a_" + path);
-	if (e) show_focus(e);
+   var e = document.getElementById("a_" + path);
+   if (e) show_focus(e);
 }
 
 
@@ -297,13 +297,13 @@ var current_right_panel = { element: null, image: null};
 function toggle_right_panel(element, image) {
   if (current_right_panel.element) current_right_panel.element.style.visibility = "hidden";
   if (current_right_panel.image) current_right_panel.image.className = "";
-  if (current_right_panel.element == element) { 
+  if (current_right_panel.element == element) {
     current_right_panel.element = current_right_panel.image = null;
-    return; // exit (close the view) 
+    return; // exit (close the view)
   }
   current_right_panel.element = element; element.style.visibility = "visible";
-  current_right_panel.image= image; 
-  if (image) image.className = "selected"; 
+  current_right_panel.image= image;
+  if (image) image.className = "selected";
 }
 
 function toggle_panel(id, imageId) {
@@ -323,7 +323,7 @@ function collection_keypress(event) {
       case 39: todo_next(); return false;
       case 73: right_panel('informations','img_informations',base_url + '/iframe/informations.php'); return false;
     }
-  } 
+  }
   return true;
 }
 
@@ -417,7 +417,7 @@ function fixDate(date) {
 // =========
 
 var help_stylesheet = null;
-for(var i = 0; i < document.styleSheets.length; i++) {
+if (document.styleSheets) for(var i = 0; i < document.styleSheets.length; i++) {
    if (document.styleSheets[i].title == "help") {
    help_stylesheet = document.styleSheets[i];
    break;
@@ -437,8 +437,8 @@ function toggle_help() {
    // 15 day cookie
    setCookie("no_help",value,now);
    var x = document.getElementById("a_help");
-   if (!x) alert("Bug: no <a> tag for help!?!");      
-   else x.setAttribute("class",value ? "" : "on"); 
+   if (!x) alert("Bug: no <a> tag for help!?!");
+   else x.setAttribute("class",value ? "" : "on");
    if (help_stylesheet) help_stylesheet.disabled = value ? true : false;
 }
 
@@ -455,7 +455,7 @@ var Message = {
    show: function (type,msg) {
       Message.showDuring(type,msg,1200);
    },
-   
+
    showDuring: function (type,msg, time) {
       var div = document.createElement("div");
       div.appendChild(document.createTextNode(msg));
@@ -465,7 +465,7 @@ var Message = {
       document.getElementById("body").appendChild(div);
       setTimeout('Message.clear("' + div.id + '")',time);
    },
-   
+
    clear: function (id) {
       var x = document.getElementById(id);
       if (x) x.parentNode.removeChild(x);

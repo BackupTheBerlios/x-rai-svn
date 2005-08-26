@@ -12,6 +12,7 @@
 // p7: user navigation
 
 var XRai = new Object(); // used for namespace
+XRai.loaded = false;
 
 // Find the position of an XML node in the page:
 //    var x = document.getBoxObjectFor(event.target);
@@ -46,8 +47,16 @@ XRai.currentView = null;
 XRai.firstPassage = null;
 XRai.firstOldPassage = null;
 
-var xpe = new XPathEvaluator();
-var nsResolver = xpe.createNSResolver(document.documentElement);
+var xpe = null;
+var nsResolver = null;
+
+
+if (document.implementation.hasFeature("XPath", "3.0")) {
+   xpe = new XPathEvaluator();
+   nsResolver = xpe.createNSResolver(document.documentElement);
+} else Message.show("warning","no xpath support found");
+
+if (!window.dump) debug = false;
 
 
 // docStatus (and saved value oldDocStatus)
@@ -91,7 +100,7 @@ XRai.removeFromArray = function(a,x) {
 
 XRai.addElementToArray = function (a,x) {
    var i = 0;
-   while (i < a.length && (a[i].compareDocumentPosition(x) & DOCUMENT_ORDER_BEFORE)) i++;
+   while (i < a.length && (compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_BEFORE)) i++;
    if (a[i] != x) a.splice(i,0,x);
 }
 
@@ -99,7 +108,7 @@ XRai.addElementToArray = function (a,x) {
 XRai.removeElementFromArray = function (a,x) {
    var id = parseInt(x.id);
    var i = 0;
-   while (i < a.length && (a[i].compareDocumentPosition(x) & DOCUMENT_ORDER_BEFORE)) i++;
+   while (i < a.length && (compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_BEFORE)) i++;
    if (a[i] = x) a.splice(i,1);
 }
 
@@ -246,13 +255,62 @@ XRai.switchMode = function() {
    XRai.updateSaveIcon();
 }
 
-
-
-
+XRai.switchSupport = function() {
+   var inex = document.getElementById("inex");
+   var img = document.getElementById("supportImg");
+   if (inex.hasAttribute("support")) {
+      inex.removeAttribute("support");
+      img.setAttribute("src",base_url + "/img/noeyes.png");
+   } else {
+      inex.setAttribute("support",1);
+      img.setAttribute("src",base_url + "/img/eyes.png");
+   }
+}
 
 // ========== @p3
 // ========== Navigation
 // ==========
+
+
+if (Node.DOCUMENT_POSITION_CONTAINS) {
+   compareDocumentPosition = function(x,y) {
+      return x.compareDocumentPosition(y);
+   }
+} else {
+   Node.DOCUMENT_POSITION_PRECEDING    = 2;
+   Node.DOCUMENT_POSITION_FOLLOWING    = 4;
+   Node.DOCUMENT_POSITION_CONTAINS     = 8;
+   Node.DOCUMENT_POSITION_CONTAINED_BY = 16;
+
+
+   XRai.numberNode = function(x,i) {
+      x.pre = i;
+      i++;
+      for(var y = XRai.firstChild(x); y; y = XRai.nextSibling(y)) {
+         i = XRai.numberNode(y,i);
+      }
+      x.post = i;
+      return i;
+   }
+
+   XRai.numberNodes = function() {
+      var n = XRai.numberNode(XRai.getRoot(),1);
+      XRai.numbered = true;
+   }
+
+   compareDocumentPosition = function(x,y) {
+      var v = 0;
+      if (!x.pre || !y.pre)
+      if (x.pre < y.pre) {
+         if (x.post >= y.post) return Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED_BY;
+         return Node.DOCUMENT_POSITION_FOLLOWING;
+      } else if (x.pre > y.pre) {
+         if (x.post <= y.post) return Node.DOCUMENT_POSITION_PRECEDING | Node.DOCUMENT_POSITION_CONTAINS;
+         return Node.DOCUMENT_POSITION_PRECEDING;
+      }
+      return 0;
+   }
+}
 
 var DOCUMENT_ORDER_BEFORE = Node.DOCUMENT_POSITION_PRECEDING | Node.DOCUMENT_POSITION_CONTAINS;
 var DOCUMENT_ORDER_AFTER = Node.DOCUMENT_POSITION_FOLLOWING;
@@ -261,22 +319,22 @@ var DOCUMENT_ORDER_AFTER = Node.DOCUMENT_POSITION_FOLLOWING;
    Returns true if x is in y
 */
 XRai.isIn = function(x, y) {
-   return x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_CONTAINS;
+   return compareDocumentPosition(x,y) & Node.DOCUMENT_POSITION_CONTAINS;
 }
 XRai.isBefore = function(x, y) {
-   return x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING;
+   return compareDocumentPosition(x,y) & Node.DOCUMENT_POSITION_FOLLOWING;
 }
 XRai.isBeforeOrContains= function(x, y) {
-   return x.compareDocumentPosition(y) & (Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED);
+   return compareDocumentPosition(x,y) & (Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED);
 }
 XRai.isAfter = function(x, y) {
-   return x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_PRECEDING;
+   return compareDocumentPosition(x,y) & Node.DOCUMENT_POSITION_PRECEDING;
 }
 
 XRai.isBetween = function(x,a,b) {
-//   if (debug) window.dump(x.compareDocumentPosition(a) + "&" +  Node.DOCUMENT_POSITION_PRECEDING + " && " + x.compareDocumentPosition(b) + "&" + Node.DOCUMENT_POSITION_FOLLOWING + " - " + (x==a) + " / " + (x==b) + "\n");
+//   if (debug) window.dump(compareDocumentPosition(x,a) + "&" +  Node.DOCUMENT_POSITION_PRECEDING + " && " + compareDocumentPosition(x,b) + "&" + Node.DOCUMENT_POSITION_FOLLOWING + " - " + (x==a) + " / " + (x==b) + "\n");
    return (x==a) || (x==b) ||
-       ((x.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING) && (x.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING));
+       ((compareDocumentPosition(x,a) & Node.DOCUMENT_POSITION_PRECEDING) && (compareDocumentPosition(x,b) & Node.DOCUMENT_POSITION_FOLLOWING));
 }
 
 
@@ -438,18 +496,17 @@ XRai.getCommonAncestor = function(x,y) {
 // Return true if the entire element x is in the range (begin of start,end of end)
 // True if the element x is start, or is after start (document order) and not after end
 XRai.isInRange = function(x,start,end) {
-//    window.dump("@@@@@ " + x.compareDocumentPosition(start) + "/" + x.compareDocumentPosition(end) + "-> " + ((x.compareDocumentPosition(start) & DOCUMENT_ORDER_AFTER) && !(x.compareDocumentPosition(end) & DOCUMENT_ORDER_AFTER)) + " / " + DOCUMENT_ORDER_AFTER + " / " + DOCUMENT_ORDER_BEFORE + "\n");
-   return (x==start) || (x==end) || ((x.compareDocumentPosition(start) & DOCUMENT_ORDER_BEFORE) && (x.compareDocumentPosition(end) & DOCUMENT_ORDER_AFTER));
+   return (x==start) || (x==end) || ((compareDocumentPosition(x,start) & DOCUMENT_ORDER_BEFORE) && (compareDocumentPosition(x,end) & DOCUMENT_ORDER_AFTER));
 }
 
 XRai.passagesOverlap = function(p1,p2) {
    if (p1.start == p2.start || p1.end == p2.end) return true;
-   var c = p1.start.compareDocumentPosition(p2.start);
+   var c = compareDocumentPosition(p1.start,p2.start);
    // Swap p1 and p2 if p2 starts before
    if ((c & Node.DOCUMENT_POSITION_PRECEDING) && !(c & Node.DOCUMENT_POSITION_CONTAINS)) {
       var p = p1; p1 = p2; p2 = p;
    }
-   var e = p1.end.compareDocumentPosition(p2.start);
+   var e = compareDocumentPosition(p1.end,p2.start);
    // No intersection if p2 start is after p1 end
    return !(e & Node.DOCUMENT_POSITION_FOLLOWING);
 }
@@ -487,7 +544,7 @@ Passage = function(x,y,savedValue) {
    this.getContainer = function() {
       var range = { start: XRai.getFirstValidParent(this.start,1), end: XRai.getFirstValidParent(this.end,1) };
       if (range.start == range.end) return null;
-      var c = range.start.compareDocumentPosition(range.end);
+      var c = compareDocumentPosition(range.start,range.end);
       if ((c & Node.DOCUMENT_POSITION_CONTAINS) || (c & Node.DOCUMENT_POSITION_CONTAINED)) return null;
       return range;
    }
@@ -693,14 +750,44 @@ Passage = function(x,y,savedValue) {
 }
 
 
+if (!document.implementation.hasFeature("Range", "2.0")) {
+   alert("X-Rai cannot be used on your browser (no range support)");
+} else {
+   if (window.getSelection) {
+      XRai.getSelectedRange = function() {
+         var range = null;
+         var selection = window.getSelection();
+         range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+         selection.collapseToStart();
+         return range.collapsed ? null : range;
+      }
+   } else {
+      XRai.onmousedown = function(event) {
+         XRai.startselection = event.target;
+         if (XRai.startselection.nodeType == Node.TEXT_NODE)
+            XRai.startselection = XRai.startselection.parentNode;
+         Message.show("notice",event.target.localName + " / " + XRai.startselection.localName);
+      }
+      XRai.onmouseup = function(event) {
+         XRai.endselection = event.target;
+         if (XRai.endselection.nodeType == Node.TEXT_NODE) XRai.endselection = XRai.endselection.parentNode;
+         Message.show("notice",event.target.localName + " / " + XRai.startselection.localName);
+      }
+
+      XRai.getSelectedRange = function() {
+
+         return { startContainer: XRai.startselection, endContainer: XRai.endselection};
+      }
+
+   }
+}
+
 
 
 // Return the start/end *elements* of the current selection
 XRai.getSelection = function() {
    if (!writeAccess) return null;
-   var selection = window.getSelection();
-   var range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-   selection.collapseToStart();
+   var range = XRai.getSelectedRange();
 
    if (range == null || range.collapsed) {
       Message.show("warning","No selected elements");
@@ -1533,6 +1620,17 @@ XRaiLoad = function() {
       }
    }
 
+   this.addSupport = function(path) {
+      path = path.replace(/\/(?!xrai:)/g,"/xraic:");
+      var ePath = xpe.evaluate("." + path, XRai.getRoot().parentNode, this.nsResolver, 0, null).iterateNext();
+      if (!ePath) {
+         if (debug) window.dump("Error: " + ePath + "\n");
+         this.loadErrors++;
+      } else {
+         ePath.setAttribute("support",1);
+      }
+   }
+
    this.end = function() {
       if (this.loadErrors != 0)
          alert("Error while loading assessments. You MUST NOT assess this file");
@@ -1564,3 +1662,13 @@ XRaiLoad = function() {
 
 }
 
+
+// Called when the XML is loaded
+XRai.init = function() {
+   if (XRai.onmousedown) {
+      XRai.getRoot().addEventListener("mousedown",XRai.onmousedown,false);
+      XRai.getRoot().addEventListener("mouseup",XRai.onmouseup,false);
+   }
+   if (XRai.numberNodes) XRai.numberNodes();
+   XRai.loaded = true;
+}
