@@ -12,26 +12,31 @@ use FileHandle;
 use IO::Handle;
 use bytes;
 
+# perl -e 'while (<>) { if (/^(\w\w)\s*(?:IEEE )?([\D]*)\s*(.*)$/) { $i=$1; $y=$3; $t = $2; $t =~ s/&/&amp;/g; $t =~ s/\s*$//; print "\"$i\" => [ \"\", \"$t\", \"$y\" ],\n";  }}'
 our %collections =
-( "an" => [ "http://computer.org/annals/","IEEE Annals of the History of Computing","1995-2001" ],
-  "cg" => ["http://computer.org/cga/","IEEE Computer Graphics and Applications","1995-2001"],
-  "co" => ["http://computer.org/computer/","Computer","1995-2001"],
-  "cs" => ["","IEEE Computational Science &amp; Engineering","1995-1998"],
-  "dt" => ["http://computer.org/dt/","IEEE Design &amp; Test of Computers","1995-2001"],
-  "ex" => ["","IEEE Expert","1995-1997"],
-  "ic" => ["http://computer.org/internet/","IEEE Internet Computing","1997-2001"],
-  "it" => ["http://computer.org/itpro/","IT Professional","1999-2001"],
-  "mi" => ["http://computer.org/micro/","IEEE Micro","1995-2001"],
-  "mu" => ["http://computer.org/multimedia/","IEEE MultiMedia","1995-2001"],
-  "pd" => ["","IEEE Parallel &amp; Distributed Technology","1995-1996"],
-  "so" => ["http://computer.org/software/","IEEE Software","1995-2001"],
-  "tc" => ["http://computer.org/tc/","IEEE Transactions on Computers","1995-2002"],
-  "td" => ["http://computer.org/tpds/","IEEE Transactions on Parallel &amp; Distributed Systems","1995-2002"],
-  "tg" => ["http://computer.org/tvcg/","IEEE Transactions on Visualization &amp; Computer Graphics","1995-2002"],
-  "tk" => ["http://computer.org/tkde/","IEEE Transactions on Knowldege and Data Engineering","1995-2002"],
-  "tp" => ["http://computer.org/tpami/","IEEE Transactions on Pattern Analysis and Machine Intelligence","1995-2002"],
-  "ts" => ["http://computer.org/tse/","IEEE Transactions on Software Engineering","1995-2002"]
-              );
+(
+"an" => [ "", "Annals of the History of Computing", "1995-2004" ],
+"cg" => [ "", "Computer Graphics and Applications", "1995-2004" ],
+"co" => [ "", "Computer", "1995-2004" ],
+"cs" => [ "", "Computational Science &amp; Engineering", "1995-2004" ],
+"dt" => [ "", "Design &amp; Test of Computers", "1995-2004" ],
+"ex" => [ "", "Expert", "1995-2004" ],
+"ic" => [ "", "Internet Computing", "1997-2004" ],
+"it" => [ "", "IT Professional", "1999-2004" ],
+"mi" => [ "", "Micro", "1995-2004" ],
+"mu" => [ "", "MultiMedia", "1995-2004" ],
+"pd" => [ "", "Parallel &amp; Distributed Technology", "1995-1996,2002-2004" ],
+"so" => [ "", "Software", "1995-2001, 2002-2004" ],
+"tb" => [ "", "Transactions on Computational Biology &amp; Bioinformatics", "2004" ],
+"tc" => [ "", "Transactions on Computers", "1995-2004" ],
+"td" => [ "", "Transactions on Parallel &amp; Distributed Systems", "1995-2004" ],
+"tg" => [ "", "Transactions on Visualization &amp; Computer Graphics", "1995-2004" ],
+"tk" => [ "", "Transactions on Knowldege and Data Engineering", "1995-2004" ],
+"tm" => [ "", "Transactions on Mobile Computing", "2002-2004" ],
+"tp" => [ "", "Transactions on Pattern Analysis and Machine Intelligence", "1995-2004" ],
+"tq" => [ "", "Transactions on Dependable and Secure Computing", "2004" ],
+"ts" => [ "", "Transactions on Software Engineering", "1995-2004" ]
+);
 
 our $do_update = 0;
 our %xpaths;
