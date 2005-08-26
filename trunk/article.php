@@ -42,7 +42,7 @@ if ($_REQUEST["view_jump"] == 1) {
 $file = $_REQUEST["file"];
 $directory = dirname($file);
 $collection = $_REQUEST["collection"];
-$documentns = "xrai:collections:$collection";
+$documentns = "urn:xrai:c:$collection";
 
 $row = $xrai_db->getRow("select id,title,parent from $db_files where collection=? AND filename=?",array($collection,$file));
 //print "$query";

@@ -12,7 +12,7 @@ error_reporting (E_ALL ^ E_NOTICE);
 // Initializations
 // ---------------
 
-$xrains = "xrai:base";
+$xrains = "urn:xrai";
 
 if (!headers_sent()) header("Pragma: no-cache");
 // include_once("assessments.php");

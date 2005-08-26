@@ -56,6 +56,11 @@ XRai.debug = function(s) {
    else if (window.opera) opera.postError(s);
 }
 
+XRai.error = function(s) {
+   if (window.dump) dump("ERROR: " + s);
+   else if (window.opera) opera.postError("ERROR: " + s);
+}
+
 
 // docStatus (and saved value oldDocStatus)
 // 0 => highlighting mode
@@ -91,8 +96,7 @@ XRai.removeFromArray = function(a,x) {
 }
 
 // *** Add/Remove an element in an ordered array
-// A: no duplicate in the array
-// A: the elements of the array are elements
+// A: the elements of the array are elements with comparable positions
 // Add an id to the array
 
 
@@ -107,7 +111,10 @@ XRai.removeElementFromArray = function (a,x) {
    var id = parseInt(x.id);
    var i = 0;
    while (i < a.length && (compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_BEFORE)) i++;
-   if (a[i] = x) a.splice(i,1);
+   while (i < a.length && !(compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_AFTER)) {
+      if (a[i] == x) { a.splice(i,1); break; }
+      i++;
+   }
 }
 
 
@@ -124,17 +131,19 @@ XRai.toggleAttribute = function(e,x) {
 
 XRai.incrementAttribute = function(e,x) {
    var a = e.getAttribute(x);
-   a = a == null ? 0 : parseInt(a);
+   var b = a; // dbg
+   a = a ? parseInt(a) : 0;
    e.setAttribute(x,a+1);
-//    if (debug) XRai.debug(XRai.getPath(e) + " - " + x + " - " + e.getAttribute(x) + "\n");
+//    if (debug) XRai.debug("[A+] " + b + ". " + XRai.getPath(e) + " - " + x + " - " + e.getAttribute(x) + "\n");
 }
 
 XRai.decrementAttribute = function(e,x) {
    var a = e.getAttribute(x);
+   var b = a; // dbg
    a = a == null ? -1 : parseInt(a) - 1;
    if (a == 0) e.removeAttribute(x);
    else if (a > 0) e.setAttribute(x,a);
-//    if (debug) XRai.debug(XRai.getPath(e) + " - " + x + " - " + e.getAttribute(x) + "\n");
+//    if (debug) XRai.debug("[A-] " + b + ". " + XRai.getPath(e) + " - " + x + " - " + a + ", "  + e.getAttribute(x) +  (e.hasAttribute(x) ? "*" : "") + "\n");
 }
 
 function lpad(c,s,l) {
@@ -547,6 +556,10 @@ XRai.getFirstValidParent = function(x,b) {
 Passage = function(x,y,savedValue) {
    // *-*- Methods
 
+   var z = XRai.normalisePassage(x,y);
+   x = z.x;
+   y = z.y;
+
    // Get the container passage (null if == to lca)
    this.getContainer = function() {
       var range = { start: XRai.getFirstValidParent(this.start,1), end: XRai.getFirstValidParent(this.end,1) };
@@ -655,7 +668,7 @@ Passage = function(x,y,savedValue) {
       if (this.next) this.next.previous = this;
 
       // Check for overlap
-      if (debug) XRai.debug("Checking for overlap");
+      if (debug) XRai.debug("Checking for overlap\n");
       if (this.previous && XRai.passagesOverlap(this,this.previous))
          throw Error("Passages overlap (" + this.getPaths() + " and " + this.previous.getPaths());
       if (this.next && XRai.passagesOverlap(this,this.next))
@@ -789,8 +802,9 @@ if (!document.implementation.hasFeature("Range", "2.0")) {
       }
 
       XRai.getSelectedRange = function() {
-
-         return { startContainer: XRai.startselection, endContainer: XRai.endselection};
+         if (compareDocumentPosition(XRai.endselection, XRai.startselection) & DOCUMENT_ORDER_BEFORE)
+            return { startContainer: XRai.startselection, endContainer: XRai.endselection};
+         return { startContainer: XRai.endselection, endContainer: XRai.startselection};
       }
 
    }
@@ -812,11 +826,20 @@ XRai.getSelection = function() {
    var x = XRai.isInDocument(range.startContainer) ? range.startContainer :XRai.previous(range.startContainer);
    var y = XRai.isInDocument(range.endContainer) ? range.endContainer : XRai.previous(range.endContainer) ;
    if ((!x) || (!y)) { Message.show("warning","Invalid passage"); return null; }
-   while (XRai.isIn(y,x)) x = XRai.firstChild(x);
-   return { x: x, y: y};
+
+//    if (debug) XRai.debug("*** Selected passage is " + XRai.getPath(x) + ", " + XRai.getPath(y));
+   return XRai.normalisePassage(x,y);
 }
 
 
+XRai.normalisePassage = function(x,y) {
+   var z;
+   // if y is the last child (or the last child last child etc.), then set y to x
+   if (XRai.isIn(y,x) && !((z = XRai.noDirectNext(y)) && XRai.isIn(z,x))) y = x;
+   // otherwise, go down until x is not in y anymore
+   else while (XRai.isIn(y,x)) x = XRai.firstChild(x);
+   return { x: x, y: y }
+}
 
 
 XRai.unhighlight = function() {
@@ -838,7 +861,7 @@ XRai.unhighlight = function() {
       // Find the first passage
       z = XRai.firstPassage;
       while (z && (XRai.isAfter(x,z.end) && !XRai.isIn(x,z.end)))  {
-         if (debug) XRai.debug("Skipping conflicting passage is " + z.getPaths() +"\n");
+         if (debug) XRai.debug("Skipping conflicting passage: " + z.getPaths() +"\n");
          z = z.next;
       }
       if (debug && z) {
@@ -846,18 +869,19 @@ XRai.unhighlight = function() {
       }
 
       var firstRemoved = false;
+
       // Check overlap with z/x
       if (z && (XRai.isAfter(x,z.start) || XRai.isIn(x,z.end))) {
          // Break the node
          toremove.push(z);
          toadd.push(new Array(z.start, XRai.previousElementTo(x,z.start)));
-         if (debug)
-            if (debug) XRai.debug("Inter(" + z.getPaths() + " with " + XRai.getPath(x) + ") => "
+         if (debug) XRai.debug("Intersection(" + z.getPaths() + " with start: " + XRai.getPath(x) + ") => "
                + XRai.getPath(XRai.previousElementTo(x,z.start)) + "\n");
          firstRemoved = true;
       }
 
       // While y is after z end
+      if (debug) if (z) XRai.debug("Check for included passages to remove with y=" + XRai.getPath(y) + " and " + XRai.getPath(z.end) + "\n"); else XRai.debug("No more conflicting and included passage for removing\n");
       for(; z && (XRai.isAfter(y,z.end) || y == z.end); z = z.next) {
          if (debug) XRai.debug("Removing passage " + z.getPaths() + (z.next ? " - next conflict: " + z.next.getPaths() : " - no next conflict") + "\n");
          if (!firstRemoved) toremove.push(z);
@@ -865,7 +889,8 @@ XRai.unhighlight = function() {
       }
 
       // Check overlap z/y
-      if (z && (XRai.isAfter(y,z.end) || XRai.isIn(y,z.end))) {
+      if (debug) if (z) XRai.debug("Check if we have to add a segment from y=" + XRai.getPath(y) + " to " + XRai.getPath(z.end) + "\n"); else XRai.debug("No more conflicting passage for rehighlighting after passage\n");
+      if (z && (compareDocumentPosition(z.end,y) && DOCUMENT_ORDER_BEFORE)) {
          if (debug) XRai.debug("Removing last conflicting passage " + z.getPaths() + " for " + XRai.getPath(y) + "\n");
          if (!firstRemoved) toremove.push(z);
          toadd.push(new Array(XRai.nextElementTo(y,z.end),z.end));
@@ -1227,7 +1252,7 @@ XRai.upwardUpdate = function(x, olda, newa, updateOnly, skip) {
    } else {
       // Is it contained in a passage ?
       var y = x;
-      while (y) {
+      while (y && y.cAssessment) {
          if (debug) XRai.debug("Looking for passage (" + XRai.getPath(y) + " IN=" + (y.passages ? y.passages.length : "null") + ")\n");
          if (y.passages && y.passages.length > 0) {
             for(var i = 0; i < y.passages.length; i++) {
@@ -1658,7 +1683,11 @@ XRaiLoad = function() {
          } else {
             if (eEnd) {
                try {
-                  new Passage(eStart, eEnd, a == "" ? null : a);
+                  var p = new Passage(eStart, eEnd, a == "" ? null : a);
+                  if ((p.start != eStart) || (p.end != eEnd)) {
+                     XRai.error("Loaded passage was not normalised!\n");
+                     this.loadErrors++;
+                  }
                } catch(e) {
                   this.loadErrors++;
                   if (debug) XRai.debug("/!\\" + e + "\n");
