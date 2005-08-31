@@ -9,8 +9,9 @@
 
 // Params $xpath $file $directory $no_topic
 
-include_once("include/xrai.inc");
-include_once("include/assessments.inc");
+require_once("include/xrai.inc");
+require_once("include/astatus.inc");
+// require_once("include/assessments.inc");
 
 $PHP_SELF = $_SERVER["PHP_SELF"];
 set_time_limit(360); // Time limit = 6 minutes
@@ -56,8 +57,8 @@ if ($id_pool) {
       while ($row = $res->fetchRow()) {
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
-         $all_assessments[$s] = $row["count"];
-         if (abs($row["status"]) != 2 && $row["count"] > 0) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         $all_assessments[$s] += $row["count"];
+         if (abs($row["status"]) != 3 && $row["count"] > 0) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
       }
       $res->free();
    }
@@ -74,10 +75,10 @@ function get_full_path($base,$path) {
 }
 
 function print_assessments($id) {
-global $assessments, $id_pool;
+global $assessments, $id_pool, $all_assessments;
   if ($id_pool >0) {
 //       print_r($assessments[$id]);
-      printStatus($assessments[$id]);
+      printStatus($assessments[$id], $all_assessments);
       print " ";
 
    }
@@ -124,7 +125,7 @@ if (!is_dir("$xml_cache/$path")) {
 
   $result = xslt_process($xslt,$xmlfilename,"$xslfilename")  ;
    if ($result) {
-    print "<div class='warning'>No cache directory was found</div>\n";
+//     print "<div class='warning'>No cache directory was found</div>\n";
       eval("?>" . $result . "<?");
    } else {
       exit("xslt error: " . xslt_error($xslt));

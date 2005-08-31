@@ -68,6 +68,7 @@ $localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=$file&
 
 // add_icon("img_treeview","$base_url/img/tree.png","Tree view (shift + T)","javascript:void(0)","toggle_treeview()",'<div class="help_top">Displays/hides the panel with the tree view of the XML document, where only tag names appear. In this panel, you can click on any tag name to view it in the main document view.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>t</code></div>');
 // add_icon("img_bookmarks","$base_url/img/trombone.png","Bookmarks (shift + B)","javascript:void(0)","toggle_bookmarks()",'<div class="help_top">Displays/hides the panel with the current document bookmarks. In this panel, you can click on any displayed path to view it in the main document view.<br/><b>Shortcut</b>: hold <code>shift</code> and press <code>b</code></div>');
+
 if ($do_debug) {
    add_icon("img_eyes","$base_url/img/eyes.png","Debug view","javascript:void(0)",'toggle_panel("assessing","img_eyes")','');
    add_icon("img_log","$base_url/img/log.png","Log view","javascript:void(0)",'toggle_panel("log","img_log")','');
@@ -142,10 +143,10 @@ div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
 
 <?=$xraiatag?>:before { background: red; color: white; content: "[error]"; }
 
-<?=$xraiatag?>[type="passage"] { background: yellow; }
+<?=$xraiatag?>[type="passage"] { background: blue; }
 
 <? if ($do_debug) { ?>
-<?=$xraiatag?>[type="in"] { background: #00F; }
+<?=$xraiatag?>[type="in"] { background: #aaF; }
 <?=$xraiatag?>[type="container"] { background: #0F0 !important; }
 <?=$xraiatag?>[intersection] { border: 2px solid #F00 !important;  }
 <? } ?>
@@ -162,8 +163,8 @@ div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
 <?=$xraiatag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
 <?=$xraiatag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
 
-*|*[first]:before { background: blue; color: white; content : "["; font-size: small; font-weight: bold; }
-*|*[last]:after { background: blue; color: white; content : "]"; font-size: small; font-weight: bold; }
+*|*[first]:before { background: blue; color: white; content : "{"; padding: 3px; font-size: larger; font-weight: bold; }
+*|*[last]:after { background: blue; color: white; content : "}"; padding: 3px;  font-size: larger;  font-weight: bold; }
 
 </style>
 <?

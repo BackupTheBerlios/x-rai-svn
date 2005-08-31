@@ -3,6 +3,9 @@
    B. Piwowarski, 2003
 */
 
+var XRai = new Object(); // used for namespace
+XRai.click = function(event) { return true; }
+
 var is_gecko = true;
 var xhtml_ns = "http://www.w3.org/1999/xhtml";
 var document_is_loaded = false;
@@ -70,6 +73,7 @@ function _isMouseInside(obj,event) {
 var current_menu;
 
 function hide_menu(menu) {
+  if (!menu) return;
   menu.style.visibility = "hidden";
   if (current_menu == menu) current_menu = 0;
   document.getElementById("a_" + menu.id).style.background = "";
@@ -83,14 +87,14 @@ function hide_menu_id(id) {
 
 function menuout(event) {
   var current, related;
-  if (window.event) {
+/*  if (window.event) {
     current = this;
     related = window.event.toElement;
   }
-  else {
+  else {*/
     current = event.currentTarget;
     related = event.relatedTarget;
-  }
+//   }
   if (related && contains(current,related)) return;
   var s='';
   if (_isMouseInside(current,event)) return;

@@ -11,7 +11,6 @@
 // p6: load & save
 // p7: user navigation
 
-var XRai = new Object(); // used for namespace
 XRai.loaded = false;
 
 // Find the position of an XML node in the page:
@@ -191,11 +190,11 @@ XRai.findHighlighted = function(x) {
 }
 
 XRai.onclick = function(event) {
-
+   if (!event) return;
    if (docStatus >= 1) {
       var t = event.target;
       if (t.localName == xraiatag && t.namespaceURI == xrains) {
-         if (event.ctrlKey) {
+      if (event.shiftKey) {
             if (!t.passage) XRai.toggleAttribute(t.parentNode,"selected");
          } else {
             XRai.showEvalPanel(t,event.pageX, event.pageY);
@@ -231,7 +230,12 @@ XRai.keypressed = function (event) {
   if (N && event.which == 104) XRai.highlight();
   else if (N && event.which == 117) XRai.unhighlight();
   else if (N && event.which == 109) XRai.switchMode();
-  else if (S && event.which == 115) XRai.save();
+  else if (C && event.which == 83) XRai.save();
+
+//   else if (event.which == 49)
+//   else if (event.which == 50)
+//   else if (event.which == 51)
+
   else {
      if (debug) XRai.debug("Key pressed: charchode=" + event.charCode
         + ", keycode=" + event.keyCode
@@ -1545,6 +1549,11 @@ function createHiddenInput(name,value) {
    x.setAttribute("name",name);
    x.setAttribute("value",value);
    return x;
+}
+
+XRai.click = function(event) {
+   event.stopPropagation();
+   return false;
 }
 
 // Called when the user wants to save the document

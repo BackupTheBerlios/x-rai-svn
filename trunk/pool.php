@@ -6,8 +6,9 @@
    */
 
 
-include_once("include/xrai.inc");
-include_once("include/assessments.inc");
+require_once("include/xrai.inc");
+require_once("include/astatus.inc");
+// require_once("include/assessments.inc");
 
 if (!$id_pool) {
    header("Location: index.php");
@@ -30,6 +31,7 @@ else {
 //       print "$row[collection] / $s / $row[inpool] $db_true / $row[count]<br/>";
       $a[$row["collection"]][$s] = $row["count"];
       $t[$s] = $row["count"];
+      $total[$s]++;
       $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[collection]'";
    }
    $res->free();
@@ -41,6 +43,7 @@ print "<h1>Statistics</h1>";
 
 $p1=getPercentage($t["1"] + $t["-1"],$t["1"]+$t["2"]+$t["-1"]+$t["-2"]);
 $p2=getPercentage($t[1],$t[1]+$t[2]);
+
 ?>
 
 <div>
@@ -61,7 +64,7 @@ if (DB::isError($ch)) non_fatal_error("Could not retrieve collections",$ch->getU
 else {
    while ($row = $ch->fetchRow(DB_FETCHMODE_ASSOC)) {
       print "<div>";
-      printStatus($a[$row["collection"]]);
+      printStatus($a[$row["collection"]], $total);
       print " <a id='$row[collection]' href=\"collections/$row[collection]?id_pool=$id_pool\">" . htmlspecialchars($row["title"]) . "</a>";
       print "</div>";
    }

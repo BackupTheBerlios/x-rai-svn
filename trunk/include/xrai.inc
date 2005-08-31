@@ -68,16 +68,6 @@ function hasCache($src1,$src2,$dest) {
 
 
 
-function getPercentage($x,$y) {
-   return $y > 0 ? intval(10000*($x / $y))/100 : 0;
-}
-function printStatus($t) {
-   global $base_url;
-   $p1 = getPercentage($t[1],$t[1]+$t[2]);
-   $p2 = getPercentage($t[-1],$t[-1]+$t[-2]);
-   $status = ($t["1"] > 0 ? "0" : "1") . ($t["-1"] > 0 ? "0" : "1");
-   print "<img alt=\"[$status]\" title=\"$p1% of pool and $p2% of non-pool documents to assess\" src=\"$base_url/img/status-$status.png\"/>";
-}
 
 
 /*
@@ -107,7 +97,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
       <link rel="stylesheet" href="<?=$base_url?>/css/style.css" />
    </head>
-      <body id="body" onload="document_loaded()">
+      <body id="body" onclick="XRai.click(event)" onload="document_loaded()">
    <table id="menubar" class="localisation">
      <tr>
       <td><span style="color: #333333; ">User <b<? if ($is_root) print " style='color:red'"; ?>><?=$inex_user?> </b> </span> |
