@@ -1,0 +1,113 @@
+@namespace url(http://www.w3.org/1999/xhtml)
+
+div#inex .xmle {
+  border: 1px solid transparent;
+}
+
+div#inex div.xmle {
+/*   border-left: 1px solid #dddddd; */
+  padding-left: 4px;
+}
+
+.xmle[sel] { background: #ffffdd;}
+
+*[sel] > .xml { background: #ddddaa; }
+*[sel] > *[class='xmlp'] .xml { background: #ddddaa; }
+
+*.xmle [name='sel'] {
+ background: #EAFF62;
+}
+
+/* One level xmle */
+
+/* *[class='xmle'] > .xml:before { content:  "["; } */
+
+/**[class='xmle'][highlight] > .xml:before { border: 1px solid red; }*/
+
+/**[class='xmle'][name='A']  > .xml:before { content:  "[" url('../img/U.png') " "; }
+*[class='xmle'][name='U'] > .xml:before { content:  "[" url('../img/na.png') " "; }
+
+*[class='xmle'][name='33'][ii='yes'] > .xml:before { content:  "[" url('../img/i33.png') " "; }
+*[class='xmle'][name='32'][ii='yes'] > .xml:before { content:  "[" url('../img/i32.png') " "; }
+*[class='xmle'][name='31'][ii='yes'] > .xml:before { content:  "[" url('../img/i31.png') " "; }
+*[class='xmle'][name='23'][ii='yes'] > .xml:before { content:  "[" url('../img/i23.png') " "; }
+*[class='xmle'][name='22'][ii='yes'] > .xml:before { content:  "[" url('../img/i22.png') " "; }
+*[class='xmle'][name='21'][ii='yes'] > .xml:before { content:  "[" url('../img/i21.png') " "; }
+*[class='xmle'][name='13'][ii='yes'] > .xml:before { content:  "[" url('../img/i13.png') " "; }
+*[class='xmle'][name='12'][ii='yes'] > .xml:before { content:  "[" url('../img/i12.png') " "; }
+*[class='xmle'][name='11'][ii='yes'] > .xml:before { content:  "[" url('../img/i11.png') " "; }
+*[class='xmle'][name='00'][ii='yes'] > .xml:before { content:  "[" url('../img/i00.png') " "; }
+
+*[class='xmle'][name='33']  > .xml:before { content:  "[" url('../img/a33.png') " "; }
+*[class='xmle'][name='32']  > .xml:before { content:  "[" url('../img/a32.png') " "; }
+*[class='xmle'][name='31']  > .xml:before { content:  "[" url('../img/a31.png') " "; }
+*[class='xmle'][name='23']  > .xml:before { content:  "[" url('../img/a23.png') " "; }
+*[class='xmle'][name='22']  > .xml:before { content:  "[" url('../img/a22.png') " "; }
+*[class='xmle'][name='21']  > .xml:before { content:  "[" url('../img/a21.png') " "; }
+*[class='xmle'][name='13']  > .xml:before { content:  "[" url('../img/a13.png') " "; }
+*[class='xmle'][name='12']  > .xml:before { content:  "[" url('../img/a12.png') " "; }
+*[class='xmle'][name='11']  > .xml:before { content:  "[" url('../img/a11.png') " "; }
+*[class='xmle'][name='00']  > .xml:before { content:  "[" url('../img/a00.png') " "; }
+
+*[class='xmle'][ic='yes']  > .xml:before { content:  "[" url('../img/I.png') " "; }*/
+
+/* Second level xmle */
+
+/**[class='xmle'] > .xmlp .xml:before { content:  "["; }
+
+*[class='xmle'][name='A'] > .xmlp  .xml:before { content:  "[" url('../img/U.png') " "; }
+*[class='xmle'][name='U'] > .xmlp  .xml:before { content:  "[" url('../img/na.png') " "; }
+
+*[class='xmle'][name='33'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i33.png') " "; }
+*[class='xmle'][name='32'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i32.png') " "; }
+*[class='xmle'][name='31'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i31.png') " "; }
+*[class='xmle'][name='23'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i23.png') " "; }
+*[class='xmle'][name='22'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i22.png') " "; }
+*[class='xmle'][name='21'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i21.png') " "; }
+*[class='xmle'][name='13'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i13.png') " "; }
+*[class='xmle'][name='12'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i12.png') " "; }
+*[class='xmle'][name='11'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i11.png') " "; }
+*[class='xmle'][name='00'][ii='yes'] > .xmlp .xml:before { content:  "[" url('../img/i00.png') " "; }
+
+*[class='xmle'][name='33']  > .xmlp .xml:before { content:  "[" url('../img/a33.png') " "; }
+*[class='xmle'][name='32']  > .xmlp> .xml:before { content:  "[" url('../img/a32.png') " "; }
+*[class='xmle'][name='31']  > .xmlp .xml:before { content:  "[" url('../img/a31.png') " "; }
+*[class='xmle'][name='23']  > .xmlp .xml:before { content:  "[" url('../img/a23.png') " "; }
+*[class='xmle'][name='22']  > .xmlp .xml:before { content:  "[" url('../img/a22.png') " "; }
+*[class='xmle'][name='21']  > .xmlp .xml:before { content:  "[" url('../img/a21.png') " "; }
+*[class='xmle'][name='13']  > .xmlp .xml:before { content:  "[" url('../img/a13.png') " "; }
+*[class='xmle'][name='12']  > .xmlp .xml:before { content:  "[" url('../img/a12.png') " "; }
+*[class='xmle'][name='11']  > .xmlp .xml:before { content:  "[" url('../img/a11.png') " "; }
+*[class='xmle'][name='00']  > .xmlp .xml:before { content:  "[" url('../img/a00.png') " "; }
+
+*[class='xmle'][ic='yes'] > .xmlp .xml:before { content:  "[" url('../img/I.png') " "; }*/
+
+
+
+
+span.xml {
+  background: inherit;
+  font-size: small;
+  margin-right: 3pt;
+  cursor: crosshair;
+  padding: 1pt;
+  color: #8888ff;
+}
+
+/* span.xml:after { content: "]"; } */
+
+
+*[class='xmle'][selected='yes'] > *[class='xmlp'] span.xml {
+  color: red; 
+}
+
+*[class='xmle'][selected='yes'] > span.xml { 
+  color: red; 
+}
+
+
+span.xml {
+ display: inline;
+}
+
+

@@ -1,0 +1,58 @@
+@namespace url(urn:xrai:c:ieee);
+
+* {
+border: 1px solid transparent;
+display: inline;
+}
+
+hdr, hdr1, hdr2, item, li, f, fn, bq, figw, fig, index, index-entry, vt, entry, question, doi, answer, article, bib, tbl, brief, tig, ti, l1, kwd, fno, edintro, bdy, fm, sec, ss1, ss2,ip1, ip2, ip2, ip3, ip4, ip5, p, p1, p2, p3, lc, bm, apt, abs, app, bb, ack, list, bibl, hdr, hdr1, hdr2, footnote, edinfo, fgc, bullet-list, list, la, lb, lc, ld, ul, l1, l2, l3, l4, l5, l6, l7, l8, l9, numeric-list {
+   display: block;
+   padding-left: 5px;
+}
+
+
+sec, sec1 { padding-left: 1em; }
+p, bb { padding: 1em 0 0 0; }
+
+tbl  { display: table; }
+
+tbl no:before { content: "Table "; }
+tbl no:after { content: " "; }
+tbl no { font-weight: bold; }
+tbl ti { clear: right; }
+tbl ti { display: table-caption; }
+
+tbl bdy { display: table-row-group; }
+bdy row { display: table-row; }
+bdy entry { display: table-cell; }
+
+it { font-style: italic; }
+b { font-weight: bold;}
+super { vertical-align: text-top; font-size: smaller; }
+
+fm atl { font-size: xx-large;   }
+
+lit { white-space: pre; }
+abs { margin: 5px; border: 1px solid gray; padding: 5px; }
+abs:before { content: "Abstract"; font-size: large; }
+
+fn:before { color: gray; content: "footnote"; padding-right: 3px; text-decoration: underline; font-size: smaller; }
+fn { border: 1px dashed gray; colour: #444444; }
+/* fn p { display: inline; } */
+
+bdy, bibl { border-top: 1px solid black; }
+
+st,h { font-size: xx-large; color: blue; padding: 5px 0 5px 0; }
+
+bb ti { font-style: italic; }
+
+l1, l2, l3, l4, l5, l6, l7, l8, l9, la, lb, lc, ld, le, list, list-numeric, numeric-rbrace, bullet-list {
+    display: block; padding-left: 2em; list-style: outside disc;
+}
+li { display: list-item; }
+ref { color: #88b; font-weight: bold;}
+
+
+*:before { color: #88f; font-size: small; content: "<"; }
+*:after { color: #88f; font-size: small; content: ">"; }
+
