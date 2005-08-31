@@ -104,7 +104,6 @@ if ($id_pool > 0) {
   var documentns = "<?=$documentns?>";
   var xrai_file = "<?=$file?>";
   var xrai_collection = "<?=$collection?>";
-  id_pool = <?=$id_pool?>;
   write_access = <?=$can_modify ? "true" : "false"?>;
   debug = <?=$do_debug ? "true": "false"?>;
   up_url = "<?=$up_url?>";
@@ -112,6 +111,7 @@ if ($id_pool > 0) {
   var xraiatag = "<?=$xraiatag?>";
 
 <? if ($id_pool > 0) { ?>
+   var id_pool = <?=$id_pool?>;
    var writeAccess = true;
    aversion = <?=$assessments->getVersion()?>;
    var docStatus = "<?=abs($assessments->getDone())?>";

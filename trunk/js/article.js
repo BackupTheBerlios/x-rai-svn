@@ -581,16 +581,16 @@ Passage = function(x,y,savedValue) {
       // Update containers
       if (debug) XRai.debug("Updating containers\n");
       var lca = this.getLCA();
-      XRai.addContained(this,lca);
+//       XRai.addContained(this,lca);
 
       // Create assessments for intersection
       var range = this.getContainer();
       if (range) {
          if (debug) XRai.debug("** Adding assessments for intersection (" + XRai.getPath(range.start) + "-" + XRai.getPath(range.end) + ")\n");
          for(var x = range.start; x; x = XRai.nextElementTo(x,range.end,1)) {
-            XRai.addPassage(x,this);
+            XRai.addPassage(x,this,1);
          }
-      } else XRai.addPassage(lca,this);
+      } else XRai.addPassage(lca,this,1);
 
       for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
          if (!XRai.isInDocument(x,1)) continue;
@@ -615,17 +615,17 @@ Passage = function(x,y,savedValue) {
       // Update containers
       if (debug) XRai.debug("Updating containers\n");
       var lca = this.getLCA();
-      XRai.removeContained(this,lca);
-      XRai.removeAssessment(this.assessment);
+//       XRai.removeContained(this,lca);
+//       XRai.removeAssessment(this.assessment);
 
       // Remove assessments for intersection
       var range = this.getContainer();
       if (range) {
          if (debug) XRai.debug("Removing intersections\n");
          for(var x = range.start; x; x = XRai.nextElementTo(x,range.end,1)) {
-            XRai.removePassage(x,this);
+            XRai.removePassage(x,this,1);
          }
-      } else XRai.removePassage(lca,this);
+      } else XRai.removePassage(lca,this,1);
 
       if (debug) XRai.debug("Removing inner elements\n");
       for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
@@ -733,6 +733,7 @@ Passage = function(x,y,savedValue) {
    this.start = x;
    this.end = y;
    this.assessment = false; // The current passage will be active only after user validation
+   this.isPassage = true;
 
    if (typeof savedValue != "undefined") this.saved = savedValue;
    if (savedValue != null) {
@@ -769,14 +770,15 @@ Passage = function(x,y,savedValue) {
    if (debug) XRai.debug("Adding the assessment\n");
    this.assessment.passage = this;
    if (typeof savedValue == "undefined") {
-      this.assessment = XRai.newAssessment(this.start,"0",this);
+/*      this.assessment = XRai.newAssessment(this.start,"0",this);*/
       XRai.changeCount++;
       this.validated = false;
    } else {
-      this.assessment = XRai.newAssessment(this.start,savedValue ? (savedValue >= 0 ? savedValue : -1-savedValue) : 0, this, savedValue);
+//       this.assessment = XRai.newAssessment(this.start,savedValue ? (savedValue >= 0 ? savedValue : -1-savedValue) : 0, this, savedValue);
    }
-   this.assessment.setAttribute("type","passage");
-   this.assessment.passage = this;
+//    this.assessment.setAttribute("type","passage");
+   //    this.assessment.passage = this;
+
    if (debug) XRai.debug("Passage " + this.getPaths() + " added\n");
 }
 
@@ -1046,7 +1048,7 @@ XRai.addPassage = function(x,p,b) {
    if (XRai.addToArray(x.passages,p) && b) {
       if (!x.realIntersection) x.realIntersection = 1;
       else x.realIntersection++;
-      if (XRai.checkContainerAssessment(x)) XRai.addContained(x,null,p.getLCA());
+      if (XRai.checkContainerAssessment(x)) XRai.addContained(x,null,null); // p.getLCA());
    }
 }
 
@@ -1055,7 +1057,7 @@ XRai.removePassage = function(x,p,b) {
    if (debug) XRai.debug("Remove passage " + p.getPaths() + " from " + XRai.getPath(x) +"\n");
    if (XRai.removeFromArray(x.passages,p) && b) {
       x.realIntersection--;
-      if (XRai.checkContainerAssessment(x) != 0) XRai.removeContained(x, null, p.getLCA());
+      if (XRai.checkContainerAssessment(x) != 0) XRai.removeContained(x, null, null) ; //p.getLCA());
    }
 }
 
@@ -1063,6 +1065,7 @@ XRai.addContained = function(z, x, limit) {
    var toremove = null;
    var toadd = z;
    if (debug) XRai.debug("\n");
+
 
    if (!x)
       if (z.passage) x = XRai.getCommonAncestor(z.passage.start,z.passage.end);
@@ -1253,29 +1256,30 @@ XRai.upwardUpdate = function(x, olda, newa, updateOnly, skip) {
    if (!skip) {
       if (debug) XRai.debug("Updating (upward) " + XRai.getPath(x) + ": " + olda + " -> "  + newa + "\n");
       if (x.cAssessment) XRai.upwardCheck(x, olda, newa, x.cAssessment, updateOnly);
-   } else {
-      // Is it contained in a passage ?
-      var y = x;
-      while (y && y.cAssessment) {
-         if (debug) XRai.debug("Looking for passage (" + XRai.getPath(y) + " IN=" + (y.passages ? y.passages.length : "null") + ")\n");
-         if (y.passages && y.passages.length > 0) {
-            for(var i = 0; i < y.passages.length; i++) {
-               var p = y.passages[i];
-               if (XRai.isInRange(x,p.start, p.end)) {
-                  if (debug) XRai.debug(XRai.getPath(x) + " is in passage " + p.getPaths() + " with a = " + p.assessment.getAttribute("a") + "\n");
-                  XRai.upwardCheck(p, olda, newa, p.assessment, updateOnly);
-               } else if (debug) XRai.debug(XRai.getPath(x) + " is NOT in passage " + p.getPaths() + "\n");
-            }
-            break;
-         } else if (debug) XRai.debug(XRai.getPath(x) + " is not an intersection\n");
-
-         if (y.cAssessment.getAttribute("type") != "in") {
-            if (debug) XRai.debug("We are not within a passage anymore:" + y.cAssessment.getAttribute("type") + "!\n");
-            break;
-         }
-         y = XRai.parent(y,1);
-      }
    }
+//       else {
+//       // Is it contained in a passage ?
+//       var y = x;
+//       while (y && y.cAssessment) {
+//          if (debug) XRai.debug("Looking for passage (" + XRai.getPath(y) + " IN=" + (y.passages ? y.passages.length : "null") + ")\n");
+//          if (y.passages && y.passages.length > 0) {
+//             for(var i = 0; i < y.passages.length; i++) {
+//                var p = y.passages[i];
+//                if (XRai.isInRange(x,p.start, p.end)) {
+//                   if (debug) XRai.debug(XRai.getPath(x) + " is in passage " + p.getPaths() + " with a = " + p.assessment.getAttribute("a") + "\n");
+//                   XRai.upwardCheck(p, olda, newa, p.assessment, updateOnly);
+//                } else if (debug) XRai.debug(XRai.getPath(x) + " is NOT in passage " + p.getPaths() + "\n");
+//             }
+//             break;
+//          } else if (debug) XRai.debug(XRai.getPath(x) + " is not an intersection\n");
+//
+//          if (y.cAssessment.getAttribute("type") != "in") {
+//             if (debug) XRai.debug("We are not within a passage anymore:" + y.cAssessment.getAttribute("type") + "!\n");
+//             break;
+//          }
+//          y = XRai.parent(y,1);
+//       }
+//    }
 
    // Go up
    x = XRai.parent(x,1);
@@ -1329,10 +1333,12 @@ XRai.setMaxBelow = function(j,bound,force) {
       if (debug) XRai.debug("=/=> " + XRai.getPath(y) + "\n");
       y = y.assessment ? y.assessment : y.cAssessment;
       XRai.debug("=" + y + "\n");
-      if (b || bound >=0) XRai.setBound(y,bound,force);
+//       if (b || (bound >=0))
+      XRai.setBound(y,bound,force);
       var b = XRai.setMaxBelow(y,bound,force);
       f |= b;
-   }
+      }
+
    // Assessment contained in a passage
    if (x.passages || j.getAttribute("type") == "in") {
       if (debug) XRai.debug("We are in a passage\n");
@@ -1355,11 +1361,9 @@ XRai.nobelow = function(j,bound,force) {
 
 
 XRai.containsPassage = function(x) {
-   if (!x.containers) return false;
-   for(var i = 0; i < x.containers.length; i++) {
-      if (x.containers[i].getPaths) return true;
-      if (debug) XRai.debug("Checking container " + XRai.getPath(x.containers[i]) + "\n");
-      return XRai.containsPassage(x.containers[i]);
+   for(var p = XRai.firstPassage; p; p = p.next) {
+      var lca = p.getLCA();
+      if (x == lca || XRai.isIn(lca,x)) return true;
    }
    return false;
 }
