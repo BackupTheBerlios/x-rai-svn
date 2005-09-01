@@ -736,8 +736,9 @@ Passage = function(x,y,savedValue) {
    this.isPassage = true;
 
    if (typeof savedValue != "undefined") this.saved = savedValue;
+
    if (savedValue != null) {
-      this.active = (savedValue >= 0);
+      this.active = (savedValue == Passage.ACTIVE);
       this.validated = true;
    } else {
       this.active = true;
@@ -816,6 +817,8 @@ if (!document.implementation.hasFeature("Range", "2.0")) {
    }
 }
 
+Passage.ACTIVE = 2;
+Passage.UNACTIVE = 1;
 
 
 // Return the start/end *elements* of the current selection
@@ -1542,6 +1545,9 @@ XRai.saved = function(b) {
       XRai.history = new Array();
       XRai.changeCount = 0;
       oldDocStatus = docStatus;
+      for(var p = XRai.firstPassage; p; p = p.next) p.saved = Passage.ACTIVE;
+      for(var p = XRai.firstOldPassage; p; p = p.next) p.saved = Passage.UNACTIVE;
+
       XRai.updateSaveIcon();
    }
    document.getElementById('saving_div').style.visibility = 'hidden'
@@ -1603,9 +1609,6 @@ XRai.save = function() {
    // Add assessments
    XRai.toSave = new Array();
    var xraij = document.getElementsByTagNameNS(xrains,xraiatag);
-//    var result = xpe.evaluate(".//xrai:" + xraiatag, document.getElementById("inex"), nsResolver, 0, null);
-//    var res;
-//    while (res = result.iterateNext()) {
    for(var n = 0; n < xraij.length; n++) {
       var res = xraij[n];
       res.value = XRai.getAValue(res);
@@ -1617,6 +1620,25 @@ XRai.save = function() {
          if (res.passage) s += XRai.getPath(res.passage.start) + "," + XRai.getPath(res.passage.end);
          else s += XRai.getPath(res.parentNode) + ",";
          if (debug) XRai.debug("Adding " + s + " (" + res.saved + "/" + res.value + ")\n");
+         XRai.saveForm.appendChild(createHiddenInput("a[]",s));
+      }
+      }
+
+  // Add passages
+  for(var p = XRai.firstPassage; p; p = p.next) {
+      if (p.saved != Passage.ACTIVE) {
+         var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.ACTIVE + ",";
+         s += XRai.getPath(p.start) + "," + XRai.getPath(p.end);
+         if (debug) XRai.debug("Adding " + s + " (" + p.getPaths() + ")\n");
+         XRai.saveForm.appendChild(createHiddenInput("a[]",s));
+      }
+   }
+
+   for(var p = XRai.firstOldPassage; p; p = p.next) {
+      if (p.saved != Passage.UNACTIVE) {
+         var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.UNACTIVE + ",";
+         s += XRai.getPath(p.start) + "," + XRai.getPath(p.end);
+         if (debug) XRai.debug("Adding " + s + " (" + p.getPaths() + ")\n");
          XRai.saveForm.appendChild(createHiddenInput("a[]",s));
       }
    }
