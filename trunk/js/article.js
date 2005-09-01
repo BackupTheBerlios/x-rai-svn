@@ -696,18 +696,29 @@ Passage = function(x,y,savedValue) {
          e.passage = this;
    }
 
+   this.getValue = function() {
+      return this.active ? Passage.ACTIVE : Passage.UNACTIVE;
+   }
+
    // Unhighlight this passage
    this.unhighlight = function() {
       if (debug) XRai.debug("Unhighlighting " + this.getPaths() + (this.validated ? "*" : "") + "\n");
       XRai.firstPassage = this.remove(XRai.firstPassage);
+
       if (this.validated) {
+         // If it was validated, change the active state
          XRai.firstOldPassage = this.add(XRai.firstOldPassage);
          this.active = false;
+         if (typeof this.saved != "undefined") {
+            if (this.getValue() != this.saved) XRai.changeCount++;
+            else XRai.changeCount--;
+         }
+
          XRai.assessmentChanged(this.assessment);
       } else {
          if (typeof this.assessment.saved != "undefined") {
             XRai.assessmentsToRemove.push(this.assessment);
-            if (this.assessment.saved == this.assessment.value) XRai.changeCount++;
+            if (this.assessment.saved == this.getValue()) XRai.changeCount++;
          } else XRai.changeCount--;
          XRai.removeAssessment(this.assessment);
       }
@@ -736,6 +747,7 @@ Passage = function(x,y,savedValue) {
    this.isPassage = true;
 
    if (typeof savedValue != "undefined") this.saved = savedValue;
+   else XRai.changeCount++;
 
    if (savedValue != null) {
       this.active = (savedValue == Passage.ACTIVE);
@@ -758,32 +770,20 @@ Passage = function(x,y,savedValue) {
       for(var p = XRai.firstOldPassage; p && !XRai.isAfter(p.start,this.start); p = p.next) {
          if (p.start == this.start && p.end == this.end) {
             if (debug) XRai.debug("Restoring an unactive passage\n");
-            this.assessment = p.assessment;
-            this.assessment.passage = this;
             XRai.firstOldPassage = p.remove(XRai.firstOldPassage);
-            XRai.assessmentChanged(this.assessment);
-            XRai.removeFromArray(XRai.assessmentsToRemove,this.assessment);
+            XRai.removeFromArray(XRai.assessmentsToRemove,this);
             return;
          }
       }
    }
 
-   if (debug) XRai.debug("Adding the assessment\n");
-   this.assessment.passage = this;
-   if (typeof savedValue == "undefined") {
-/*      this.assessment = XRai.newAssessment(this.start,"0",this);*/
-      XRai.changeCount++;
-      this.validated = false;
-   } else {
-//       this.assessment = XRai.newAssessment(this.start,savedValue ? (savedValue >= 0 ? savedValue : -1-savedValue) : 0, this, savedValue);
-   }
-//    this.assessment.setAttribute("type","passage");
-   //    this.assessment.passage = this;
-
    if (debug) XRai.debug("Passage " + this.getPaths() + " added\n");
 }
 
+Passage.ACTIVE = 2;
+Passage.UNACTIVE = 1;
 
+// Get selection function
 if (!document.implementation.hasFeature("Range", "2.0")) {
    alert("X-Rai cannot be used on your browser (no range support)");
 } else {
@@ -817,8 +817,6 @@ if (!document.implementation.hasFeature("Range", "2.0")) {
    }
 }
 
-Passage.ACTIVE = 2;
-Passage.UNACTIVE = 1;
 
 
 // Return the start/end *elements* of the current selection
@@ -1647,7 +1645,7 @@ XRai.save = function() {
    for(var i = 0; i < XRai.assessmentsToRemove.length; i++) {
       var s = "";
       res = XRai.assessmentsToRemove[i];
-      if (res.passage) s += XRai.getPath(res.passage.start) + "," + XRai.getPath(res.passage.end);
+      if (res.isPassage) s += XRai.getPath(res.start) + "," + XRai.getPath(res.end);
       else s += XRai.getPath(res.parent) + ",";
       XRai.saveForm.appendChild(createHiddenInput("r[]",s));
    }
