@@ -14,28 +14,29 @@ use bytes;
 
 # perl -e 'while (<>) { if (/^(\w\w)\s*(?:IEEE )?([\D]*)\s*(.*)$/) { $i=$1; $y=$3; $t = $2; $t =~ s/&/&amp;/g; $t =~ s/\s*$//; print "\"$i\" => [ \"\", \"$t\", \"$y\" ],\n";  }}'
 our %collections =
-(
-"an" => [ "", "Annals of the History of Computing", "1995-2004" ],
-"cg" => [ "", "Computer Graphics and Applications", "1995-2004" ],
-"co" => [ "", "Computer", "1995-2004" ],
-"cs" => [ "", "Computational Science &amp; Engineering", "1995-2004" ],
-"dt" => [ "", "Design &amp; Test of Computers", "1995-2004" ],
-"ex" => [ "", "Expert", "1995-2004" ],
-"ic" => [ "", "Internet Computing", "1997-2004" ],
-"it" => [ "", "IT Professional", "1999-2004" ],
-"mi" => [ "", "Micro", "1995-2004" ],
-"mu" => [ "", "MultiMedia", "1995-2004" ],
-"pd" => [ "", "Parallel &amp; Distributed Technology", "1995-1996,2002-2004" ],
-"so" => [ "", "Software", "1995-2001, 2002-2004" ],
+("an" => [ "", "Annals of the History of Computing", "2002-2004" ],
+"cg" => [ "", "Computer Graphics and Applications", "2002-2004" ],
+"co" => [ "", "Computer", "2002-2004" ],
+"cs" => [ "", "Computational Science &amp; Engineering", "2002-2004" ],
+"ds" => [ "", "Computing in Science &amp; Engineering", "2004" ],
+"dt" => [ "", "Design &amp; Test of Computers", "2002-2004" ],
+"ex" => [ "", "Expert", "2002-2004" ],
+"ic" => [ "", "Intelligent Systems", "2002-2004" ],
+"it" => [ "", "IT Professional", "2002-2004" ],
+"mi" => [ "", "Micro", "2002-2004" ],
+"mu" => [ "", "MultiMedia", "2002-2004" ],
+"pc" => [ "", "Parallel &amp; Distributed Technology", "2002-2004" ],
+"so" => [ "", "Concurrency", "2002-2004" ],
+"sp" => [ "", "Software", "2002-2004" ],
 "tb" => [ "", "Transactions on Computational Biology &amp; Bioinformatics", "2004" ],
-"tc" => [ "", "Transactions on Computers", "1995-2004" ],
-"td" => [ "", "Transactions on Parallel &amp; Distributed Systems", "1995-2004" ],
-"tg" => [ "", "Transactions on Visualization &amp; Computer Graphics", "1995-2004" ],
-"tk" => [ "", "Transactions on Knowldege and Data Engineering", "1995-2004" ],
+"tc" => [ "", "Transactions on Computers", "2002-2004" ],
+"td" => [ "", "Transactions on Parallel &amp; Distributed Systems", "2002-2004" ],
+"tg" => [ "", "Transactions on Visualization &amp; Computer Graphics", "2002-2004" ],
+"tk" => [ "", "Transactions on Knowldege and Data Engineering", "2002-2004" ],
 "tm" => [ "", "Transactions on Mobile Computing", "2002-2004" ],
-"tp" => [ "", "Transactions on Pattern Analysis and Machine Intelligence", "1995-2004" ],
+"tp" => [ "", "Transactions on Pattern Analysis and Machine Intelligence", "2002-2004" ],
 "tq" => [ "", "Transactions on Dependable and Secure Computing", "2004" ],
-"ts" => [ "", "Transactions on Software Engineering", "1995-2004" ]
+"ts" => [ "", "Transactions on Software Engineering", "2004-2004" ]
 );
 
 our $do_update = 0;
