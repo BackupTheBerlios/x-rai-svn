@@ -62,10 +62,10 @@ function startElement($parser, $name, $attrs) {
       case "path":
          $pathid = getPathId($attrs["path"]);
          if ($file > 0 && $pathid > 0) {
-            print "Adding $file, $path\n";
+            print "Adding $file, $pathid\n";
             $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idpath" => $pathid));
             if (DB::isError($res)) die($res->getUserInfo() . "\n");
-         } else print "Skipping $file, $pathid\n";
+         } else print "[ERROR] Skipping $file, $pathid\n";
 
          break;
       default: die("Unexpected tag: $name");
