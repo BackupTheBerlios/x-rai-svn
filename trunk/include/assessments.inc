@@ -16,7 +16,7 @@ function get_assessment_link($a) {
 class Files {
      function getFileId($collection,$filename, $create = false) {
       global $xrai_db, $db_files;
-      $id = $xrai_db->getOne("SELECT id FROM $db_files WHERE collection=? AND filename=?",array($collection,$filename));
+      $id = $xrai_db->getOne("SELECT id FROM $db_files WHERE lower(collection)=lower(?) AND lower(filename)=lower(?)",array($collection,$filename));
       if (!$id) {
          if (!$create) return -1;
          $id = $xrai_db->nextId("{$db_files}_id");
