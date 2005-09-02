@@ -97,7 +97,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
       <link rel="stylesheet" href="<?=$base_url?>/css/style.css" />
    </head>
-      <body id="body" onclick="XRai.click(event)" onload="document_loaded()">
+      <body id="body" onclick="return XRai.click(event)" onload="document_loaded()">
    <table id="menubar" class="localisation">
      <tr>
       <td><span style="color: #333333; ">User <b<? if ($is_root) print " style='color:red'"; ?>><?=$inex_user?> </b> </span> |

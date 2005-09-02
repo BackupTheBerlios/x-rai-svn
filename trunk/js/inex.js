@@ -4,7 +4,15 @@
 */
 
 var XRai = new Object(); // used for namespace
-XRai.click = function(event) { return true; }
+
+XRai.click = function(event) {
+   if (event.target.localName == "a") {
+      if (XRai.beforeunload) {
+         return XRai.beforeunload(null);
+      }
+   }
+   return true;
+}
 
 var is_gecko = true;
 var xhtml_ns = "http://www.w3.org/1999/xhtml";
@@ -124,13 +132,15 @@ function show_menu(x,y) {
 // Returns the absolute minimum position
 function get_inner_top() {
    var menu = document.getElementById("menubar");
-   return window.scrollY + menu.offsetTop + menu.offsetHeight;
+   if (window.opera) return window.pageYOffset + menu.offsetTop + menu.offsetHeight;
+   if (window.scrollY) return window.scrollY + menu.offsetTop + menu.offsetHeight;
 }
 
 function get_inner_bottom() {
    var s_div = document.getElementById("s_div");
-   if (!s_div) return window.innerHeight + window.scrollY;
-   return window.scrollY + s_div.offsetTop;
+
+   if (window.opera) return window.pageYOffset + (s_div ? window.innerHeight : s_div.offsetTop);
+   return window.scrollY + (s_div ? window.innerHeight : s_div.offsetTop);
 //    if (s_div) bottom -= window.innerHeight + window.scrollY
 }
 
@@ -180,11 +190,15 @@ function hide_div(id) {
 }
 
 function get_position (e) {
+   if (document.getBoxObjectFor) {
+      var x = document.getBoxObjectFor(e);
+      return { x: x.x, y: x.y, height: x.height }
+   }
   if (document.layers) {
-    return { x: e.x, y: e.y };
+     return { x: e.x, y: e.y, height: e.offsetHeight };
   }
   else if (document.getElementById) {
-    var coords = {x: 0, y: 0 };
+    var coords = {x: 0, y: 0, height: e.offsetHeight };
     while (e) {
       coords.x += e.offsetLeft;
       coords.y += e.offsetTop;
@@ -199,12 +213,17 @@ function get_position (e) {
 
 function scroll_to_element(e,top) {
   var coords = get_position(e);
-  var y_min = get_inner_top(), y_max = get_inner_bottom();
 
+  var y_min = get_inner_top(), y_max = get_inner_bottom();
   var y_top = coords.y;
-  var y_bottom = coords.y + e.offsetHeight;
-//   alert("object=" + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max);
-  if (y_top < y_min || y_bottom > y_max) { scrollTo(0,y_top - (y_min - window.scrollY)); }
+  var y_bottom = coords.y + coords.height;
+
+//   Message.show("notice","Pos: " + coords.y + " / "+ coords.height + " / " + y_min + "," + y_max, 4800);
+
+  //   alert("object=" + coords.y  + ", " + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max);
+  if (y_top < y_min || y_bottom > y_max) {
+     scrollTo(0,y_top - (y_min - window.pageYOffset));
+  }
 //   else if (y_bottom > y_max) {
 //        var y = y_bottom + window.scrollY - y_max ;
 //      scrollTo(0,y);
@@ -216,22 +235,25 @@ function scroll_to_element(e,top) {
 
 var todo_index = -1;
 
-/* Todo list */
+
+var toRestore = new Array();
+
 function restore_focus(id) {
-   var e=document.getElementById(id);
+   var e = toRestore.pop();
    if (e)  {
-//       alert(e + " and " + id);
-     get_first_xml(e).style.border = "0";
+      e.removeAttribute("focus");
    }
 }
 
 function show_focus(e) {
+   if (!e) return;
    scroll_to_element(e,20);
-   if (e.focus) e.focus();
+   if (e.focus) { e.focus();  }
    else {
       // article view
-      e.style.border = "2pt solid red";
-      setTimeout('restore_focus("'+ get_xmle(e).id + '")',700);
+      e.setAttribute("focus","yes");
+      toRestore.push(e);
+      setTimeout('restore_focus()',700);
    }
 }
 
@@ -318,17 +340,30 @@ function toggle_panel(id, imageId) {
   if (image) image.className = b ? null : "selected";
 }
 
+XRai.gotoLocation = function(url) {
+   if (XRai.beforeunload) if (!XRai.beforeunload(null)) return false;
+   window.location = url;
+}
+
 function collection_keypress(event) {
-    if (!event.shiftKey && event.ctrlKey) {
-//     alert(event.keyCode + "!!!");
-    switch(event.keyCode) {
-      case 37: todo_previous(); return false;
-      case 38: if (up_url) { window.location = up_url; return false; }; break;
-      case 39: todo_next(); return false;
-      case 73: right_panel('informations','img_informations',base_url + '/iframe/informations.php'); return false;
-    }
-  }
-  return true;
+   event.stopPropagation();
+   var C = event.ctrlKey;
+
+//    Message.show("notice",event.which + "," + (!C && event.which == 51));
+   if ((C && (event.which == 37)) || (!C && event.which == 49)) todo_previous();
+   else if (((C && event.which == 38) || (!C && event.which == 50)) && up_url) XRai.gotoLocation(up_url);
+   else if ((C && event.which == 39)  || (!C && event.which == 51)) { todo_next(); }
+   else if (C && (event.which == 73)) right_panel('informations','img_informations',base_url + '/iframe/informations.php');
+
+
+//     XRai.debug("Key pressed: charchode=" + event.charCode
+//     + ", keycode=" + event.which
+//     + ", which=" + event.which + ", shiftKey=" + event.shiftKey + ", ctrlKey=" + event.ctrlKey
+    //     + ", x= " + event.pageX + "\n");
+
+  // Desactive ALL shortcuts for security reasons
+  event.stopPropagation();
+  return false;
 }
 
 function right_panel(id,img_id,src) {
@@ -456,8 +491,9 @@ var Message = {
    // Unique message id generator
    message_id: 0,
 
-   show: function (type,msg) {
-      Message.showDuring(type,msg,1200);
+   show: function (type,msg, duration) {
+      if (!duration) duration = 1200;
+      Message.showDuring(type,msg,duration);
    },
 
    showDuring: function (type,msg, time) {

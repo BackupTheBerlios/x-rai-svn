@@ -1,3 +1,7 @@
+*|* [focus='yes'], *[focus='yes'] {
+   border: 2px solid red !important;
+   text-decoration: blink;
+}
 
 div.help_top {
   font-size: medium;
@@ -8,8 +12,8 @@ div.help_top {
   left: 1em;
   background: #eeeeff;
   border: 1px solid blue;
-  padding: 3px;   
-  visibility: hidden;   
+  padding: 3px;
+  visibility: hidden;
 }
 
 div.help_bottom {
@@ -21,8 +25,8 @@ div.help_bottom {
   left: 1em;
   background: #eeeeff;
   border: 1px solid blue;
-  padding: 3px;   
-  visibility: hidden;   
+  padding: 3px;
+  visibility: hidden;
 }
 
 div.message_panel {
@@ -31,8 +35,8 @@ div.message_panel {
   border: 2px solid #00ff00;
   padding: 0.5cm;
   top: 40%;
-  left: 10%;  
-  visibility: hidden; 
+  left: 10%;
+  visibility: hidden;
 }
 
 div.message_error {
@@ -41,7 +45,7 @@ div.message_error {
   border: 2px solid #ff0000;
   padding: 0.5cm;
   top: 40%;
-  left: 10%;  
+  left: 10%;
 }
 
 div.message_warning {
@@ -50,7 +54,7 @@ div.message_warning {
   border: 2px solid #ffff00;
   padding: 0.5cm;
   top: 40%;
-  left: 10%;  
+  left: 10%;
 }
 
 div.message_notice {
@@ -59,7 +63,7 @@ div.message_notice {
   border: 2px solid #0000ff;
   padding: 0.5cm;
   top: 40%;
-  left: 10%;  
+  left: 10%;
 }
 
 p { text-align: justify; }
@@ -101,7 +105,7 @@ A.text:active,A.text:hover {
 
 /*
 
-	Normal link
+   Normal link
 
  */
 
@@ -126,7 +130,7 @@ A:link {
 
 a.img img {
   border: 1px solid white;
-  padding: 1px; margin: 0; 
+  padding: 1px; margin: 0;
   vertical-align: bottom;
   background: #cccccc;
 }
@@ -248,9 +252,9 @@ table.list tfoot tr {
 }
 
 table.list th {
-	border-left: 1pt solid #aaaaee;
-	border-right: 1pt solid #aaaaee;
-	padding: 3pt;
+   border-left: 1pt solid #aaaaee;
+   border-right: 1pt solid #aaaaee;
+   padding: 3pt;
 }
 
 
@@ -267,14 +271,14 @@ div.status {
 
 div.status > div {
   border: 0;
-  margin: 0; 
+  margin: 0;
   padding: 0px;
   display: table-row;
 }
 
 div.status > div > span {
-  border: 1px outset #888888; 
-  background: #eeeeee; 
+  border: 1px outset #888888;
+  background: #eeeeee;
   margin: 0;
   padding: 0px;
   display: table-cell;
@@ -299,7 +303,7 @@ div.status img:hover {
 /* An XML tag */
 
 div.inex div.article {
-	padding: 2px;
+   padding: 2px;
 }
 
 
@@ -316,60 +320,60 @@ div.inex h1, div.inex h2 {
 /** Logs */
 
 div.log {
-	margin-top: 5pt;
-	margin-bottom: 5pt;
+   margin-top: 5pt;
+   margin-bottom: 5pt;
 }
 
 div.log div {
-	background: #ffffff;
-	margin: 0;
-	margin-bottom: 1px;
-	padding: 3pt;
-	border-bottom: #888899 1px solid;
+   background: #ffffff;
+   margin: 0;
+   margin-bottom: 1px;
+   padding: 3pt;
+   border-bottom: #888899 1px solid;
 }
 
 div.log div span.when {
-	width: 200pt;
-	color: #444444;
+   width: 200pt;
+   color: #444444;
 }
 
 div.log div span.in_progress {
-	border-left: 3px solid #00FFFF  ;
-	padding-left: 3pt;
+   border-left: 3px solid #00FFFF  ;
+   padding-left: 3pt;
 }
 
 div.log div.wishlist span.what {
-	border-left: 3px solid #FF0000;
-	padding-left: 3pt;
+   border-left: 3px solid #FF0000;
+   padding-left: 3pt;
 }
 
 div.log div.bug span.what {
-	border-left: 3px solid #FF0000;
-	padding-left: 3pt;
+   border-left: 3px solid #FF0000;
+   padding-left: 3pt;
 }
 
 div.log div.fixed span.what {
-	border-left: 3px solid #00FF00;
-	padding-left: 3pt;
+   border-left: 3px solid #00FF00;
+   padding-left: 3pt;
 }
 
 
 div.log div span.what {
-	border-left: 3px solid #0000FF;
-	padding-left: 3pt;
+   border-left: 3px solid #0000FF;
+   padding-left: 3pt;
 }
 
 
-/* 
-  Localisation 
+/*
+  Localisation
   (Menu bar)
   */
 
 table.localisation {
-  margin: 0; 
+  margin: 0;
   padding: 0;
   position: fixed;
-  top: 0; 
+  top: 0;
   left: 0;
   width: 100%;
   background: #eeeeee;
@@ -380,7 +384,7 @@ table.localisation {
 }
 
 table.localisation tr {
-  padding: 0; margin: 0; 
+  padding: 0; margin: 0;
 }
 
 table.localisation td {
@@ -393,37 +397,37 @@ table.localisation td {
 table.localisation a { padding: 1px; font-weight: bold; color: #000000; }
 table.localisation a:hover {  padding: 1px; background: yellow; color: #000000; }
 
-table.localisation a.on img { 
+table.localisation a.on img {
    border: 1px inset white;
-   background: yellow; 
+   background: yellow;
 }
-table.localisation a img { 
-  vertical-align: bottom; 
-  margin: 0; 
-  padding: 2px; 
+table.localisation a img {
+  vertical-align: bottom;
+  margin: 0;
+  padding: 2px;
   background: #dddddd;
-  border: 1px outset white; 
+  border: 1px outset white;
 }
 
-table.localisation a.on:hover img { 
+table.localisation a.on:hover img {
    background: #dddddd;
    border: 1px outset white;
 }
-table.localisation a:hover img { 
-  border: 1px outset white; 
-  background: yellow; 
+table.localisation a:hover img {
+  border: 1px outset white;
+  background: yellow;
 }
 
-table.localisation a img.selected { 
-  vertical-align: bottom; 
-  margin: 0; 
-  padding: 2px; 
+table.localisation a img.selected {
+  vertical-align: bottom;
+  margin: 0;
+  padding: 2px;
   background: yellow;
-  border: 1px outset white; 
+  border: 1px outset white;
 }
-table.localisation a:hover img.selected { 
+table.localisation a:hover img.selected {
   border: 1px inset white;
-  background: #dddddd; 
+  background: #dddddd;
 }
 
 /* Menu */
@@ -436,45 +440,45 @@ div.menu {
   visibility: hidden;
   padding: 0;
   background: #eeeeee;
-  border: 1px solid #dddddd;  
+  border: 1px solid #dddddd;
   text-align: left;
  }
 
-table.localisation div.menu a:hover { 
+table.localisation div.menu a:hover {
   border-left: 3px solid yellow;
   border-right: 3px solid yellow;
    color: #000000;
 }
 
-table.localisation div.menu div a { 
+table.localisation div.menu div a {
   font-weight: normal;
-   background: inherit; 
-   border:0; 
-   border-left:3px solid transparent; 
-   border-right:3px solid transparent; 
-   padding: 2px; color: #000000; 
+   background: inherit;
+   border:0;
+   border-left:3px solid transparent;
+   border-right:3px solid transparent;
+   padding: 2px; color: #000000;
  }
 
- span.menubar a.menu:hover, span.menubar a.menu:active { 
+ span.menubar a.menu:hover, span.menubar a.menu:active {
   background: white;
   color: #000000;
-  padding: 1px; 
+  padding: 1px;
   border: 1px outset white;
 }
 
-span.menubar a.menu, span.menubar a.menu:visited { 
-  font-weight: normal; 
+span.menubar a.menu, span.menubar a.menu:visited {
+  font-weight: normal;
 /*   border: 1px solid white;  */
-  padding: 1px; 
+  padding: 1px;
 /*   background: #dddddd;  */
-  color: #000000; 
+  color: #000000;
   background: transparent;
   border: 1px solid transparent;
 }
 
- 
-div.menu > div { 
-  margin: 3px; 
+
+div.menu > div {
+  margin: 3px;
 }
 
 
@@ -482,9 +486,9 @@ div.menu > div {
 /* Panel */
 
 div.askpanel {
-  visibility: hidden; 
-  position: absolute; 
-  background: #DDDDDD; 
+  visibility: hidden;
+  position: absolute;
+  background: #DDDDDD;
   padding: 5px; width: 60%;
   border: 1px solid red;
 }

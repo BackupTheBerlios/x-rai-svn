@@ -101,7 +101,7 @@ XRai.removeFromArray = function(a,x) {
 
 XRai.addElementToArray = function (a,x) {
    var i = 0;
-   while (i < a.length && (compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_BEFORE)) i++;
+   while ((i < a.length) && (compareDocumentPosition(x, a[i]) & DOCUMENT_ORDER_BEFORE)) i++;
    if (a[i] != x) a.splice(i,0,x);
 }
 
@@ -109,8 +109,8 @@ XRai.addElementToArray = function (a,x) {
 XRai.removeElementFromArray = function (a,x) {
    var id = parseInt(x.id);
    var i = 0;
-   while (i < a.length && (compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_BEFORE)) i++;
-   while (i < a.length && !(compareDocumentPosition(a[i], x) & DOCUMENT_ORDER_AFTER)) {
+   while (i < a.length && (compareDocumentPosition(x, a[i]) & DOCUMENT_ORDER_BEFORE)) i++;
+   while (i < a.length && !(compareDocumentPosition(x, a[i]) & DOCUMENT_ORDER_AFTER)) {
       if (a[i] == x) { a.splice(i,1); break; }
       i++;
    }
@@ -250,8 +250,12 @@ XRai.keypressed = function (event) {
 
 // Check that everything is saved before allowing the user to go out of this view
 XRai.beforeunload = function(event) {
-   if (XRai.hasChanged())
-      return "X-Rai warning: " + XRai.changeCount + " change(s) were not saved";
+   if (XRai.hasChanged()) {
+      if (event) return "X-Rai warning: " + XRai.changeCount + " change(s) were not saved";
+      else {
+         return window.confirm("Do you really want to quit that page?\n\nX-Rai warning: " + XRai.changeCount + " change(s) were not saved" + "\n\nClick on OK to continue, or Cancel to stay on the actual page");
+      }
+   }
 }
 
 
@@ -710,18 +714,17 @@ Passage = function(x,y,savedValue) {
          XRai.firstOldPassage = this.add(XRai.firstOldPassage);
          this.active = false;
          if (typeof this.saved != "undefined") {
-            if (this.getValue() != this.saved) XRai.changeCount++;
+            if (this.getValue() == this.saved) XRai.changeCount++;
             else XRai.changeCount--;
-         }
-
-         XRai.assessmentChanged(this.assessment);
-      } else {
-         if (typeof this.assessment.saved != "undefined") {
-            XRai.assessmentsToRemove.push(this.assessment);
-            if (this.assessment.saved == this.getValue()) XRai.changeCount++;
          } else XRai.changeCount--;
-         XRai.removeAssessment(this.assessment);
+      } else {
+         if (typeof this.saved != "undefined") {
+            XRai.assessmentsToRemove.push(this);
+            if (this.saved == this.getValue()) XRai.changeCount++;
+         } else XRai.changeCount--;
       }
+
+      // Unhighlight in the user view
       XRai.decrementAttribute(this.start,"first");
       XRai.decrementAttribute(this.end,"last");
       for(var e = this.start; e != null; e = XRai.nextElementTo(e, this.end))
@@ -743,7 +746,6 @@ Passage = function(x,y,savedValue) {
 
    this.start = x;
    this.end = y;
-   this.assessment = false; // The current passage will be active only after user validation
    this.isPassage = true;
 
    if (typeof savedValue != "undefined") this.saved = savedValue;
@@ -1023,7 +1025,7 @@ XRai.gotoPrevious = function() {
 }
 
 XRai.checkContainerAssessment = function(x) {
-   XRai.debug("Checking for container " + x.cAssessment + ", " + x.reallyContained + ", " + x.realIntersection + "\n");
+   if (debug) XRai.debug("Checking for container " + x.cAssessment + ", " + x.reallyContained + ", " + x.realIntersection + "\n");
    if (x.cAssessment && !x.realIntersection && (!x.reallyContained || x.reallyContained < 2)) {
       XRai.removeAssessment(x.cAssessment);
       return -1;
@@ -1559,10 +1561,6 @@ function createHiddenInput(name,value) {
    return x;
 }
 
-XRai.click = function(event) {
-   event.stopPropagation();
-   return false;
-}
 
 // Called when the user wants to save the document
 XRai.save = function() {
@@ -1774,6 +1772,19 @@ XRaiLoad = function() {
       }
    }
 
+}
+
+function todo_previous() {
+   if (todo_index > 0) todo_index = (todo_index - 1) % XRai.toAssess.length;
+   else todo_index = XRai.toAssess.length - 1;
+   Message.show("notice","Showing " + todo_index);
+   show_focus(XRai.toAssess[todo_index]);
+}
+
+function todo_next() {
+   todo_index = (todo_index + 1) % XRai.toAssess.length;
+   Message.show("notice","Showing " + todo_index);
+   show_focus(XRai.toAssess[todo_index]);
 }
 
 
