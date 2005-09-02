@@ -81,7 +81,7 @@ function make_header($title = "") {
      global $menu, $is_root;
   global $no_topic, $id_topic, $url_add, $id_pool, $pool, $login;
   global $base_url, $xrains;
-   global $header_done, $inex_user, $message;
+   global $header_done, $inex_user, $message, $sticky;
    if ($header_done) return;
    $header_done = 1;
 
@@ -173,6 +173,7 @@ window.open("<?=$base_url?>/show_topic.php?id_topic=<?=$id_topic?>","inex_topic"
   print "</div></td>";
   print "<td style='text-align: right'><img src='$base_url/img/inex.jpg' alt='INEX'/></td></tr>";
   print "</table>";
+  print "$sticky";
 }
 
 
