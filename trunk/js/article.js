@@ -877,9 +877,11 @@ XRai.unhighlight = function() {
          if (debug) XRai.debug("Next conflicting passage is " + z.getPaths() +"\n");
       }
 
+      if (y != z.start && XRai.isBefore(y,z.start) && !XRai.isIn(z.start,y)) return;
+
       var firstRemoved = false;
 
-      // Check overlap with z/x
+      // < overlap with z/x
       if (z && (XRai.isAfter(x,z.start) || XRai.isIn(x,z.end))) {
          // Break the node
          toremove.push(z);
@@ -891,8 +893,10 @@ XRai.unhighlight = function() {
 
       // While y is after z end
       if (debug) if (z) XRai.debug("Check for included passages to remove with y=" + XRai.getPath(y) + " and " + XRai.getPath(z.end) + "\n"); else XRai.debug("No more conflicting and included passage for removing\n");
+
       for(; z && (XRai.isAfter(y,z.end) || y == z.end); z = z.next) {
-         if (debug) XRai.debug("Removing passage " + z.getPaths() + (z.next ? " - next conflict: " + z.next.getPaths() : " - no next conflict") + "\n");
+         if (debug) XRai.debug("Removing passage " + z.getPaths()
+            + (z.next ? " - next conflict: " + z.next.getPaths() : " - no next conflict") + "\n");
          if (!firstRemoved) toremove.push(z);
          firstRemoved = false;
       }
