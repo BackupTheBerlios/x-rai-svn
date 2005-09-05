@@ -91,7 +91,7 @@ if ($id_pool > 0) {
 ?>
 
 <!-- Our own style & js -->
-<link rel="stylesheet" href="<?=$base_url?>/css/collections/<?=$collection?>.css" />
+<link rel="stylesheet" href="<?=$base_url?>/collection/<?=$collection?>.css" />
 <link rel="stylesheet" href="<?=$base_url?>/css/article.css" />
 <link rel="stylesheet" id="tags_css" href="<?=$base_url?>/css/tags.css" />
 
@@ -274,6 +274,8 @@ print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection
 $stack = Array();
 $load_errors = 0;
 
+require("collection/$collection.inc");
+
 function startElement($parser, $name, $attrs) {
    global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors;
    print "<$name";
@@ -283,15 +285,12 @@ function startElement($parser, $name, $attrs) {
       print " $aname=\"$value\"";
    }
 
-//    if ($name == "art") print " xlink:type=\"simple\" xlink:show=\"embed\"  xlink:actuate=\"onLoad\" xlink:href=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"";
    if (sizeof($stack) > 0)
       if ($stack[sizeof($stack)-1] < 0) { $load_errors++; print " error=\"1\""; }
       else $stack[sizeof($stack)-1]++;
    print ">";
 
-   // FIXME: should be DTD independant!
-   if ($name == "art")
-      print "<html:img src=\"$media_url/$collection/$directory/" .  strtolower(preg_replace("/\.gif$/",".png",$attrs["file"])) . "\"/>";
+   if (function_exists("collectionStartElement")) collectionStartElement($name, $attrs);
 
    array_push($stack,0);
 }

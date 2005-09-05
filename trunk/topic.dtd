@@ -1,0 +1,14 @@
+<!ELEMENT inex_topic  (title,castitle?,parent?,description,narrative,keywords)>
+
+<!ATTLIST inex_topic
+  topic_id     CDATA     #REQUIRED
+  query_type   CDATA   #REQUIRED
+  ct_no        CDATA         #REQUIRED
+>
+
+<!ELEMENT title        (#PCDATA)>
+<!ELEMENT castitle     (#PCDATA)>
+<!ELEMENT parent      (#PCDATA)>
+<!ELEMENT description   (#PCDATA)>
+<!ELEMENT narrative     (#PCDATA)>
+<!ELEMENT keywords 	(#PCDATA)>

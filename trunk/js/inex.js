@@ -362,8 +362,9 @@ function collection_keypress(event) {
     //     + ", x= " + event.pageX + "\n");
 
   // Desactive ALL shortcuts for security reasons
-  event.stopPropagation();
-  return false;
+//   event.stopPropagation();
+//   return false;
+   return true;
 }
 
 function right_panel(id,img_id,src) {

@@ -23,7 +23,11 @@ make_header("Pool summary for topic $id_topic");
 
 
 $todojs = "";
-$res = &$xrai_db->query("SELECT sv.*,f.collection FROM $db_files f, $db_statusview sv WHERE f.parent is null AND f.id=sv.rootid AND idpool=?",array($id_pool));
+$res = &$xrai_db->query("SELECT ta.idpool, root.id AS rootid, root.collection, ta.status, ta.inpool, count(*) AS count
+  FROM $db_files root, $db_files f, $db_filestatus ta
+  WHERE idpool=? AND root.parent is null AND root.pre <= f.pre AND root.post >= f.pre AND ta.idfile = f.id
+  GROUP BY ta.idpool, root.id, root.collection, ta.status, ta.inpool",array($id_pool));
+// print_r($res);
 if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
 else {
    while ($row = $res->fetchRow()) {
@@ -73,7 +77,7 @@ else {
 
 ?>
 <script language="javascript">
- id_pool=<?=$id_pool?>;
+ id_pool=<?=$id_pool?$id_pool : 0?>;
  <?=$todojs?>
 </script>
 
