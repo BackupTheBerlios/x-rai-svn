@@ -16,14 +16,14 @@ mkdir -p "$BASEDIR"
 
 LASTFILE="$BASEDIR/last"
 CURRENT="$BASEDIR/current"
-/usr/bin/mysqldump -C $database $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
+/usr/bin/pg_dump -O --schema $database $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
 
 if test -f "$LASTFILE" && /usr/bin/diff -q "$CURRENT" "$LASTFILE" > /dev/null
 then
-	# Files are the same
+   # Files are the same
    echo -n
 else
-	# OK, keep backup (move it to the good directory)
+   # OK, keep backup (move it to the good directory)
   DIR="$BASEDIR"/$(/bin/date "+%Y/%m/%d")
   FILE="$DIR"/$(/bin/date "+assessments@%H%M").sql.bz2
   /bin/mkdir -p "$DIR"

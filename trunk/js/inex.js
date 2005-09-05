@@ -234,8 +234,6 @@ function scroll_to_element(e,top) {
 
 
 var todo_index = -1;
-
-
 var toRestore = new Array();
 
 function restore_focus(id) {
@@ -248,12 +246,13 @@ function restore_focus(id) {
 function show_focus(e) {
    if (!e) return;
    scroll_to_element(e,20);
+
    if (e.focus) { e.focus();  }
    else {
       // article view
       e.setAttribute("focus","yes");
       toRestore.push(e);
-      setTimeout('restore_focus()',700);
+      setTimeout('restore_focus()',1000);
    }
 }
 
@@ -311,12 +310,6 @@ function find_siblings(path) {
 }
 
 
-function show_element(path) {
-   var e = document.getElementById("a_" + path);
-   if (e) show_focus(e);
-}
-
-
 // Show right panel
 
 var current_right_panel = { element: null, image: null};
@@ -351,7 +344,7 @@ function collection_keypress(event) {
 
 //    Message.show("notice",event.which + "," + (!C && event.which == 51));
    if ((C && (event.which == 37)) || (!C && event.which == 49)) todo_previous();
-   else if (((C && event.which == 38) || (!C && event.which == 50)) && up_url) XRai.gotoLocation(up_url);
+   else if (((C && event.which == 38) || (!C && event.which == 50)) && up_url) XRai.goUp();
    else if ((C && event.which == 39)  || (!C && event.which == 51)) { todo_next(); }
    else if (C && (event.which == 73)) right_panel('informations','img_informations',base_url + '/iframe/informations.php');
 
@@ -513,3 +506,8 @@ var Message = {
    }
 }
 
+
+
+XRai.goUp = function() {
+if (up_url) window.location = up_url;
+}

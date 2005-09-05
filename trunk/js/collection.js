@@ -1,8 +1,5 @@
 //
 
-function goUp() {
-   if (up_url) window.location = up_url;
-}
 
 function todo_previous() {
      if (!todo || todo.length == 0) {

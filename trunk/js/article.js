@@ -1799,5 +1799,7 @@ XRai.init = function() {
       XRai.getRoot().addEventListener("mouseup",XRai.onmouseup,false);
    }
    if (XRai.numberNodes) XRai.numberNodes();
+
    XRai.loaded = true;
+   document.getElementById('saving_div').style.visibility = 'hidden'
 }
