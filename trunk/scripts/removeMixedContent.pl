@@ -19,7 +19,7 @@ my $wrap_cdata = 0; # 1 if cdata has to be wrapped
 my $xrais = "xrai:s";
 my @endtag;
 
-my $debug = 1;
+my $debug = 0;
 
 #
 # --- SAX handlers ---
@@ -44,7 +44,9 @@ sub check_end {
 }
 
 sub handle_start {
+   print "{2,$wrap_cdata,$_[1]<}"  if ($debug);
    check_end();
+   print "{2>}" if ($debug);
    if (!is_space($cdata)) { print "<xrai:s>$cdata</xrai:s>"; $cdata = ""; }
 
    $stack[$#stack] = 1 if ($#stack >= 0);
@@ -60,6 +62,7 @@ sub handle_start {
 
 
 sub handle_end {
+   print "{5}" if ($debug);
    push @endtag, $_[1];
    pop @stack;
 }
@@ -71,7 +74,8 @@ sub handle_text {
    if (!is_space($_[1])) {
       check_end();
    }
-   $wrap_cdata = 1 unless ($stack[$#stack] == 0);
+   $wrap_cdata = 1 if ((!is_space($_[1])) && ($stack[$#stack] != 0));
+   print "{4,$wrap_cdata|$cdata}" if ($debug);
    $cdata .= "$_[1]";
 }
 
