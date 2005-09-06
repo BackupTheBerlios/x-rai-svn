@@ -14,28 +14,39 @@ use bytes;
 
 my @stack;
 my $cdata = "";
+my $wrap_cdata = 0; # 1 if cdata has to be wrapped
+
 my $xrais = "xrai:s";
 my @endtag;
+
+my $debug = 1;
 
 #
 # --- SAX handlers ---
 #
 
+sub is_space {
+   return $_[0] =~ /^[\n\r\s\t]*$/;
+}
+
 sub check_end {
    if ($#endtag >= 0) {
-#       print "$cdata";
+      if (!is_space($cdata)) {
+         if ($wrap_cdata) {
+            print "<xrai:s>$cdata</xrai:s>";
+         } else {
+            print "$cdata";
+         }
+         $cdata = ""; $wrap_cdata = 0;
+      }
       while ($#endtag >= 0) { my $t = shift @endtag; print "</$t>"; }
-#       $cdata = "";
    }
 }
 
 sub handle_start {
    check_end();
-#    print STDERR "$_[1] ($cdata)\n";
-   if (!($cdata =~ /^[\n\r\s]*$/s)) {
-      print "<${xrais}>" . $cdata . "</${xrais}>";
-      $cdata = "";
-   }
+   if (!is_space($cdata)) { print "<xrai:s>$cdata</xrai:s>"; $cdata = ""; }
+
    $stack[$#stack] = 1 if ($#stack >= 0);
 
    print "<$_[1]";
@@ -44,29 +55,26 @@ sub handle_start {
    }
    print ">";
    push @stack, 0;
+   $wrap_cdata = 0;
+}
+
+
+sub handle_end {
+   push @endtag, $_[1];
+   pop @stack;
 }
 
 sub handle_text {
    $_[1] =~ s/</&lt;/g;
    $_[1] =~ s/>/&gt;/g;
    $_[1] =~ s/&/&amp;/g;
-   if (!($_[1] =~ /^[\n\r\s]*$/s)) {
-      print $cdata; $cdata = "";
+   if (!is_space($_[1])) {
       check_end();
    }
+   $wrap_cdata = 1 unless ($stack[$#stack] == 0);
    $cdata .= "$_[1]";
 }
 
-sub handle_end {
-   if (!($cdata =~ /^[\n\r\s]*$/s)) {
-      check_end();
-      if ($stack[$#stack] > 0) { print "<${xrais}>" . $cdata . "</${xrais}>"; }
-      else { print $cdata; }
-      $cdata = "";
-   }
-   push @endtag, $_[1];
-   pop @stack;
-}
 
 my $parser = new XML::Parser(ParseParamEnt => 1, Handlers => {Start => \&handle_start, End   => \&handle_end, Char => \&handle_text});
 
