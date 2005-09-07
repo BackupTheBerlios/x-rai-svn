@@ -59,7 +59,7 @@ if ($id_pool) {
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
          $all_assessments[$s] += $row["count"];
-         if ((abs($row["status"]) != 3) && ($row["count"] > 0)) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         if ((abs($row["status"]) != 3) && ($row["count"] > 0) ) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
       }
       $res->free();
    }

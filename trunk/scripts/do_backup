@@ -7,16 +7,16 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
-database="$1"
+schema="$1"
 table="$2"
 
 # Prepare
-BASEDIR="/home/inex/backups/$database/$table"
+BASEDIR="/home/inex/backups/$schema/$table"
 mkdir -p "$BASEDIR"
 
 LASTFILE="$BASEDIR/last"
 CURRENT="$BASEDIR/current"
-/usr/bin/pg_dump -O --schema $database $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
+/usr/bin/pg_dump --no-owner --schema $schema $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
 
 if test -f "$LASTFILE" && /usr/bin/diff -q "$CURRENT" "$LASTFILE" > /dev/null
 then
