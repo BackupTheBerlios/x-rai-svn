@@ -227,20 +227,21 @@ XRai.keypressed = function (event) {
   var C = !event.shiftKey && event.ctrlKey;
   var SC = event.shiftKey && event.ctrlKey;
 
+   if (debug) XRai.debug("Key pressed: charchode=" + event.charCode
+        + ", keycode=" + event.keyCode
+      + ", which=" + event.which + ", shiftKey=" + event.shiftKey + ", ctrlKey=" + event.ctrlKey
+      + ", x= " + event.pageX + "\n");
+
   if (N && event.which == 104) XRai.highlight();
   else if (N && event.which == 117) XRai.unhighlight();
   else if (N && event.which == 109) XRai.switchMode();
-  else if (C && event.which == 83) XRai.save();
+  else if (C && (event.which == 83 || event.which == 115)) XRai.save();
 
 //   else if (event.which == 49)
 //   else if (event.which == 50)
 //   else if (event.which == 51)
 
   else {
-     if (debug) XRai.debug("Key pressed: charchode=" + event.charCode
-        + ", keycode=" + event.keyCode
-      + ", which=" + event.which + ", shiftKey=" + event.shiftKey + ", ctrlKey=" + event.ctrlKey
-      + ", x= " + event.pageX + "\n");
    return collection_keypress(event);
   }
 

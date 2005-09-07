@@ -354,20 +354,20 @@ if ($write_access) {
 <div id="s_div" class="status">
   <div>
   <span>
-          <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shift+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
+          <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shortcut: control+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
    </span>
 
   <span>
-      <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (control + left arrow)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous element to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code> keys</div></span>
-      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
-      <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (control + right arrow)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next element to assess.<br/><b>Shortcut</b>: <code>control + right arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (1)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous element to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code> keys</div></span>
+      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (2)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (3)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next element to assess.<br/><b>Shortcut</b>: <code>control + right arrow</code></div></span>
    </span>
    <span>
       <span>
-         <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]" title="Show/hide the support elements"/>
+         <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]"  title="Show/hide the support elements"/>
       </span>
       <span>
-         <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and exhaustivity mode"/>
+         <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and assessment mode (shortcut: &quot;m&quot;)"/>
       </span>
       <span>
          <img id="finishImg" onclick="XRai.onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
