@@ -2,33 +2,36 @@
 
 # do_backup database table
 
-if [ $# -ne 2 ]; then
-  echo "$0 <database> <table>" 1>&2
+if [ $# -lt 2 ]; then
+  echo "$0 <database> <table> [<table> [...]]" 1>&2
   exit 1
 fi
 
 schema="$1"
-table="$2"
+shift
 
-# Prepare
-BASEDIR="/home/inex/backups/$schema/$table"
-mkdir -p "$BASEDIR"
+for table in "$@"; do
 
-LASTFILE="$BASEDIR/last"
-CURRENT="$BASEDIR/current"
-/usr/bin/pg_dump --no-owner --schema $schema --table $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
+   # Prepare
+   BASEDIR="/home/inex/backups/$schema/$table"
+   mkdir -p "$BASEDIR"
 
-if test -f "$LASTFILE" && /usr/bin/diff -q "$CURRENT" "$LASTFILE" > /dev/null
-then
-   # Files are the same
-   echo -n
-else
-   # OK, keep backup (move it to the good directory)
-  DIR="$BASEDIR"/$(/bin/date "+%Y/%m/%d")
-  FILE="$DIR"/$(/bin/date "+assessments@%H%M").sql.bz2
-  /bin/mkdir -p "$DIR"
-  mv "$CURRENT" "$FILE"
-   ln -sf "$FILE" "$BASEDIR"/last
-fi
+   LASTFILE="$BASEDIR/last"
+   CURRENT="$BASEDIR/current"
+   /usr/bin/pg_dump --no-owner --schema $schema --table $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
+
+   if test -f "$LASTFILE" && /usr/bin/diff -q "$CURRENT" "$LASTFILE" > /dev/null
+   then
+      # Files are the same
+      echo -n
+   else
+      # OK, keep backup (move it to the good directory)
+   DIR="$BASEDIR"/$(/bin/date "+%Y/%m/%d")
+   FILE="$DIR"/$(/bin/date "+assessments@%H%M").sql.bz2
+   /bin/mkdir -p "$DIR"
+   mv "$CURRENT" "$FILE"
+      ln -sf "$FILE" "$BASEDIR"/last
+   fi
 
 #mail -s "Backup done $(/bin/date "+%Y%m%d%M%H")" bpiwowar
+done
