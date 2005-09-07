@@ -1603,7 +1603,7 @@ XRai.save = function() {
    // Add history
    for(var i = 0; i < XRai.history.length; i++) {
       var x = XRai.history[i];
-      XRai.saveForm.appendChild(createHiddenInput("hist[]",x[0]+","+x[1]+","+ XRai.getPath(x[2]) + "," + (x[3] ? XRai.getPath(x[3]) : "")));
+      XRai.saveForm.appendChild(createHiddenInput("hist[]",x[0]+","+x[1]+","+ (x[2] ? XRai.getPath(x[2]) : "") + "," + (x[3] ? XRai.getPath(x[3]) : "")));
    }
 
    // Add assessments
@@ -1801,5 +1801,6 @@ XRai.init = function() {
    if (XRai.numberNodes) XRai.numberNodes();
 
    XRai.loaded = true;
+   XRai.history.push(new Array("L",XRai.getTimeString(),null,null));
    document.getElementById('saving_div').style.visibility = 'hidden'
 }
