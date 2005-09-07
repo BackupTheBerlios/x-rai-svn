@@ -17,7 +17,7 @@ $xrains = "urn:xrai";
 if (!headers_sent()) header("Pragma: no-cache");
 // include_once("assessments.php");
 
-if (function_exists("xslt_create")) $xslt=xslt_create();
+
 $header_done = false;
 $inex_user = $_SERVER["REMOTE_USER"];
 $id_pool = $_REQUEST["id_pool"];

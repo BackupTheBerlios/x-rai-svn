@@ -11,6 +11,7 @@
 
 require_once("include/xrai.inc");
 require_once("include/astatus.inc");
+require_once("include/xslt.inc");
 // require_once("include/assessments.inc");
 
 $PHP_SELF = $_SERVER["PHP_SELF"];
@@ -22,7 +23,6 @@ $path = $matches[2];
 if (!$path) $path ="";
 
 $basepath = "$base_url/article.php?id_pool=$id_pool&collection=$collection&file=$path";
-$xsl_params = array("basepath" => $basepath);
 
 // SELECT root.id, anc.collection, anc.filename, ta.status,count(*) FROM toassess ta, files anc, files f, files root WHERE anc.pre>=f.pre AND anc.post <= f.post AND ta.idfile=f.id AND root.id=f.parent GROUP BY root.id, anc.id, anc.filename, anc.collection, ta.status
 
@@ -59,7 +59,7 @@ if ($id_pool) {
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
          $all_assessments[$s] += $row["count"];
-         if (abs($row["status"]) != 3 && $row["count"] > 0) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         if ((abs($row["status"]) != 3) && ($row["count"] > 0)) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
       }
       $res->free();
    }
@@ -106,7 +106,7 @@ function end_document() { print "</a>"; }
 
 
 
-
+$xslt = get_xslt_processor();
 if (!$xslt) print "<div class='error'>No XSLT processor defined !</div>";
 
 print "<h1>" . htmlspecialchars($title) . "</h1>\n";
@@ -118,15 +118,17 @@ print "<h1>" . htmlspecialchars($title) . "</h1>\n";
 <?
 
 print "<div class='inex'>";
-xslt_set_encoding($xslt,"UTF-8");
 
 // Has no cache
  if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";
 if (!is_dir("$xml_cache/$path")) {
-
-  $result = xslt_process($xslt,$xmlfilename,"$xslfilename")  ;
+  if ($xslt_mode) {
+      $result = xslt_process($xslt,$xmlfilename,"$xslfilename")  ;
+   } else {
+      $xslt->importStyleSheet(DOMDocument::load($xslfilename));
+      $result = $xslt->transformToXML(DOMDocument::load($xmlfilename));
+   }
    if ($result) {
-//     print "<div class='warning'>No cache directory was found</div>\n";
       eval("?>" . $result . "<?");
    } else {
       exit("xslt error: " . xslt_error($xslt));
