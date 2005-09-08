@@ -201,8 +201,7 @@ if ($id_pool > 0) {
   }
 }
 }
-
-if ($num_keywords > 0) print "<style type='text/css'>\n@namespace url($base_url);\n$style\n</style>\n";
+if ($num_keywords > 0) print "<style type='text/css'>\n@namespace url($xrains);\n$style\n</style>\n";
 
 
 // --- Retrieve assessments & elements to assess ---
