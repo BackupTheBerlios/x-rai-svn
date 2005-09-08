@@ -2,63 +2,11 @@
 -- PostgreSQL database dump
 --
 
-SET client_encoding = 'LATIN1';
-
-ALTER TABLE ONLY public.assessments DROP CONSTRAINT "validPoolFile";
-ALTER TABLE ONLY public.topicelements DROP CONSTRAINT "validPath";
-ALTER TABLE ONLY public.topicelements DROP CONSTRAINT "validTopic";
-ALTER TABLE ONLY public.topicelements DROP CONSTRAINT "validFile";
-ALTER TABLE ONLY public.history DROP CONSTRAINT "validEndPath";
-ALTER TABLE ONLY public.history DROP CONSTRAINT "validStartPath";
-ALTER TABLE ONLY public.history DROP CONSTRAINT "validFile";
-ALTER TABLE ONLY public.history DROP CONSTRAINT "validPool";
-ALTER TABLE ONLY public.files DROP CONSTRAINT "validParent";
-ALTER TABLE ONLY public.filestatus DROP CONSTRAINT "validFile";
-ALTER TABLE ONLY public.filestatus DROP CONSTRAINT "validPool";
-ALTER TABLE ONLY public.keywords DROP CONSTRAINT "validPool";
-ALTER TABLE ONLY public.pools DROP CONSTRAINT "validTopic";
-ALTER TABLE ONLY public.assessments DROP CONSTRAINT "validEndPath";
-ALTER TABLE ONLY public.assessments DROP CONSTRAINT "validStartPath";
-ALTER TABLE ONLY public.topicelements DROP CONSTRAINT pk_topicelements;
-ALTER TABLE ONLY public.assessments DROP CONSTRAINT pk_assessments;
-ALTER TABLE ONLY public.filestatus DROP CONSTRAINT "pkAssessmentVersion";
-ALTER TABLE ONLY public.keywords DROP CONSTRAINT "pkKeywords";
-ALTER TABLE ONLY public.topics DROP CONSTRAINT "pkTopic";
-ALTER TABLE ONLY public.pools DROP CONSTRAINT "pkPool";
-ALTER TABLE ONLY public.paths DROP CONSTRAINT unique_path;
-ALTER TABLE ONLY public.paths DROP CONSTRAINT unique_path_id;
-ALTER TABLE ONLY public.files DROP CONSTRAINT unique_file;
-ALTER TABLE ONLY public.files DROP CONSTRAINT unique_file_id;
-DROP VIEW public.topicelementsview;
-DROP VIEW public.statusview;
-DROP TABLE public.topicelements;
-DROP VIEW public.assessmentsview;
-DROP TABLE public.history;
-DROP TABLE public.filestatus;
-DROP DOMAIN public.xpathstring;
-DROP SEQUENCE public.pools_id_seq;
-DROP TABLE public.pools;
-DROP TABLE public.topics;
-DROP TABLE public.keywords;
-DROP TABLE public.assessments;
-DROP TABLE public.files;
-DROP TABLE public.paths;
-SET SESSION AUTHORIZATION 'postgres';
+SET client_encoding = 'SQL_ASCII';
 
 --
--- TOC entry 4 (OID 2200)
--- Name: public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
-SET SESSION AUTHORIZATION 'bpiwowar';
-
---
--- TOC entry 7 (OID 17145)
--- Name: paths; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 17 (OID 4150753)
+-- Name: paths; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE paths (
@@ -68,8 +16,8 @@ CREATE TABLE paths (
 
 
 --
--- TOC entry 9 (OID 17150)
--- Name: files; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 19 (OID 4150758)
+-- Name: files; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE files (
@@ -85,8 +33,8 @@ CREATE TABLE files (
 
 
 --
--- TOC entry 11 (OID 17156)
--- Name: assessments; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 21 (OID 4150764)
+-- Name: assessments; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE assessments (
@@ -99,8 +47,8 @@ CREATE TABLE assessments (
 
 
 --
--- TOC entry 15 (OID 17158)
--- Name: keywords; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 25 (OID 4150766)
+-- Name: keywords; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE keywords (
@@ -112,8 +60,8 @@ CREATE TABLE keywords (
 
 
 --
--- TOC entry 16 (OID 17165)
--- Name: topics; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 26 (OID 4150773)
+-- Name: topics; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE topics (
@@ -124,23 +72,23 @@ CREATE TABLE topics (
 
 
 --
--- TOC entry 18 (OID 17171)
--- Name: pools; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 28 (OID 4150779)
+-- Name: pools; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE pools (
     id integer DEFAULT nextval('public.pools_id_seq'::text) NOT NULL,
     idtopic integer NOT NULL,
-    login character varying(10) NOT NULL,
     name text NOT NULL,
     state character varying(10) NOT NULL,
-    enabled boolean NOT NULL
+    enabled boolean NOT NULL,
+    login character varying(16) NOT NULL
 ) WITHOUT OIDS;
 
 
 --
--- TOC entry 6 (OID 17177)
--- Name: pools_id_seq; Type: SEQUENCE; Schema: public; Owner: bpiwowar
+-- TOC entry 8 (OID 4150785)
+-- Name: pools_id_seq; Type: SEQUENCE; Schema: inex_2005; Owner: inex
 --
 
 CREATE SEQUENCE pools_id_seq
@@ -151,8 +99,8 @@ CREATE SEQUENCE pools_id_seq
 
 
 --
--- TOC entry 20 (OID 17180)
--- Name: filestatus; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 30 (OID 4150787)
+-- Name: filestatus; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE filestatus (
@@ -166,8 +114,8 @@ CREATE TABLE filestatus (
 
 
 --
--- TOC entry 25 (OID 17188)
--- Name: history; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 35 (OID 4150793)
+-- Name: history; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE history (
@@ -181,8 +129,8 @@ CREATE TABLE history (
 
 
 --
--- TOC entry 27 (OID 17192)
--- Name: assessmentsview; Type: VIEW; Schema: public; Owner: bpiwowar
+-- TOC entry 37 (OID 4150797)
+-- Name: assessmentsview; Type: VIEW; Schema: inex_2005; Owner: inex
 --
 
 CREATE VIEW assessmentsview AS
@@ -190,8 +138,8 @@ CREATE VIEW assessmentsview AS
 
 
 --
--- TOC entry 28 (OID 17193)
--- Name: topicelements; Type: TABLE; Schema: public; Owner: bpiwowar
+-- TOC entry 38 (OID 4150798)
+-- Name: topicelements; Type: TABLE; Schema: inex_2005; Owner: inex
 --
 
 CREATE TABLE topicelements (
@@ -202,17 +150,8 @@ CREATE TABLE topicelements (
 
 
 --
--- TOC entry 30 (OID 17197)
--- Name: statusview; Type: VIEW; Schema: public; Owner: bpiwowar
---
-
-CREATE VIEW statusview AS
-    SELECT root.id AS rootid, anc.filename, ta.status, ta.inpool, count(*) AS count FROM files root, files anc, files f, filestatus ta WHERE ((((anc.parent = root.id) AND (anc.pre <= f.pre)) AND (anc.post >= f.pre)) AND (ta.idfile = f.id)) GROUP BY root.id, anc.filename, ta.status, ta.inpool;
-
-
---
--- TOC entry 31 (OID 36059)
--- Name: topicelementsview; Type: VIEW; Schema: public; Owner: bpiwowar
+-- TOC entry 40 (OID 4150805)
+-- Name: topicelementsview; Type: VIEW; Schema: inex_2005; Owner: inex
 --
 
 CREATE VIEW topicelementsview AS
@@ -220,8 +159,119 @@ CREATE VIEW topicelementsview AS
 
 
 --
--- TOC entry 35 (OID 35967)
--- Name: unique_file_id; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 41 (OID 5372740)
+-- Name: statusview; Type: VIEW; Schema: inex_2005; Owner: inex
+--
+
+CREATE VIEW statusview AS
+    SELECT ta.idpool, root.id AS rootid, anc.filename, ta.status, ta.inpool, count(*) AS count FROM files root, files anc, files f, filestatus ta WHERE ((((anc.parent = root.id) AND (anc.pre <= f.pre)) AND (anc.post >= f.pre)) AND (ta.idfile = f.id)) GROUP BY ta.idpool, root.id, anc.filename, ta.status, ta.inpool;
+
+
+SET search_path = metrics_2004, pg_catalog;
+
+--
+-- TOC entry 43 (OID 1425714)
+-- Name: curve; Type: INDEX; Schema: metrics_2004; Owner: inex
+--
+
+CREATE INDEX curve ON measures USING btree (curve, runid);
+
+
+--
+-- TOC entry 46 (OID 1425715)
+-- Name: aggregates_runid; Type: INDEX; Schema: metrics_2004; Owner: inex
+--
+
+CREATE INDEX aggregates_runid ON aggregates USING btree (runid);
+
+
+--
+-- TOC entry 51 (OID 3032296)
+-- Name: runid; Type: INDEX; Schema: metrics_2004; Owner: inex
+--
+
+CREATE UNIQUE INDEX runid ON officials USING btree (runid);
+
+
+--
+-- TOC entry 50 (OID 3032298)
+-- Name: official_run_by_login; Type: INDEX; Schema: metrics_2004; Owner: inex
+--
+
+CREATE INDEX official_run_by_login ON officials USING btree (login);
+
+
+SET search_path = inex_2005, pg_catalog;
+
+--
+-- TOC entry 54 (OID 6093029)
+-- Name: lower_filename; Type: INDEX; Schema: inex_2005; Owner: inex
+--
+
+CREATE INDEX lower_filename ON files USING btree (lower((collection)::text), lower((filename)::text));
+
+
+SET search_path = metrics_2004, pg_catalog;
+
+--
+-- TOC entry 42 (OID 1425764)
+-- Name: primary_key_runs; Type: CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY runs
+    ADD CONSTRAINT primary_key_runs PRIMARY KEY (id);
+
+
+--
+-- TOC entry 44 (OID 1425766)
+-- Name: curve_point; Type: CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY measures
+    ADD CONSTRAINT curve_point UNIQUE (curve, x, runid);
+
+
+--
+-- TOC entry 45 (OID 1425768)
+-- Name: aggregates_primary; Type: CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY aggregates
+    ADD CONSTRAINT aggregates_primary PRIMARY KEY (runid, curve, "type");
+
+
+--
+-- TOC entry 47 (OID 1425772)
+-- Name: auth_key; Type: CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY authorisations
+    ADD CONSTRAINT auth_key PRIMARY KEY (login, "year");
+
+
+--
+-- TOC entry 48 (OID 1425774)
+-- Name: measures_order_key; Type: CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY measures_order
+    ADD CONSTRAINT measures_order_key PRIMARY KEY (curve);
+
+
+--
+-- TOC entry 49 (OID 1425776)
+-- Name: unique_order; Type: CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY measures_order
+    ADD CONSTRAINT unique_order UNIQUE ("order");
+
+
+SET search_path = inex_2005, pg_catalog;
+
+--
+-- TOC entry 56 (OID 4150806)
+-- Name: unique_file_id; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY files
@@ -229,8 +279,8 @@ ALTER TABLE ONLY files
 
 
 --
--- TOC entry 34 (OID 35969)
--- Name: unique_file; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 55 (OID 4150808)
+-- Name: unique_file; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY files
@@ -238,8 +288,8 @@ ALTER TABLE ONLY files
 
 
 --
--- TOC entry 33 (OID 35971)
--- Name: unique_path_id; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 53 (OID 4150810)
+-- Name: unique_path_id; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY paths
@@ -247,8 +297,8 @@ ALTER TABLE ONLY paths
 
 
 --
--- TOC entry 32 (OID 35973)
--- Name: unique_path; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 52 (OID 4150812)
+-- Name: unique_path; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY paths
@@ -256,8 +306,8 @@ ALTER TABLE ONLY paths
 
 
 --
--- TOC entry 39 (OID 35975)
--- Name: pkPool; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 60 (OID 4150814)
+-- Name: pkPool; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY pools
@@ -265,8 +315,8 @@ ALTER TABLE ONLY pools
 
 
 --
--- TOC entry 38 (OID 35977)
--- Name: pkTopic; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 59 (OID 4150816)
+-- Name: pkTopic; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY topics
@@ -274,8 +324,8 @@ ALTER TABLE ONLY topics
 
 
 --
--- TOC entry 37 (OID 35979)
--- Name: pkKeywords; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 58 (OID 4150818)
+-- Name: pkKeywords; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY keywords
@@ -283,8 +333,8 @@ ALTER TABLE ONLY keywords
 
 
 --
--- TOC entry 40 (OID 35981)
--- Name: pkAssessmentVersion; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 61 (OID 4150820)
+-- Name: pkAssessmentVersion; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY filestatus
@@ -292,8 +342,8 @@ ALTER TABLE ONLY filestatus
 
 
 --
--- TOC entry 36 (OID 35985)
--- Name: pk_assessments; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 57 (OID 4150822)
+-- Name: pk_assessments; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
@@ -301,17 +351,57 @@ ALTER TABLE ONLY assessments
 
 
 --
--- TOC entry 41 (OID 35987)
--- Name: pk_topicelements; Type: CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 62 (OID 4150824)
+-- Name: pk_topicelements; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY topicelements
     ADD CONSTRAINT pk_topicelements PRIMARY KEY (idtopic, idfile, idpath);
 
 
+SET search_path = metrics_2004, pg_catalog;
+
 --
--- TOC entry 43 (OID 35989)
--- Name: validStartPath; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 64 (OID 1425778)
+-- Name: runid; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY measures
+    ADD CONSTRAINT runid FOREIGN KEY (runid) REFERENCES runs(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 65 (OID 1425782)
+-- Name: aggregates_runid; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY aggregates
+    ADD CONSTRAINT aggregates_runid FOREIGN KEY (runid) REFERENCES runs(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 63 (OID 1425786)
+-- Name: authorised; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY runs
+    ADD CONSTRAINT authorised FOREIGN KEY (login, "year") REFERENCES authorisations(login, "year") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 66 (OID 1425790)
+-- Name: valid_official_run; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
+--
+
+ALTER TABLE ONLY officials
+    ADD CONSTRAINT valid_official_run FOREIGN KEY (runid) REFERENCES runs(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+SET search_path = inex_2005, pg_catalog;
+
+--
+-- TOC entry 68 (OID 4150826)
+-- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
@@ -319,8 +409,8 @@ ALTER TABLE ONLY assessments
 
 
 --
--- TOC entry 44 (OID 35993)
--- Name: validEndPath; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 69 (OID 4150830)
+-- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
@@ -328,8 +418,8 @@ ALTER TABLE ONLY assessments
 
 
 --
--- TOC entry 47 (OID 35997)
--- Name: validTopic; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 72 (OID 4150834)
+-- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY pools
@@ -337,8 +427,8 @@ ALTER TABLE ONLY pools
 
 
 --
--- TOC entry 46 (OID 36001)
--- Name: validPool; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 71 (OID 4150838)
+-- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY keywords
@@ -346,8 +436,8 @@ ALTER TABLE ONLY keywords
 
 
 --
--- TOC entry 48 (OID 36005)
--- Name: validPool; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 73 (OID 4150842)
+-- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY filestatus
@@ -355,8 +445,8 @@ ALTER TABLE ONLY filestatus
 
 
 --
--- TOC entry 49 (OID 36009)
--- Name: validFile; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 74 (OID 4150846)
+-- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY filestatus
@@ -364,8 +454,8 @@ ALTER TABLE ONLY filestatus
 
 
 --
--- TOC entry 42 (OID 36021)
--- Name: validParent; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 67 (OID 4150850)
+-- Name: validParent; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY files
@@ -373,8 +463,8 @@ ALTER TABLE ONLY files
 
 
 --
--- TOC entry 50 (OID 36025)
--- Name: validPool; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 75 (OID 4150854)
+-- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY history
@@ -382,8 +472,8 @@ ALTER TABLE ONLY history
 
 
 --
--- TOC entry 51 (OID 36029)
--- Name: validFile; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 76 (OID 4150858)
+-- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY history
@@ -391,8 +481,8 @@ ALTER TABLE ONLY history
 
 
 --
--- TOC entry 52 (OID 36033)
--- Name: validStartPath; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 77 (OID 4150862)
+-- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY history
@@ -400,8 +490,8 @@ ALTER TABLE ONLY history
 
 
 --
--- TOC entry 53 (OID 36037)
--- Name: validEndPath; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 78 (OID 4150866)
+-- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY history
@@ -409,8 +499,8 @@ ALTER TABLE ONLY history
 
 
 --
--- TOC entry 54 (OID 36041)
--- Name: validFile; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 79 (OID 4150870)
+-- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY topicelements
@@ -418,8 +508,8 @@ ALTER TABLE ONLY topicelements
 
 
 --
--- TOC entry 55 (OID 36045)
--- Name: validTopic; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 80 (OID 4150874)
+-- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY topicelements
@@ -427,8 +517,8 @@ ALTER TABLE ONLY topicelements
 
 
 --
--- TOC entry 56 (OID 36049)
--- Name: validPath; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 81 (OID 4150878)
+-- Name: validPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY topicelements
@@ -436,125 +526,113 @@ ALTER TABLE ONLY topicelements
 
 
 --
--- TOC entry 45 (OID 36053)
--- Name: validPoolFile; Type: FK CONSTRAINT; Schema: public; Owner: bpiwowar
+-- TOC entry 70 (OID 4150882)
+-- Name: validPoolFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
     ADD CONSTRAINT "validPoolFile" FOREIGN KEY (idpool, idfile) REFERENCES filestatus(idpool, idfile) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
-SET SESSION AUTHORIZATION 'postgres';
-
 --
--- TOC entry 3 (OID 2200)
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA public IS 'Standard public schema';
-
-
-SET SESSION AUTHORIZATION 'bpiwowar';
-
---
--- TOC entry 8 (OID 17145)
--- Name: TABLE paths; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 18 (OID 4150753)
+-- Name: TABLE paths; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON TABLE paths IS 'Paths indexed by an ID';
 
 
 --
--- TOC entry 10 (OID 17150)
--- Name: TABLE files; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 20 (OID 4150758)
+-- Name: TABLE files; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON TABLE files IS 'Files index by id';
 
 
 --
--- TOC entry 12 (OID 17156)
--- Name: TABLE assessments; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 22 (OID 4150764)
+-- Name: TABLE assessments; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON TABLE assessments IS 'Assessments';
 
 
 --
--- TOC entry 13 (OID 17156)
--- Name: COLUMN assessments.exhaustivity; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 23 (OID 4150764)
+-- Name: COLUMN assessments.exhaustivity; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN assessments.exhaustivity IS 'For a passage: positive is exh, 0 is unknown, negative for old (exh=-1-value), null for not validated';
 
 
 --
--- TOC entry 14 (OID 17156)
--- Name: COLUMN assessments.endpath; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 24 (OID 4150764)
+-- Name: COLUMN assessments.endpath; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN assessments.endpath IS 'Might point to an empty path';
 
 
 --
--- TOC entry 17 (OID 17165)
--- Name: COLUMN topics."type"; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 27 (OID 4150773)
+-- Name: COLUMN topics."type"; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN topics."type" IS 'Type of the query: CO, CO+S, CAS';
 
 
 --
--- TOC entry 19 (OID 17171)
--- Name: COLUMN pools.state; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 29 (OID 4150779)
+-- Name: COLUMN pools.state; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN pools.state IS 'Distinguish official topics, etc.';
 
 
 --
--- TOC entry 21 (OID 17180)
--- Name: TABLE filestatus; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 31 (OID 4150787)
+-- Name: TABLE filestatus; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON TABLE filestatus IS 'Keeps information about the assessment process';
 
 
 --
--- TOC entry 22 (OID 17180)
--- Name: COLUMN filestatus."version"; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 32 (OID 4150787)
+-- Name: COLUMN filestatus."version"; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN filestatus."version" IS 'Current version of the file.';
 
 
 --
--- TOC entry 23 (OID 17180)
--- Name: COLUMN filestatus.inpool; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 33 (OID 4150787)
+-- Name: COLUMN filestatus.inpool; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN filestatus.inpool IS 'Was the file in the original pool?';
 
 
 --
--- TOC entry 24 (OID 17180)
--- Name: COLUMN filestatus.status; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 34 (OID 4150787)
+-- Name: COLUMN filestatus.status; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON COLUMN filestatus.status IS '0 = highlighting, 1 = assessing, 2 = done';
 
 
 --
--- TOC entry 26 (OID 17188)
--- Name: TABLE history; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 36 (OID 4150793)
+-- Name: TABLE history; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON TABLE history IS 'Log the assessor actions';
 
 
 --
--- TOC entry 29 (OID 17193)
--- Name: TABLE topicelements; Type: COMMENT; Schema: public; Owner: bpiwowar
+-- TOC entry 39 (OID 4150798)
+-- Name: TABLE topicelements; Type: COMMENT; Schema: inex_2005; Owner: inex
 --
 
 COMMENT ON TABLE topicelements IS 'Keeps the elements which should be highlighted for a topic';

@@ -1,0 +1,86 @@
+@namespace url(urn:xrai:c:lp);
+
+image {
+        display: block;
+background-image: url("./images/BN6_2.png");
+
+        }
+
+
+
+destination:before {content: "Destination: "}
+destination {
+        display: block;
+        background-color: white;
+        position: absolute;
+        margin: 20px;
+        width: 800px;
+        font-family: Baskerville;
+        font-weight: bold;
+        font-size:18pt;
+        }
+
+full_name:before {
+        font-weight:italic;
+        content: "Full destination name: ";
+        }
+
+full_name {
+        display: block;
+        margin-left: 10px;
+        font-size: 11pt;
+        font-weight: bold;
+        }
+
+full_name:after {
+        font-size: 11pt;
+        font-weight: normal;
+}
+
+general, transport, attractions {
+        font-weight: bold;
+        display:block;
+        position: relative;
+        left: 10px;
+        font-size:16pt;
+}
+
+introduction, timezones, warning, weights_measures, capital_city, government, environment {
+        diplay:block;
+        position: relative;
+        left: 10px;
+        font-size: 14pt
+        font-weight: bold;
+        border-bottom-width: 2px;
+        border-left-width: 1px;
+        border-right-width: 0px;
+        border-top-width: 0px;
+        border-color: orange;
+        border-style: solid;
+        }
+
+
+
+p, timezone, type, severity, system, type, title, leader,area_sqkm, population,caption, photographer  {
+        left: 10px;
+        font-size:11pt;
+        display: block;
+        position: relative;
+        font-weight: normal;
+        }
+
+general:before {content: "General Section"; }
+introduction:before { content: "Introduction"}
+warning:before { content: "Warning: "}
+type:before {font-face: bold; content: "Type: "}
+severity:before {font-face: bold; content: "Severity: "}
+timezones:before { content: "Timezones"; }
+timezone:before { content: "zone:"; }
+weights_measures:before { content: "Weights measures"}
+system:before { content: "System:"}
+capital_city:before { content: "Capital city: "}
+government:before { content: "Government"}
+leader:before { content: "Leader: "}
+title:before { content: "Title: "}
+area_sqkm:before {content:"Area (in square kilometers): "}
+population:before{content:"Population: "}
