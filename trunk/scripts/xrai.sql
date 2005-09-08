@@ -258,45 +258,6 @@ ALTER TABLE ONLY topicelements
     ADD CONSTRAINT pk_topicelements PRIMARY KEY (idtopic, idfile, idpath);
 
 
-SET search_path = metrics_2004, pg_catalog;
-
---
--- TOC entry 64 (OID 1425778)
--- Name: runid; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
---
-
-ALTER TABLE ONLY measures
-    ADD CONSTRAINT runid FOREIGN KEY (runid) REFERENCES runs(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 65 (OID 1425782)
--- Name: aggregates_runid; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
---
-
-ALTER TABLE ONLY aggregates
-    ADD CONSTRAINT aggregates_runid FOREIGN KEY (runid) REFERENCES runs(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 63 (OID 1425786)
--- Name: authorised; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
---
-
-ALTER TABLE ONLY runs
-    ADD CONSTRAINT authorised FOREIGN KEY (login, "year") REFERENCES authorisations(login, "year") ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 66 (OID 1425790)
--- Name: valid_official_run; Type: FK CONSTRAINT; Schema: metrics_2004; Owner: inex
---
-
-ALTER TABLE ONLY officials
-    ADD CONSTRAINT valid_official_run FOREIGN KEY (runid) REFERENCES runs(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
-SET search_path = inex_2005, pg_catalog;
 
 --
 -- TOC entry 68 (OID 4150826)
