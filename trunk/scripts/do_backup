@@ -2,23 +2,24 @@
 
 # do_backup database table
 
-if [ $# -lt 2 ]; then
-  echo "$0 <database> <table> [<table> [...]]" 1>&2
+if [ $# -lt 3 ]; then
+  echo "$0 <base rep> <database> <table> [<table> [...]]" 1>&2
   exit 1
 fi
 
-schema="$1"
-shift
+BASEDIR="/home/inex/backups"
+schema="$2"
+shift 2
 
 for table in "$@"; do
 
    # Prepare
-   BASEDIR="/home/inex/backups/$schema/$table"
-   mkdir -p "$BASEDIR"
+   DIR="$BASEDIR/$schema/$table"
+   mkdir -p "$DIR"
 
-   LASTFILE="$BASEDIR/last"
-   CURRENT="$BASEDIR/current"
-   /usr/bin/pg_dump --no-owner --schema $schema --table $table | /usr/bin/bzip2 -c > "$BASEDIR/current"
+   LASTFILE="$DIR/last"
+   CURRENT="$DIR/current"
+   /usr/bin/pg_dump --no-owner --schema $schema --table $table | /usr/bin/bzip2 -c > "$DIR/current"
 
    if test -f "$LASTFILE" && /usr/bin/diff -q "$CURRENT" "$LASTFILE" > /dev/null
    then
@@ -26,11 +27,11 @@ for table in "$@"; do
       echo -n
    else
       # OK, keep backup (move it to the good directory)
-   DIR="$BASEDIR"/$(/bin/date "+%Y/%m/%d")
+   DIR="$DIR"/$(/bin/date "+%Y/%m/%d")
    FILE="$DIR"/$(/bin/date "+assessments@%H%M").sql.bz2
    /bin/mkdir -p "$DIR"
    mv "$CURRENT" "$FILE"
-      ln -sf "$FILE" "$BASEDIR"/last
+      ln -sf "$FILE" "$DIR"/last
    fi
 
 #mail -s "Backup done $(/bin/date "+%Y%m%d%M%H")" bpiwowar
