@@ -257,6 +257,7 @@ XRai.beforeunload = function(event) {
          return window.confirm("Do you really want to quit that page?\n\nX-Rai warning: " + XRai.changeCount + " change(s) were not saved" + "\n\nClick on OK to continue, or Cancel to stay on the actual page");
       }
    }
+   if (event) return;
    return true;
 }
 

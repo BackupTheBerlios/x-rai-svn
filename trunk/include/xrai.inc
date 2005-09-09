@@ -256,6 +256,7 @@ if ($id_pool > 0) {
    $pool = $xrai_db->getRow("SELECT * FROM $db_pools WHERE id=?",array($id_pool),DB_FETCHMODE_ASSOC);
    if (!$pool || DB::isError($pool)) exit("Cannot retrieve pool data" . ($do_debug ? ": " . $pool->getUserInfo() : ""));
    $id_topic = $pool["idtopic"];
+   if (!$is_root && ($pool["login"] != $inex_user)) fatal_error("Access to this pool is not permitted");
    if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
    $write_access = $can_modify = ($pool["enabled"] == 't');
    add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
