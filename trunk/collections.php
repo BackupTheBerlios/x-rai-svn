@@ -52,7 +52,7 @@ $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-   $res = &$xrai_db->query("SELECT ta.idpool, anc.type, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.type, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
+   $res = &$xrai_db->query("SELECT ta.idpool, anc.type, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.collection=root.collection AND anc.collection=f.collection AND anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.type, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
       while ($row = $res->fetchRow()) {

@@ -25,7 +25,8 @@ our %collections =
 "it" => [ "", "IT Professional", "2002-2004" ],
 "mi" => [ "", "Micro", "2002-2004" ],
 "mu" => [ "", "MultiMedia", "2002-2004" ],
-"pc" => [ "", "Parallel &amp; Distributed Technology", "2002-2004" ],
+"pd" => [ "", "Pervasive ", "" ],
+"pd" => [ "", "Parallel &amp; Distributed Technology", "2002-2004" ],
 "so" => [ "", "Concurrency", "2002-2004" ],
 "sp" => [ "", "Software", "2002-2004" ],
 "tb" => [ "", "Transactions on Computational Biology &amp; Bioinformatics", "2004" ],
@@ -134,7 +135,7 @@ sub parsedir {
          my $prexid = $xid + 1;
          print STDERR "[Found] $path\n";
          my $name = $path;
-         $name =~ s²$ARGV[0]/(.*)\/volume.xml²$1²;
+         $name =~ s$ARGV[0]/(.*)\/volume.xml$1;
 #          push @current_localisation, [dirname($path), basename($path)];
          $parser->parsefile($path);
       } elsif (-f $path) {
