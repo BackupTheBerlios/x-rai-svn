@@ -247,7 +247,7 @@ function show_focus(e) {
    if (!e) return;
    scroll_to_element(e,20);
 
-   if (e.focus) { e.focus();  }
+   if (e.focus) { e.focus(); e.focus(); }
    else {
       // article view
       e.setAttribute("focus","yes");
@@ -334,7 +334,7 @@ function toggle_panel(id, imageId) {
 }
 
 XRai.gotoLocation = function(url) {
-   if (XRai.beforeunload) if (!XRai.beforeunload(null)) return false;
+  if (XRai.beforeunload) if (!XRai.beforeunload(null)) return false;
    window.location = url;
 }
 

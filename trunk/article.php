@@ -22,16 +22,21 @@ $xraiatag = "j";
 
 // Redirect to the next article to assess
 if ($_REQUEST["view_jump"] == 1) {
-  $view_xid = $_REQUEST["view_xid"];
-  $next = $_REQUEST["next"];
-  $sql_begin = "SELECT * FROM assessments WHERE id_pool=$id_pool AND (assessment = 'U' or inconsistant='Y') AND xid " ;
-  if (($row = sql_get_row($sql_begin . ($next ? ">" : "<") . " $view_xid ORDER BY xid " . ($next ? "" : "DESC") . " LIMIT 0,1", false))
-|| ($row = sql_get_row($sql_begin . ($next ? "<" : ">") . " $view_xid ORDER BY xid " . ($next ? "" : "DESC") . " LIMIT 0,1", false))) {
-        $rfile = sql_get_row("SELECT * FROM files WHERE type='xml' AND xid <= $row[xid] AND post >= $row[xid]");
-        header("Location: $PHP_SELF?id_pool=$id_pool&file=$rfile[name]");
+  $view_pos = $_REQUEST["viewpos"];
+  $next = $_REQUEST["next"]; // 0 for previous, 1 for next
+  if ($next != "0" && $next != "1") exit();
+  $sql_begin = "SELECT a.* FROM $db_files a, $db_filestatus fs WHERE idfile=id AND idpool=? AND status not in (-2,2)";
+  $sql[0] = "$sql_begin AND pre < ? ORDER BY a.pre DESC LIMIT 1";
+  $sql[1] = "$sql_begin AND pre > ? ORDER BY a.pre ASC LIMIT 1";
+
+  $row = $xrai_db->getRow($sql[$next], array($id_pool, $view_pos), DB_FETCHMODE_ASSOC);
+  if (!$row) $row = $xrai_db->getRow($sql[1-$next], array($id_pool, $view_pos), DB_FETCHMODE_ASSOC);
+    if ($row) {
+        if (DB::isError($row)) { fatal_error("Database error",$row->getUserInfo()); }
+        header("Location: $PHP_SELF?id_pool=$id_pool&collection=$row[collection]&file=$row[filename]");
         exit();
     } else {
-        header("Location: $base_url/pool.php?id_pool=$id_pool&message=Pool%20completed%20!!!");
+        header("Location: $base_url/pool?id_pool=$id_pool&message=Pool%20completed%20!!!");
         exit();
     }
 
@@ -44,10 +49,11 @@ $directory = dirname($file);
 $collection = $_REQUEST["collection"];
 $documentns = "urn:xrai:c:$collection";
 
-$row = $xrai_db->getRow("select id,title,parent from $db_files where collection=? AND filename=?",array($collection,$file));
+$row = $xrai_db->getRow("select id,title,parent,pre from $db_files where collection=? AND filename=?",array($collection,$file));
 //print "$query";
 $title = $row["title"];
 $fileid = $row["id"];
+$viewpos = $row["pre"];
 $xmlfilename = "$xml_documents/$collection/$file.xml";
 
 // Begins output
@@ -109,6 +115,7 @@ if ($id_pool > 0) {
   up_url = "<?=$up_url?>";
   var write_access = <?=($write_access ? "true":"false")?>;
   var xraiatag = "<?=$xraiatag?>";
+  var goto_url = "<?="$_SERVER[PHP_SELF]?id_pool=$id_pool&amp;view_jump=1&amp;viewpos=$viewpos"?>";
 
 <? if ($id_pool > 0) { ?>
    var id_pool = <?=$id_pool?>;
@@ -357,13 +364,13 @@ if ($write_access) {
    </span>
 
   <span>
-      <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (1)" alt="&lt;-" onclick="todo_previous()"/><div class="help_bottom">Go to the previous element to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code> keys</div></span>
-      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (2)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
-      <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (3)" alt="-&gt;" onclick="todo_next()"/><div class="help_bottom">Go to the next element to assess.<br/><b>Shortcut</b>: <code>control + right arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (1)" alt="&lt;-" onclick="todo_previous(event.shiftKey)"/><div class="help_bottom">Go to the previous element (or to the previous view with shift + click) to assess.<br/><b>Shortcut</b>: <code>1</code> for previous element and <code>9</code> for previous view</div></span>
+      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (2)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>2</code></div></span>
+      <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (3)" alt="-&gt;" onclick="todo_next(event.shiftKey)"/><div class="help_bottom">Go to the next element (or to the next view with shift + click) to assess.<br/><b>Shortcut</b>: <code>3</code>  and <code>0</code> for next view</div></span>
    </span>
    <span>
       <span>
-         <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]"  title="Show/hide the support elements"/>
+         <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]"  title="Show/hide the support elements"/><div class="help_bottom">Support elements are the elements returned by participating systems that were selected during the pooling phase. They are shown in blue dotted boxes.</div>
       </span>
       <span>
          <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and assessment mode (shortcut: &quot;m&quot;)"/>

@@ -158,15 +158,6 @@ CREATE VIEW topicelementsview AS
     SELECT topicelements.idfile, topicelements.idpath, topicelements.idtopic, files.filename, paths."path" FROM ((topicelements JOIN files ON ((topicelements.idfile = files.id))) JOIN paths ON ((topicelements.idpath = paths.id)));
 
 
---
--- TOC entry 41 (OID 5372740)
--- Name: statusview; Type: VIEW; Schema: inex_2005; Owner: inex
---
-
-CREATE VIEW statusview AS
-    SELECT ta.idpool, root.id AS rootid, anc.filename, ta.status, ta.inpool, count(*) AS count FROM files root, files anc, files f, filestatus ta WHERE ((((anc.parent = root.id) AND (anc.pre <= f.pre)) AND (anc.post >= f.pre)) AND (ta.idfile = f.id)) GROUP BY ta.idpool, root.id, anc.filename, ta.status, ta.inpool;
-
-
 
 --
 -- TOC entry 56 (OID 4150806)

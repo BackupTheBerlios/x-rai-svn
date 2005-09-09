@@ -32,6 +32,7 @@ $title = $row["title"];
 $basepath = $row["filename"];
 $rootid = $row["id"];
 $xslname = "xrai";
+$viewxid = $row["pre"];
 
 if ($id_pool)
   $localisation[] = array("$pool[name]","$base_url/pool.php?id_pool=$id_pool", "Pool for topic $pool[idtopic]" );
@@ -51,15 +52,14 @@ $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-   $res = &$xrai_db->query("SELECT * FROM $db_statusview WHERE rootid=? AND idpool=$id_pool",array($rootid));
-//    print_r($res);
+   $res = &$xrai_db->query("SELECT ta.idpool, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
       while ($row = $res->fetchRow()) {
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
          $all_assessments[$s] += $row["count"];
-         if ((abs($row["status"]) != 3) && ($row["count"] > 0) ) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         if ((abs($row["status"]) != 2) && ($row["count"] > 0) ) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
       }
       $res->free();
    }
@@ -112,7 +112,8 @@ if (!$xslt) print "<div class='error'>No XSLT processor defined !</div>";
 print "<h1>" . htmlspecialchars($title) . "</h1>\n";
 ?>
  <script type='text/javascript'>
- id_pool=<?=$id_pool?>;
+ id_pool="<?=$id_pool?>";
+ viewxid="<?=$viewxid?>";
  <? if ($todojs) print "$todojs);"; else print "todo = new Array();"; ?>
  </script>
 <?
@@ -167,7 +168,7 @@ if ($write_access) {
   <div>
   <span>
       <span><img src="<?=$base_url?>/img/left.png" title="Go to the container (control + left arrow)" alt="^" onclick="todo_previous()"/><div class="help_bottom">Go to the previous collection or document to assess.<br/><b>Shortcut</b>: <code>u</code> key</div></span>
-      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
+      <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (control + up arrow)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>control + up arrow</code></div></span>
       <span><img src="<?=$base_url?>/img/right.png" title="Go to the container (control + right arrow)" alt="->" onclick="todo_next()"/><div class="help_bottom">Go to the NEXTlection or document to assess.<br/><b>Shortcut</b>: <code>control + left arrow</code></div></span>
  </span>
 </div>

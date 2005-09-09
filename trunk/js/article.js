@@ -236,10 +236,8 @@ XRai.keypressed = function (event) {
   else if (N && event.which == 117) XRai.unhighlight();
   else if (N && event.which == 109) XRai.switchMode();
   else if (C && (event.which == 83 || event.which == 115)) XRai.save();
-
-//   else if (event.which == 49)
-//   else if (event.which == 50)
-//   else if (event.which == 51)
+  else if (!C && event.which == 57) todo_previous(true);
+  else if (!C && event.which == 48) todo_previous(true);
 
   else {
    return collection_keypress(event);
@@ -251,12 +249,15 @@ XRai.keypressed = function (event) {
 
 // Check that everything is saved before allowing the user to go out of this view
 XRai.beforeunload = function(event) {
+   if (!event && !window.opera) return true; // only in opera we need to check before leaving
+
    if (XRai.hasChanged()) {
       if (event) return "X-Rai warning: " + XRai.changeCount + " change(s) were not saved";
       else {
          return window.confirm("Do you really want to quit that page?\n\nX-Rai warning: " + XRai.changeCount + " change(s) were not saved" + "\n\nClick on OK to continue, or Cancel to stay on the actual page");
       }
    }
+   return true;
 }
 
 
@@ -1779,17 +1780,37 @@ XRaiLoad = function() {
 
 }
 
-function todo_previous() {
-   if (todo_index > 0) todo_index = (todo_index - 1) % XRai.toAssess.length;
-   else todo_index = XRai.toAssess.length - 1;
-   Message.show("notice","Showing " + todo_index);
-   show_focus(XRai.toAssess[todo_index]);
+function check_move(way) {
+   if (docStatus >= 1) {
+      if (XRai.toAssess.length == 0) {
+         if (docStatus == 2) Message.show("notice","No more assessments in this view; click on the arrow while pressing shift to jump to the previous view to assess.");
+         else Message.show("notice","No more elements to assess in this view");
+         return false;
+      }
+   } else {
+      Message.show("notice","Arrows only work in assessing mode");
+      return false;
+   }
+   return true;
 }
 
-function todo_next() {
-   todo_index = (todo_index + 1) % XRai.toAssess.length;
-   Message.show("notice","Showing " + todo_index);
-   show_focus(XRai.toAssess[todo_index]);
+function todo_previous(jump) {
+   if (jump) {
+      XRai.gotoLocation(goto_url + "&next=0");
+   } else if (check_move("previous")) {
+      if (todo_index > 0) todo_index = (todo_index - 1) % XRai.toAssess.length;
+      else todo_index = XRai.toAssess.length - 1;
+      show_focus(XRai.toAssess[todo_index]);
+   }
+}
+
+function todo_next(jump) {
+   if (jump) {
+      XRai.gotoLocation(goto_url + "&next=1");
+   } else if (check_move("next")) {
+      todo_index = (todo_index + 1) % XRai.toAssess.length;
+      show_focus(XRai.toAssess[todo_index]);
+   }
 }
 
 
