@@ -52,28 +52,31 @@ class Paths {
 
 /** Access to the assessments db */
 class Assessments {
-   function Assessments($idPool, $idFile, $version, $status) {
+   function Assessments($idPool, $idFile, $version, $status, $inpool) {
       $this->version = $version;
       $this->idPool = $idPool;
       $this->idFile = $idFile;
       $this->status = $status;
+      $this->inpool = $inpool;
    }
 
    function create($idPool, $collection, $file) {
-      global $db_filestatus, $db_assessments, $xrai_db, $db_toassess;
+      global $db_filestatus, $db_assessments, $db_true, $xrai_db, $db_toassess;
       $idFile = Files::getFileId($collection,$file);
       if (DB::isError($idFile)) return $idFile;
 
-      $statusrow = $xrai_db->getRow("SELECT version, status FROM $db_filestatus WHERE idfile=? AND idpool=?",array($idFile,$idPool),DB_FETCHMODE_ROW);
+      $statusrow = $xrai_db->getRow("SELECT version, status, inpool FROM $db_filestatus WHERE idfile=? AND idpool=?",array($idFile,$idPool),DB_FETCHMODE_ROW);
       if (DB::isError($statusrow)) return $statusrow;
 
       if (!is_array($statusrow)) {
          $version = 0;
          $status = 0;
+         $inpool = false;
       } else {
-         list($version,$status) = $statusrow;
+         list($version,$status,$inpool) = $statusrow;
+         $inpool = ($db_true == $inpool);
       }
-      return new Assessments($idPool, $idFile, $version, $status);
+      return new Assessments($idPool, $idFile, $version, $status, $inpool);
    }
 
    function &getCursor() {

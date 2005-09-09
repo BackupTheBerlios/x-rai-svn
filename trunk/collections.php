@@ -52,10 +52,14 @@ $xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
 // --- Retrieve assessments ---
 
 if ($id_pool) {
-   $res = &$xrai_db->query("SELECT ta.idpool, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
+   $res = &$xrai_db->query("SELECT ta.idpool, anc.type, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.type, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
       while ($row = $res->fetchRow()) {
+         if ($row["type"] == "xml") {
+            $document[$row["filename"]] = array($row["status"], $row["inpool"] == $db_true);
+         }
+
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
          $all_assessments[$s] += $row["count"];
@@ -95,10 +99,21 @@ function begin_subcollection($path) {
 function end_subcollection() { print "</a>"; }
 
 function begin_document($path) {
-  global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath, $collection;
+  global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath, $collection, $document;
 //   print "$basepath";
    $id = get_full_path($basepath, $path);
-  print_assessments($id);
+  if ($document[$id]) {
+     $a = &$document[$id];
+     if ($a[1]) print "<span style=\"padding: 2px; border: 1px dashed blue\" title=\"in pool\">";
+     else print "<span>";
+
+      switch($a[0]) {
+         case "0": print "<img style=\"vertical-align: center;\" src=\"$base_url/img/mode_highlight\" title=\"highlighting mode\" alt=\"[highlighting]\"/>"; break;
+         case "1": print "<img style=\"vertical-align: center;\" src=\"$base_url/img/nok\" title=\"assessing mode (not validated)\" alt=\"[assessing]\"/>"; break;
+         case "2": print "<img style=\"vertical-align: center;\"  src=\"$base_url/img/ok\" title=\"assessing mode (validated)\" alt=\"[validated]\"/>"; break;
+      }
+      print "</span> ";
+  }
   print "<a id='$id' href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
 }
 

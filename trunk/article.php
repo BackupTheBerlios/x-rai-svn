@@ -369,9 +369,11 @@ if ($write_access) {
       <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (3)" alt="-&gt;" onclick="todo_next(event.shiftKey)"/><div class="help_bottom">Go to the next element (or to the next view with shift + click) to assess.<br/><b>Shortcut</b>: <code>3</code>  and <code>0</code> for next view</div></span>
    </span>
    <span>
+   <? if ($assessments && $assessments->inpool) { ?>
       <span>
          <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]"  title="Show/hide the support elements"/><div class="help_bottom">Support elements are the elements returned by participating systems that were selected during the pooling phase. They are shown in blue dotted boxes.</div>
       </span>
+   <? } ?>
       <span>
          <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and assessment mode (shortcut: &quot;m&quot;)"/>
       </span>
