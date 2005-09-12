@@ -266,10 +266,11 @@ if ($id_pool> 0) {
 
 <? } // end of if (write_access)
 
+if ($id_pool > 0) {
 ?>
 <div id="saving_div" style='visibility: visible; position: fixed; opacity: 0.9; -moz-opacity: .9; margin: auto; left: 40%; border: 2px outset #FFF; background: #000;'><div><img src="<?=$base_url?>/img/xrai-inex.jpg"/></div><div id="saving_message" style='font-size: small; color: #f00; font-weight: bold; text-align: center;'>Loading document...</div></div>
 <?
-
+}
 
 // Functions called by the PHP (XML+XSL) file
 // ==========================================
@@ -449,7 +450,6 @@ if ($write_access) {
 if ($id_pool > 0) {
    // Display assessments
    ?><script type="text/javascript">
-   XRai.init();
    var load = new XRaiLoad();
    <?
    while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
@@ -470,6 +470,7 @@ if ($id_pool > 0) {
    ?>
    load.end();
    load = null;
+   XRai.init();
    </script><?
    if ($do_debug) {
       ?><iframe src="<?=$base_url?>/log.html" id="log" align="middle" onclick="this.visibility='hide'"

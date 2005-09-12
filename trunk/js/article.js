@@ -1220,7 +1220,7 @@ XRai.assess = function(img, a, event) {
          else if (olda == "-1") XRai.setMaxBelow(XRai.currentAssessed,0);
          else if (a < max_exhaustivity) XRai.setMaxBelow(XRai.currentAssessed,a);
 
-         XRai.setAssessment(XRai.currentAssessed,a,false)
+         XRai.setAssessment(XRai.currentAssessed,a,false);
          XRai.updateSaveIcon();
       }
 
@@ -1306,6 +1306,8 @@ XRai.setBound = function(x, bound, force) {
    else if (bound == 0 && x.getAttribute("a") == "-1") XRai.setAssessment(x,"0");
    else if (bound > 0 && x.getAttribute("a") > bound) XRai.setAssessment(x,"0");
    else if (bound < -1) throw Error("Bound should be >= -1 in setTooSmall() [value is " + bound + "]");
+
+   XRai.updateSaveIcon();
 }
 
 XRai.setMaxBelow = function(j,bound,force) {
