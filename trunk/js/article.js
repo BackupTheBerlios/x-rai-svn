@@ -1827,5 +1827,4 @@ XRai.init = function() {
 
    XRai.loaded = true;
    XRai.history.push(new Array("L",XRai.getTimeString(),null,null));
-   document.getElementById('saving_div').style.visibility = 'hidden'
 }

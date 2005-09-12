@@ -450,6 +450,7 @@ if ($write_access) {
 if ($id_pool > 0) {
    // Display assessments
    ?><script type="text/javascript">
+   XRai.init();
    var load = new XRaiLoad();
    <?
    while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
@@ -470,7 +471,8 @@ if ($id_pool > 0) {
    ?>
    load.end();
    load = null;
-   XRai.init();
+   document.getElementById('saving_div').style.visibility = 'hidden'
+
    </script><?
    if ($do_debug) {
       ?><iframe src="<?=$base_url?>/log.html" id="log" align="middle" onclick="this.visibility='hide'"
