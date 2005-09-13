@@ -602,8 +602,8 @@ Passage = function(x,y,savedValue) {
       for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
          if (!XRai.isInDocument(x,1)) continue;
 //          if (debug) XRai.debug("In " + XRai.getPath(x) + "\n");
-         for(var y = x; (y == x) || XRai.isIn(y,x); y = XRai.next(y,1)) {
-            if (debug) XRai.debug("  Element " + XRai.getPath(y) + " is in passage\n");
+         for(var y = x; y && ((y == x) || XRai.isIn(y,x)); y = XRai.next(y,1)) {
+            if (debug) XRai.debug("  Element " + XRai.getPath(y) + " is in passage " + this.getPaths() + "\n");
             if (!y.cAssessment) {
                y.cAssessment = XRai.newAssessment(y,"0",false);
             }
