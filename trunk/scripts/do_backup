@@ -7,7 +7,7 @@ if [ $# -lt 3 ]; then
   exit 1
 fi
 
-BASEDIR="/home/inex/backups"
+BASEDIR="$1"
 schema="$2"
 shift 2
 
@@ -27,10 +27,10 @@ for table in "$@"; do
       echo -n
    else
       # OK, keep backup (move it to the good directory)
-   DIR="$DIR"/$(/bin/date "+%Y/%m/%d")
-   FILE="$DIR"/$(/bin/date "+assessments@%H%M").sql.bz2
-   /bin/mkdir -p "$DIR"
-   mv "$CURRENT" "$FILE"
+      SQLDIR="$DIR"/$(/bin/date "+%Y/%m/%d")
+      FILE="$SQLDIR"/$(/bin/date "+assessments@%H%M").sql.bz2
+      /bin/mkdir -p "$SQLDIR"
+      mv "$CURRENT" "$FILE"
       ln -sf "$FILE" "$DIR"/last
    fi
 

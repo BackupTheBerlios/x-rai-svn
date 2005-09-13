@@ -814,6 +814,10 @@ if (!document.implementation.hasFeature("Range", "2.0")) {
       }
 
       XRai.getSelectedRange = function() {
+/*         var r = document.selection.createRange();
+         alert(r.parentElement);
+         alert(r.collapse);
+         r.collapse(false);*/
          if (compareDocumentPosition(XRai.endselection, XRai.startselection) & DOCUMENT_ORDER_BEFORE)
             return { startContainer: XRai.startselection, endContainer: XRai.endselection};
          return { startContainer: XRai.endselection, endContainer: XRai.startselection};
