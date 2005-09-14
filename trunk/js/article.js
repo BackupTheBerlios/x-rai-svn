@@ -600,6 +600,7 @@ Passage = function(x,y,savedValue) {
       } else XRai.addPassage(lca,this,1);
 
       for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
+         if (debug) XRai.debug(" [adding assessments below " + XRai.getPath(x) + "]\n");
          if (!XRai.isInDocument(x,1)) continue;
 //          if (debug) XRai.debug("In " + XRai.getPath(x) + "\n");
          for(var y = x; y && ((y == x) || XRai.isIn(y,x)); y = XRai.next(y,1)) {
@@ -607,8 +608,8 @@ Passage = function(x,y,savedValue) {
             if (!y.cAssessment) {
                y.cAssessment = XRai.newAssessment(y,"0",false);
             }
-            if (y.cAssessment.hasAttribute("type") && (y.cAssessment.getAttribute("type") != "in"))
-               throw Error("The element assessment " + XRai.getPath(y) + " has already a type (" + y.getAttribute("type"));
+            if (y.cAssessment.hasAttribute("type")  && (y.cAssessment.getAttribute("type") != "in"))
+               throw Error("The element assessment " + XRai.getPath(y) + " has already a type (" + y.cAssessment.getAttribute("type") + ")");
             y.cAssessment.setAttribute("type","in");
          }
       }
@@ -638,11 +639,17 @@ Passage = function(x,y,savedValue) {
       for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
          if (!XRai.isInDocument(x,1)) continue;
          if (debug) XRai.debug("In " + XRai.getPath(x) + "\n");
-         for(var y = x; (y == x) || XRai.isIn(y,x); y = XRai.next(y,1)) {
+         for(var y = x; y && ((y == x) || XRai.isIn(y,x)); y = XRai.next(y,1)) {
             if (!y.cAssessment) continue;
             XRai.removeAssessment(y.cAssessment);
          }
       }
+
+      if (typeof this.saved != "undefined") {
+         XRai.assessmentsToRemove.push(this);
+         var oldvalue = this.validated ? Passage.VALIDATED : Passage.UNVALIDATED;
+         if (this.saved == oldvalue) XRai.changeCount++;
+      } else XRai.changeCount--;
 
       XRai.firstOldPassage = this.remove(XRai.firstOldPassage);
 
@@ -703,28 +710,24 @@ Passage = function(x,y,savedValue) {
          e.passage = this;
    }
 
-   this.getValue = function() {
-      return this.active ? Passage.ACTIVE : Passage.UNACTIVE;
-   }
-
    // Unhighlight this passage
    this.unhighlight = function() {
       if (debug) XRai.debug("Unhighlighting " + this.getPaths() + (this.validated ? "*" : "") + "\n");
       XRai.firstPassage = this.remove(XRai.firstPassage);
+
+      var oldvalue = this.validated ? Passage.VALIDATED : Passage.UNVALIDATED;
 
       if (this.validated) {
          // If it was validated, change the active state
          XRai.firstOldPassage = this.add(XRai.firstOldPassage);
          this.active = false;
          if (typeof this.saved != "undefined") {
-            if (this.getValue() == this.saved) XRai.changeCount++;
+            if (oldvalue == this.saved) XRai.changeCount++;
             else XRai.changeCount--;
          } else XRai.changeCount--;
       } else {
-         if (typeof this.saved != "undefined") {
-            XRai.assessmentsToRemove.push(this);
-            if (this.saved == this.getValue()) XRai.changeCount++;
-         } else XRai.changeCount--;
+         if (typeof this.saved != "undefined") throw Error("A saved passage cannot be not validated!");
+         XRai.changeCount--;
       }
 
       // Unhighlight in the user view
@@ -745,6 +748,8 @@ Passage = function(x,y,savedValue) {
       return this.lca = XRai.getCommonAncestor(this.start, this.end);
    }
 
+
+
    // -*- Initialisation
 
    this.start = x;
@@ -755,8 +760,8 @@ Passage = function(x,y,savedValue) {
    else XRai.changeCount++;
 
    if (savedValue != null) {
-      this.active = (savedValue == Passage.ACTIVE);
-      this.validated = true;
+      this.active = (savedValue == Passage.VALIDATED) || (savedValue == Passage.UNVALIDATED);
+      this.validated = (savedValue != Passage.UNVALIDATED);
    } else {
       this.active = true;
       this.validated = false;
@@ -785,8 +790,9 @@ Passage = function(x,y,savedValue) {
    if (debug) XRai.debug("Passage " + this.getPaths() + " added\n");
 }
 
-Passage.ACTIVE = 2;
-Passage.UNACTIVE = 1;
+Passage.UNVALIDATED = 3; // active & not validated
+Passage.VALIDATED = 2; // active & validated
+Passage.OLDVALIDATED = 1; // not active & validated
 
 // Get selection function
 if (!document.implementation.hasFeature("Range", "2.0")) {
@@ -1562,8 +1568,8 @@ XRai.saved = function(b) {
       XRai.history = new Array();
       XRai.changeCount = 0;
       oldDocStatus = docStatus;
-      for(var p = XRai.firstPassage; p; p = p.next) p.saved = Passage.ACTIVE;
-      for(var p = XRai.firstOldPassage; p; p = p.next) p.saved = Passage.UNACTIVE;
+      for(var p = XRai.firstPassage; p; p = p.next) p.saved = p.validated ? Passage.VALIDATED : Passage.UNVALIDATED;
+      for(var p = XRai.firstOldPassage; p; p = p.next) p.saved = Passage.OLDVALIDATED;
 
       XRai.updateSaveIcon();
    }
@@ -1639,8 +1645,9 @@ XRai.save = function() {
 
   // Add passages
   for(var p = XRai.firstPassage; p; p = p.next) {
-      if (p.saved != Passage.ACTIVE) {
-         var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.ACTIVE + ",";
+      if (p.saved != Passage.VALIDATED) {
+         var s = (typeof p.saved != "undefined" ? 1 : 0) + ","
+                  + (p.validated ?  Passage.VALIDATED : Passage.UNVALIDATED) + ",";
          s += XRai.getPath(p.start) + "," + XRai.getPath(p.end);
          if (debug) XRai.debug("Adding " + s + " (" + p.getPaths() + ")\n");
          XRai.saveForm.appendChild(createHiddenInput("a[]",s));
@@ -1648,8 +1655,8 @@ XRai.save = function() {
    }
 
    for(var p = XRai.firstOldPassage; p; p = p.next) {
-      if (p.saved != Passage.UNACTIVE) {
-         var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.UNACTIVE + ",";
+      if (p.saved != Passage.OLDVALIDATED) {
+         var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.OLDVALIDATED + ",";
          s += XRai.getPath(p.start) + "," + XRai.getPath(p.end);
          if (debug) XRai.debug("Adding " + s + " (" + p.getPaths() + ")\n");
          XRai.saveForm.appendChild(createHiddenInput("a[]",s));
@@ -1722,7 +1729,7 @@ XRaiLoad = function() {
 
    this.add = function(start,end,a) {
       try {
-         if (debug) XRai.debug("Loading " + start + " - " + end + " (" + a + ")\n");
+         if (debug) XRai.debug("[LOADING" + (end != "" ? "*" : "") + "] " + a + " : "  + start + " - " + end + "\n");
          var eStart = this.resolvePath(start);
          var eEnd = this.resolvePath(end);
          if (!eStart || (end != "" && !eEnd)) {
@@ -1731,7 +1738,7 @@ XRaiLoad = function() {
          } else {
             if (eEnd) {
                try {
-                  var p = new Passage(eStart, eEnd, a == "" ? null : a);
+                  var p = new Passage(eStart, eEnd, a);
                   if ((p.start != eStart) || (p.end != eEnd)) {
                      XRai.error("Loaded passage was not normalised!\n");
                      this.loadErrors++;
