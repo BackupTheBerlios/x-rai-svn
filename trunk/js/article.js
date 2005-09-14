@@ -1475,6 +1475,10 @@ XRai.updateStatusIcon = function() {
    }
 }
 
+function setSaving(hidden) {
+   document.getElementById("saving_div").style.visibility = hidden ? "hidden" : "visible";
+}
+
 function setSavingMessage(txt) {
    var saving_message = document.getElementById("saving_message");
    saving_message.replaceChild(document.createTextNode(txt), saving_message.firstChild);
@@ -1820,6 +1824,17 @@ function todo_next(jump) {
    }
 }
 
+
+XRai.erase = function() {
+   var r = window.prompt("Type 'erase' in order to confirm your order");
+   if (r != "erase") Message.show("notice","Command not confirmed");
+   else {
+      var d = document.getElementById("erasing");
+      setSavingMessage("Connecting to server...");
+      setSaving(false);
+      d.src = base_url + "/iframe/trash.php?file=" +  xrai_file + "&idpool=" + id_pool + "&collection=" + xrai_collection + "&time=" + XRai.getTimeString();
+   }
+}
 
 // Called when the XML is loaded
 XRai.init = function() {

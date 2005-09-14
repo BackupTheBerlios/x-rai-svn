@@ -235,6 +235,7 @@ if ($id_pool> 0) {
 <iframe src="about:blank" id="assessing" name="xrai-assessing" align="middle" onclick="this.visibility='hide'"
   style="visibility: hidden; position: fixed; left: 10%; top: 10%; bottom: 10%; right: 10%; z-index: 1; background: white">
 </iframe>
+<iframe src="about:blank" id="erasing" style="display: block; position: fixed; top: 10; left: 10"></iframe>
 
 <!-- Evaluation panel -->
 <div id="eval_div"  onclick="hideEval()" onmouseover="window.status='Click to assess the element(s)'" onmouseout="window.status=''">
@@ -361,6 +362,8 @@ if ($write_access) {
 <div id="s_div" class="status">
   <div>
   <span>
+          <span><img onclick="XRai.erase();" id="erase" src="<?=$base_url?>/img/trash.png" alt="Erase all assessments from this view" title="Erase assessments"/><div class="help_bottom">Erase all the assessements from this view.</div></span>
+
           <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shortcut: control+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
    </span>
 

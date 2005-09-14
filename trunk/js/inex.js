@@ -2,7 +2,6 @@
    INEX javascript code
    B. Piwowarski, 2003
 */
-
 var XRai = new Object(); // used for namespace
 
 XRai.click = function(event) {

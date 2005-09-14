@@ -96,6 +96,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
       <title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
       <link rel="stylesheet" href="<?=$base_url?>/css/style.css" />
+      <script src="<?=$base_url?>/js/inex.js" language="javascript"></script>
    </head>
       <body id="body" onclick="return XRai.click(event)" onload="document_loaded()">
    <table id="menubar" class="localisation">
@@ -166,7 +167,6 @@ window.open("<?=$base_url?>/show_topic.php?id_topic=<?=$id_topic?>","inex_topic"
 <div style="font-size: xx-large"><?=$GLOBALS["main_title"]?></div>
 <div style="margin: 0 10%; font-size: large"><?=htmlspecialchars($title)?></div>
 <div class="menu">
-<script src="<?=$base_url?>/js/inex.js" language="javascript"></script>
 <?
   // In pool
 
