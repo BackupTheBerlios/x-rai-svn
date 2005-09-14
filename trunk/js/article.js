@@ -599,9 +599,10 @@ Passage = function(x,y,savedValue) {
          }
       } else XRai.addPassage(lca,this,1);
 
-      for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
-         if (debug) XRai.debug(" [adding assessments below " + XRai.getPath(x) + "]\n");
+      if (debug) XRai.debug("*** Adding in[side] elements for " + this.getPaths() + "\n");
+      for(var x = this.start; x; x = XRai.nextElementTo(x,this.end)) {
          if (!XRai.isInDocument(x,1)) continue;
+         if (debug) XRai.debug(" [adding assessments below " + XRai.getPath(x) + "]\n");
 //          if (debug) XRai.debug("In " + XRai.getPath(x) + "\n");
          for(var y = x; y && ((y == x) || XRai.isIn(y,x)); y = XRai.next(y,1)) {
             if (debug) XRai.debug("  Element " + XRai.getPath(y) + " is in passage " + this.getPaths() + "\n");
@@ -636,7 +637,7 @@ Passage = function(x,y,savedValue) {
       } else XRai.removePassage(lca,this,1);
 
       if (debug) XRai.debug("Removing inner elements\n");
-      for(var x = this.start; x; x = XRai.nextElementTo(x,this.end,1)) {
+      for(var x = this.start; x; x = XRai.nextElementTo(x,this.end)) {
          if (!XRai.isInDocument(x,1)) continue;
          if (debug) XRai.debug("In " + XRai.getPath(x) + "\n");
          for(var y = x; y && ((y == x) || XRai.isIn(y,x)); y = XRai.next(y,1)) {
