@@ -1770,7 +1770,7 @@ XRaiLoad = function() {
 
    this.end = function() {
       if (this.loadErrors != 0)
-         alert("Error while loading assessments. You MUST NOT assess this file");
+         alert("Error while loading assessments. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar.");
       try {
          // Update containers
          for(var p = XRai.firstPassage; p; p = p.next)
