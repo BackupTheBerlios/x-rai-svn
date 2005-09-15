@@ -1581,7 +1581,8 @@ XRai.saved = function(b) {
 
       XRai.updateSaveIcon();
    }
-   document.getElementById('saving_div').style.visibility = 'hidden'
+   document.getElementById('saving_div').style.visibility = 'hidden';
+   if (XRai.onsaved) XRai.onsaved();
 }
 
 function createHiddenInput(name,value) {
@@ -1839,6 +1840,21 @@ function todo_next(jump) {
    }
 }
 
+XRai.saveAndGo = function(previous) {
+   if (!confirm("Are you sure that you want to validate this file (every non highlighted element will be assessed as non relevant)")) return;
+   if (!XRai.switchToAssess()) return;
+   XRai.updateStatusIcon();
+   XRai.updateSaveIcon();
+   XRai.onFinishClick();
+   XRai.updateStatusIcon();
+   XRai.updateSaveIcon();
+   if (docStatus != 2) Message.show("warning","Document cannot be validated");
+   else {
+      XRai.save();
+      if (previous) XRai.onsaved = function() { todo_previous(true); }
+      else XRai.onsaved = function() { todo_previous(false); }
+   }
+}
 
 XRai.erase = function() {
    var r = window.prompt("Type 'erase' in order to confirm your order");

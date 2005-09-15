@@ -144,7 +144,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
       <iframe id="informations" class="right_panel"/>
       </td></tr>
    </table>
-   <? if ($message) print "<div class='message'>$message</div>"; ?>
+   <? if ($_REQUEST["message"]) print "<div class='message'>$_REQUEST[message]</div>"; ?>
    <script type="text/javascript" language="javascript"><![CDATA[
 var base_url = "<?=$base_url?>";
 function popup_window(uri,w,h) {
