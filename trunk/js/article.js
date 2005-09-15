@@ -554,6 +554,11 @@ XRai.getFirstValidParent = function(x,b) {
 // - previousPassage points to the previous passage
 // - maxBelow is the maximum exhaustivity over all descendants
 
+
+// A passage can be:
+// - active = highlighted
+// - validated = highlighted passages after a switch are validated (and unhighlighted are erased)
+
 // XML nodes which are within a passage are marked with attribute marked=1
 
 // Passage object
@@ -727,8 +732,10 @@ Passage = function(x,y,savedValue) {
             else XRai.changeCount--;
          } else XRai.changeCount--;
       } else {
-         if (typeof this.saved != "undefined") throw Error("A saved passage cannot be not validated!");
-         XRai.changeCount--;
+         if (typeof this.saved != "undefined") {
+            XRai.assessmentsToRemove.push(this);
+            XRai.changeCount++;
+         } else XRai.changeCount--;
       }
 
       // Unhighlight in the user view
