@@ -39,7 +39,7 @@
   <xsl:template match="subcollection">
   <div style="border-bottom: 1px dashed #dddddd;">
   <script language="php">begin_subcollection("<xsl:value-of select="@path"/>");</script>
-  <xsl:apply-templates/>
+   <xsl:choose><xsl:when test="normalize-space(text())"><xsl:apply-templates/></xsl:when><xsl:otherwise>[no title found]</xsl:otherwise></xsl:choose>
   <script language="php">end_subcollection();</script>
   </div>
   </xsl:template>
@@ -48,7 +48,8 @@
   <xsl:template match="issue"><b>Issue: </b> <xsl:apply-templates/><br/></xsl:template>
   <xsl:template match="publisher"><b>Publisher: </b> <xsl:apply-templates/><br/></xsl:template>
   <xsl:template match="section"><h2><xsl:apply-templates/></h2></xsl:template>
-  <xsl:template match="document"><div><script language="php">begin_document("<xsl:value-of select="@path"/>");</script><xsl:value-of select="."/><script language="php">end_document();</script></div></xsl:template>
+  <xsl:template match="document"><div><script language="php">begin_document("<xsl:value-of select="@path"/>");</script>   <xsl:choose><xsl:when test="normalize-space(text())"><xsl:apply-templates/></xsl:when><xsl:otherwise>[no title found]</xsl:otherwise></xsl:choose>
+<script language="php">end_document();</script></div></xsl:template>
 
 
 
