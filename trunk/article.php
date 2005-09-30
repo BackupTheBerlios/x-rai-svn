@@ -115,6 +115,7 @@ if ($id_pool > 0) {
   up_url = "<?=$up_url?>";
   var write_access = <?=($write_access ? "true":"false")?>;
   var xraiatag = "<?=$xraiatag?>";
+  var highlight_only = <?=$highlight_only?"true":"false"?>;
   var goto_url = "<?="$_SERVER[PHP_SELF]?id_pool=$id_pool&amp;view_jump=1&amp;viewpos=$viewpos"?>";
 
 <? if ($id_pool > 0) { ?>
@@ -366,13 +367,13 @@ if ($write_access) {
 
           <span><img onclick="XRai.save();" id="save" src="<?=$base_url?>/img/filenosave.png" alt="Save" title="Save assessments (shortcut: control+s)"/><div class="help_bottom">Save the assessements. <br/><b>Shortcut</b>: hold <code>shift</code> and press <code>s</code></div></span>
    </span>
-
   <span>
       <span><img src="<?=$base_url?>/img/saveandprevious.png" title="Validate, save and go to the previous view" alt="&lt;&lt;" onclick="XRai.saveAndGo(false)"/><div class="help_bottom">Switch to assessment mode, validate, save and go to the previous article to assess</div></span>
+<? if (!$highlight_only) { ?>
       <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (1)" alt="&lt;-" onclick="todo_previous(event.shiftKey)"/><div class="help_bottom">Go to the previous element (or to the previous view with shift + click) to assess.<br/><b>Shortcut</b>: <code>1</code> for previous element and <code>9</code> for previous view</div></span>
       <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (2)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>2</code></div></span>
       <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (3)" alt="-&gt;" onclick="todo_next(event.shiftKey)"/><div class="help_bottom">Go to the next element (or to the next view with shift + click) to assess.<br/><b>Shortcut</b>: <code>3</code>  and <code>0</code> for next view</div></span>
-      <span><img src="<?=$base_url?>/img/saveandnext.png" title="Validate, save and go to the previous view" alt="&gt;&gt;" onclick="XRai.saveAndGo(true)"/><div class="help_bottom">Switch to assessment mode, validate, save and go to the next article to assess</div></span>
+<? } ?>      <span><img src="<?=$base_url?>/img/saveandnext.png" title="Validate, save and go to the previous view" alt="&gt;&gt;" onclick="XRai.saveAndGo(true)"/><div class="help_bottom">Switch to assessment mode, validate, save and go to the next article to assess</div></span>
    </span>
 
    <span>
@@ -381,13 +382,14 @@ if ($write_access) {
          <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]"  title="Show/hide the support elements"/><div class="help_bottom">Support elements are the elements returned by participating systems that were selected during the pooling phase. They are shown in blue dotted boxes.</div>
       </span>
    <? } ?>
+<? if (!$highlight_only) { ?>
       <span>
          <img id="switchImg" onclick="XRai.switchMode()" src="<?=$base_url?>/img/mode_highlight.png" alt="Finish" title="Switch between highlighting mode and assessment mode (shortcut: &quot;m&quot;)"/>
       </span>
+<? } ?>
       <span>
          <img id="finishImg" onclick="XRai.onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
-         &#8226;
-         <span title="Unkown assessments" id="UnknownA">0</span>
+         <? if (!$highlight_only) { ?>&#8226; <span title="Unkown assessments" id="UnknownA">0</span><?}?>
       </span>
    </span>
 

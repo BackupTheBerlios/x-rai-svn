@@ -263,6 +263,7 @@ XRai.beforeunload = function(event) {
 
 
 XRai.switchMode = function() {
+   if (highlight_only) return;
    if (docStatus == 0) {
       if (!XRai.switchToAssess()) return;
       docStatus = 1;
@@ -1170,6 +1171,7 @@ XRai.removeContained = function(z, x, limit) {
 
 // Called to switch the view
 XRai.switchToAssess = function() {
+   if (highlight_only) return true;
    try {
       // (1) Invalidate
       if (XRai.firstOldPassage) {
@@ -1478,14 +1480,16 @@ XRai.updateStatusIcon = function() {
    var img = document.getElementById("switchImg");
    var divinex = document.getElementById("inex");
    var spanh = document.getElementById("highlight");
-   if (docStatus > 0) {
+   if (!highlight_only) {
+    if (docStatus > 0) {
       img.src = base_url + "/img/mode_assess.png";
       divinex.setAttribute("mode","assess");
       spanh.style.display = "none";
-   } else {
+    } else {
       img.src = base_url + "/img/mode_highlight.png";
       divinex.setAttribute("mode","highlight");
       spanh.style.display = null;
+    }
    }
 }
 
@@ -1524,11 +1528,16 @@ XRai.updateSaveIcon = function() {
    if (XRai.hasChanged()) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title","Save current assessments (" + XRai.changeCount + " changes)");  }
    else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","Nothing to save"); }
 
-   var x = document.getElementById("UnknownA");
-   x.replaceChild(document.createTextNode(XRai.toAssess.length), x.firstChild);
+   if (!highlight_only) {
+	var x = document.getElementById("UnknownA");
+   	x.replaceChild(document.createTextNode(XRai.toAssess.length), x.firstChild);
+   }
 
    // Update the validation
-   if (docStatus > 0) {
+   if (highlight_only) {
+      if (docStatus == 2) XRai.setFinished(2);
+      else XRai.setFinished(1);
+   } else if (docStatus > 0) {	
       if (docStatus == 2 && XRai.toAssess.length > 0) docStatus = 1;
       if (docStatus == 1 && XRai.toAssess.length == 0) { XRai.setFinished(1); }
       else if (docStatus == 2) XRai.setFinished(2);
@@ -1539,8 +1548,12 @@ XRai.updateSaveIcon = function() {
 // Called when the user clicked on "finish"
 XRai.onFinishClick = function() {
    var t = document.getElementById("finishImg");
-   if (docStatus == 1 && XRai.toAssess.length == 0) { docStatus = 2; }
-   else if (docStatus == 2) { docStatus = 1; }
+   if (highlight_only) {
+     if (docStatus == 0) docStatus = 2; else docStatus = 0;
+   } else {
+     if (docStatus == 1 && XRai.toAssess.length == 0) { docStatus = 2; }
+     else if (docStatus == 2) { docStatus = 1; }
+   }
    XRai.updateSaveIcon();
 }
 
@@ -1845,14 +1858,15 @@ XRai.saveAndGo = function(previous) {
    if (!XRai.switchToAssess()) return;
    XRai.updateStatusIcon();
    XRai.updateSaveIcon();
-   XRai.onFinishClick();
+   if (docStatus != 2) XRai.onFinishClick();
    XRai.updateStatusIcon();
    XRai.updateSaveIcon();
    if (docStatus != 2) Message.show("warning","Document cannot be validated");
    else {
-      XRai.save();
       if (previous) XRai.onsaved = function() { todo_previous(true); }
       else XRai.onsaved = function() { todo_previous(false); }
+      if (XRai.hasChanged()) XRai.save();
+      else XRai.onsaved();
    }
 }
 
