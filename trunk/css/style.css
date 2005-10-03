@@ -220,6 +220,7 @@ table.stats thead tr {
  background: #ddddee;
 }
 
+table.stats td, table.stats th { padding: 2px; border: 1px solid #888888; }
 table.stats tbody tr {
   border-top: 1pt solid black;
   background: #eeeeff;

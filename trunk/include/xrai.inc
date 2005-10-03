@@ -264,7 +264,9 @@ if ($id_pool > 0) {
 }
 
 if ($is_root) {
-/*    add_menu("Admin","$base_url/admin/add_pool","Add a pool","Add a new pool");
+   add_menu("Admin","$base_url/stats","Statistics","Pool statistics");
+/*
+   add_menu("Admin","$base_url/admin/add_pool","Add a pool","Add a new pool");
     add_menu("Admin","$base_url/admin/manage_pools","Pools view","View pools (manage users, etc.)");*/
 }
 
