@@ -20,20 +20,22 @@ $topics = array();
 if (DB::isError($res)) fatal_error("DB error",$res);
 ?> <h1>Pools</h1><table class="stats"><thead><tr><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
 while ($row=$res->fetchRow()) {
-   $topics[$row["topic"]][$row["todo"] > 0 ? 0 : 1] ++;
+   if (!is_array($topics[$row["topic"]])) $topics[$row["topic"]] = array(array(),array());
+   array_push($topics[$row["topic"]][$row["todo"] > 0 ? 0 : 1], $row["login"]);
    ?><tr><td><?=$row["pool"]?></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row[done]?></td><td><?=$row[todo]?></td></tr><?
 }
 ?></tbody></table><?
 
 ?> <h1>Topics</h1><table class="stats"><thead><tr><th>Topic ID</th><th># finished pools</th><th># not finished</th></tr></thead><tbody><?
 function myorder($x,$y) {
-   $z = $y[0] - $x[0];
+   $z = sizeof($y[0]) - sizeof($x[0]);
    if ($z != 0) return $z;
-   return  $x[1] - $y[1];
+   return  sizeof($x[1]) - sizeof($y[1]);
 }
 uasort($topics,"myorder");
 foreach($topics as $id => $status) {
- ?><tr><td><?=$id?></td><td><?=$status[1] - 0?></td><td><?=$status[0] - 0?></td></tr><?
+ ?><tr><td><?=$id?></td><td><?=sizeof($status[1])?>
+<div style="font-size:small;"><?=implode(", ",$status[1])?></div></td><td><?=sizeof($status[0])?><div style="font-size:small;"><?=implode(", ",$status[0])?></div></td></tr><?
 }
 ?></tbody></table><?
 
