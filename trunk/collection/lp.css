@@ -1,86 +1,136 @@
 @namespace url(urn:xrai:c:lp);
 
-image {
-        display: block;
-background-image: url("./images/BN6_2.png");
-
-        }
 
 
-
-destination:before {content: "Destination: "}
-destination {
-        display: block;
-        background-color: white;
-        position: absolute;
-        margin: 20px;
-        width: 800px;
-        font-family: Baskerville;
-        font-weight: bold;
-        font-size:18pt;
-        }
-
-full_name:before {
-        font-weight:italic;
-        content: "Full destination name: ";
-        }
-
-full_name {
-        display: block;
-        margin-left: 10px;
-        font-size: 11pt;
-        font-weight: bold;
-        }
-
-full_name:after {
-        font-size: 11pt;
-        font-weight: normal;
-}
-
-general, transport, attractions {
+factoids, eat, night, sleep, shop, see, health, doing_business, general, transport, government, environment, society,
+economy, money, pre-departure, weather, communication, transport, culture, images, points_of_interest, attractions, copyright {
         font-weight: bold;
         display:block;
-        position: relative;
+        border-style: solid;
+        margin: 2pt;
+        border-color: orange;
+        border-top-width: 1pt;
+        border-left-width: 0pt;
+        border-right-width: 0pt;
+        border-bottom-width: 0pt;
         left: 10px;
         font-size:16pt;
 }
 
-introduction, timezones, warning, weights_measures, capital_city, government, environment {
-        diplay:block;
-        position: relative;
+telephone, point_of_interest, periodicals, radio_stations, tv_systems, dvd_zones, books, business_area, etiquette,
+dangers_and_annoyances, conditions, event, attractions destination,  visas_overview, electricity, when_to_go, customs,
+duty_free, relative_costs, sample_prices, tipping, preferred_form, tips, changing, major_industries, trading_partners,
+females, gay_lesbian, disabled, kids, people, history pre_20c, history modern, history recent, overview, introduction,
+warning, timezones, weights_measures, leaders, language_spokens, religion, currency, daylight_savings, orientation, geography,
+flora, fauna, political_region, geology, getting_there_and_away, getting_around {
+        display:block;
+        margin: 2pt;
+        background-color:white;
         left: 10px;
-        font-size: 14pt
+        font-size: 12pt;
         font-weight: bold;
-        border-bottom-width: 2px;
-        border-left-width: 1px;
-        border-right-width: 0px;
-        border-top-width: 0px;
-        border-color: orange;
-        border-style: solid;
+        }
+
+points_of_interest point_of_interest name, attractions destination name {
+        display:block;
+        background-color: lightgrey;
+        left: 0px;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+leader, language_spoken, weather month name {
+        left: 10px;
+        background: white;
+        font-size:11pt;
+        display: block;
+        font-weight: bold;
         }
 
 
 
-p, timezone, type, severity, system, type, title, leader,area_sqkm, population,caption, photographer  {
-        left: 10px;
+keyword, telfax, postcode, activity, tours, premium_departure_countries, amount, item, low, mid, high, deluxe,
+p, timezone, gmt_utc, system, capital_city, start, end, timezone name, description, topic, topics, coins, gdp  {
         font-size:11pt;
         display: block;
-        position: relative;
         font-weight: normal;
         }
 
-general:before {content: "General Section"; }
-introduction:before { content: "Introduction"}
-warning:before { content: "Warning: "}
-type:before {font-face: bold; content: "Type: "}
-severity:before {font-face: bold; content: "Severity: "}
-timezones:before { content: "Timezones"; }
-timezone:before { content: "zone:"; }
-weights_measures:before { content: "Weights measures"}
-system:before { content: "System:"}
-capital_city:before { content: "Capital city: "}
-government:before { content: "Government"}
-leader:before { content: "Leader: "}
-title:before { content: "Title: "}
-area_sqkm:before {content:"Area (in square kilometers): "}
-population:before{content:"Population: "}
+
+
+tour name, copyright, plugs, plug, full_name, getting_there_and_away type, getting_there_and_away title, getting_around type, getting_around type  {
+        display: block;
+        left: 10px;
+        font-weight: bold;
+        font-size:11pt;
+        }
+
+
+destination {
+        display: block;
+        background-color: white;
+        margin: 20px;
+        font-family: Baskerville;
+        font-size:11pt;
+        }
+
+destination name {
+        display: block;
+        left: 10px;
+
+        background-color:orange;
+        font-size:20pt;
+        font-weight:bold;
+        }
+
+
+country_dialling_code, dailling_out, areacodes, telephone overview, adaptors, mobile,  admission, keywords, review, review, address, part,
+telfaxs, url, radio_station name, radio_station frequency, periodical title, periodical type, periodical url, periodical amount, book title,
+book author, book subject, condition type, eat introduction, night introduction, see introduction, sleep introduction, shop introduction,
+activities introduction, event type, event from_date, event to_date, event_summary, map name, voltage, hz, room, meal, sample_price, leader name,
+leader type, leader title, language_spokens type, language_spokens name, currency name, currency code, currency symbol, currency unit ,
+map, map name, caption, factoid title, warning type, warning severity, government type, area_sqkm, population,
+month, humidity {
+        display: block;
+        border-top-width: 1pt;
+        left: 10px;
+        background-color:white;
+        font-size:11pt;
+        font-weight:bold;
+}
+
+am, pm, avg, avg_hi_temp, avg_low_temp, avg_rainfall, avg_sunshine {
+        font-size: 11pt; font-weight: normal;
+}
+
+
+part type, part text, telfax type, telfax subtype, telfax areacode, telfax number, telfax text {
+        font-size: 11pt;
+        font-weight: normal;
+}
+
+photographer, dailling_out, country_dailling_code, hours_variation time, hours time, e-mail, range, creditcards, hours time {
+        display: block;
+        left: 10px;
+        font-size:11pt;
+        font-weight:normal;
+}
+
+warning title {
+        font-size: 12pt;
+        font-style: italic;
+        font-weight: bold;
+}
+
+ul { display: block; }
+li { display: list-item;        list-style: square inside; }
+b {     font-weight: bold; }
+i { font-style: italic; }
+br{  display: list-item; list-style: none inside; }
+
+
+
+image { display: block; }
+
+*:before { color: #88f; font-size: small; content: "<"; }
+*:after { color: #88f; font-size: small; content: ">"; }

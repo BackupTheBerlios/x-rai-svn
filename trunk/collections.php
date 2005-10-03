@@ -89,11 +89,15 @@ global $assessments, $id_pool, $all_assessments;
    }
 }
 
+function xmlspecialchars($s) {
+   return preg_replace(array('/\'/'),array('&quot;'),$s);
+}
+
 function begin_subcollection($path) {
   global $PHP_SELF, $id_pool, $basepath;
   $id = get_full_path($basepath, $path);
   print_assessments($id);
-   print "<a id=\"$id\" href=\"$PHP_SELF/$path?id_pool=$id_pool\"> ";
+   print "<a id=\"" . xmlspecialchars($id) . "\" href=\"$PHP_SELF/$path?id_pool=$id_pool\"> ";
 }
 
 function end_subcollection() { print "</a>"; }
@@ -114,7 +118,7 @@ function begin_document($path) {
       }
       print "</span> ";
   }
-  print "<a id='$id' href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
+  print "<a id='" . xmlspecialchars($id) . "' href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
 }
 
 function end_document() { print "</a>"; }

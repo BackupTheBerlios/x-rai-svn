@@ -284,7 +284,7 @@ print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection
 $stack = Array();
 $load_errors = 0;
 
-require("collection/$collection.inc");
+include("collection/$collection.inc");
 
 function startElement($parser, $name, $attrs) {
    global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors;
@@ -310,6 +310,7 @@ function endElement($parser, $name) {
    $depth--;
    array_pop($stack);
    print "</$name>";
+   if (function_exists("collectionEndElement")) collectionEndElement($name);
 }
 
 function cdata($parser, $data) {
