@@ -1,9 +1,206 @@
-@namespace url(urn:xrai:c:lp);
+result {
+        display:block;
+        border-color: green;
+        border-style: dashed;
+        border-width: 2pt;
+        background: lightgreen;
 
+}
+
+general:before { content:"General";}
+transport:before { content:"Transport"; }
+government:before { content:"Government"; }
+environment:before { content:"Environment"; }
+society:before { content:"Society"; }
+economy:before { content:"Economy"; }
+money:before { content:"Money"; }
+pre-departure:before { content:"Pre-departure"; }
+weather:before { content:"Weather"; }
+communication:before { content:"Communication"; }
+transport:before { content:"Transport"; }
+culture:before { content:"Culture"; }
+images:before { content:"Images"; }
+points_of_interest:before { content:"Points of interest"; }
+attractions:before { content:"Attractions"; }
+factoids:before {content: "Facts"; }
+eat:before {content: "Eat"; }
+night:before {content: "Night"; }
+see:before {content: "See"; }
+shop:before {content: "Shop"; }
+sleep:before {content: "Sleep"; }
+health:before {content: "Health"; }
+doing_business:before {content: "doing business"; }
+warning:before {content: "Warning"; }
+currency:before {content: "Currency"; }
+timezones:before {content: "Timezones"; }
+introduction:before {content: "Introduction"; }
+weights_measures:before {content: "Weight measures"; }
+leaders:before {content: "Leaders"; }
+language_spokens:before {content: "Spoken languages"; }
+religion:before {content: "Religion"; }
+daylight_savings:before {content: "Daylight savings times"; }
+orientation:before {content: "Orientation"; }
+geography:before {content: "Geography"; }
+flora:before {content: "Flora"; }
+fauna:before {content: "Faune"; }
+political_region:before {content: "Political region"; }
+geology:before {content: "Geology"; }
+getting_there_and_away:before {content: "Getting there and away"; }
+getting_around:before {content: "Getting around"; }
+overview:before {content: "Overview"; }
+history recent:before {content: "Recent history"; }
+history modern:before {content: "Modern history"; }
+history pre_20c:before {content: "'Pre twentieth century' history"; }
+females:before {content: "Females"; }
+gay_lesbian:before {content: "Gay/lesbian"; }
+disabled:before {content: "Disabled"; }
+kids:before {content: "Kids"; }
+people:before {content: "People"; }
+major_industries:before { content: "Major industries"; }
+trading_partners:before { content: "Trading partners"; }
+tipping:before {content: "Tipping"; }
+preferred_form:before {content: "Preferred form"; }
+tips:before {content: "Tips"; }
+changing:before {content: "Changing money"; }
+relative_costs:before {content: "Relative costs"; }
+sample_prices:before {content: "Sample prices "; }
+visas_overview:before {content: "Visa requirements"; }
+electricity:before {content: "Electricity"; }
+when_to_go:before {content: "When to go"; }
+premium_depurture_countries:before {content: "Premium departure countries: "; }
+customs:before {content: "Customs"; }
+duty_free:before {content: "Duty free shopping"; }
+attractions destination name:before {content: "Destination: ";   }
+event:before { content: "Event";}
+dangers_and_annoyances:before { content: "Dangers and annoyances";}
+conditions:before { content: "Conditions";}
+business_area:before { content: "Business area"; }
+etiquette:before { content: "Etiquette"; }
+books:before { content: "Books"; }
+periodicals:before { content: "Periodicals"; }
+radio_stations:before { content: "Radio stations"; }
+tv_systems:before { content: "TV systems"; }
+dvd_zones:before { content: "DVD zones"; }
+point_of_interest name:before{content: "Point of interest: "; }
+telephone:before{ content: "Telephone"; }
+
+
+leader:before {content: "Leader "; }
+language_spoken:before {content: "Language "; }
+
+gmt_utc:before {content: "Timezone (relative to GMT/UTC): "; }
+timezone name:before {content: "Timezone name: "; }
+coins:before { content: "Coins"; }
+notes:before { content: "Notes"; }
+gpd:before {content: "Gdp"; }
+system:before {content: "System: "; }
+start:before {content: "Start: "; }
+end:before {content: "End: "; }
+
+
+low:before { content: "low prices: "; }
+mid:before { content: "mid prices: "; }
+high:before { content: "high prices: "; }
+deluxe:before { content: "deluxe prices: "; }
+amount:before {content: attr(currency); }
+postcode:before {content: "Postal code: "; }
+
+
+getting_around title:before { content: "Topic title: "; }
+getting_around type:before { content: "Topic type: "; }
+plugs:before { content: "Plugs"; }
+plug:before { content: "Plug"; }
+activity:before { content: "Activity"; }
+activities:before { content: "Activities"; }
+tours:before { content: "Tours"; }
+tour name:before {content:"Tour: "; }
+
+getting_there_and_away title:before { content: "Topic title: "; }
+getting_there_and_away type:before { content: "Topic type: "; }
+
+currency name:before {content: "Name: ";        font-weight:normal; }
+currency code:before {content: "Code: ";        font-weight:normal; }
+currency symbol:before {content: "Symbol: ";    font-weight:normal; }
+currency unit:before {content: "Unit: ";        font-weight:normal; }
+voltage:before {content: "Voltage: ";   font-weight:normal; }
+hz:before {content: "Hertz: ";  font-weight:normal; }
+
+
+leader name:before {content: "Name: ";  font-weight:normal; }
+leader title:before {content: "Title: ";        font-weight:normal; }
+leader type:before {content: "Type of position: ";      font-weight:normal; }
+room:before {content: "Rooms: ";}
+meal:before {content: "Meals: ";}
+
+activity type:before {content: "Type of activity: ";    font-weight:normal; }
+activity subtype:before {content: "Subtype: ";  font-weight:normal; }
+
+language_spokens type:before { content: "Type: ";       font-weight:normal; }
+language_spokens name:before { content: "Name: ";       font-weight:normal;  }
+attractions destination general:before {content: "";    border-top-width: 0pt; }
+attractions destination general introduction:before {content: ""; }
+activities introduction:before {content: ""; }
+event type:before { content: "Type: ";  font-weight:normal; }
+event from_date:before { content: "From: ";     font-weight:normal; }
+event to_date:before { content: "To: "; font-weight:normal; }
+event summary:before { content: "Summary ";     font-weight:normal; }
+eat introduction:before {content: ""; }
+night introduction:before {content: ""; }
+see introduction:before {content: ""; }
+sleep introduction:before {content: ""; }
+shop introduction:before {content: ""; }
+condition type:before { content: "Type of condition: "; font-weight:normal; }
+book title:before {content: "Title: ";  font-weight:normal; }
+book author:before {content: "Author: ";        font-weight:normal; }
+book subject:before {content: "Subject: ";      font-weight:normal; }
+periodical title:before {content: "Title: ";    font-weight:normal; }
+periodical type:before {content: "Type: ";      font-weight:normal; }
+periodical url:before {content: "Url: ";        font-weight:normal; }
+periodical amount:before {content: "Amount: ";  font-weight:normal; }
+radio_station name:before {content: "Name: ";   font-weight:normal; }
+radio_station frequency:before {content: "Frequency: "; font-weight:normal; }
+address:before { content: "Address: "; }
+telfaxs:before { content: "Telephone/Facsimiles: "; }
+url:before { content: "Url: "; }
+review:before { content: "Review"; }
+admission:before { content: "Admission"; }
+keywords:before {content: "Keywords"; }
+adaptors:before {content: "Adaptors"; }
+mobile:before {content: "Mobile telephony"; }
+areacodes:before {content: "Areacodes"; }
+dailling_out:before {content: "Dailing out: "; }
+country_dialling_code:before { content: "Country code: "; }
+government type:before { content: "Type of government: "; }
+area_sqkm:before { content: "Area (in square kilometers): "; }
+latitude:before { content: "Latitude: "; }
+longditude:before { content: "Longditude: "; }
+population:before { content: "Population: "; }
+e-mail:before { content: "E-mail: ";}
+range:before { content: "Range: ";}
+creditcards:before { content: "Creditcards accepted: ";}
+hours time:before { content:"Hours: "; }
+hours_variation time:before { content: "Hours (variation): "; }
+variation:before { content: "Variation: "; }
+part type:after { content:": "; }
+full_name:before { content: "Full destination name: "; }
+warning type:before { content: "Type:"; }
+warning severity:before { content: "Severity:"; }
+photographer:before { content: "Photographer: "; font-weight:normal; }
+map name:before {content: "Map of "; }
+
+weather month name:before{ content: ""; }
+humidity:before{ content: "Humidity (%): "; }
+avg_hi_temp:before{ content: " - Average high temperature: "; }
+avg_low_temp:before{ content: " - Average low temperature: "; }
+avg_rainfall:before{ content: " - Average rainfall: "; }
+avg_sunshine:before{ content: " - Average sunshine: "; }
+am:before{ content: " - PM: "; }
+pm:before{ content: " - AM: "; }
+avg:before{ content: "Average: "; }
 
 
 factoids, eat, night, sleep, shop, see, health, doing_business, general, transport, government, environment, society,
-economy, money, pre-departure, weather, communication, transport, culture, images, points_of_interest, attractions, copyright {
+economy, money, pre-departure, weather, communication, transport, culture, images, points_of_interest, attractions, copyright, activities {
         font-weight: bold;
         display:block;
         border-style: solid;
@@ -13,7 +210,7 @@ economy, money, pre-departure, weather, communication, transport, culture, image
         border-left-width: 0pt;
         border-right-width: 0pt;
         border-bottom-width: 0pt;
-        left: 10px;
+        margin: 5px;
         font-size:16pt;
 }
 
@@ -22,11 +219,10 @@ dangers_and_annoyances, conditions, event, attractions destination,  visas_overv
 duty_free, relative_costs, sample_prices, tipping, preferred_form, tips, changing, major_industries, trading_partners,
 females, gay_lesbian, disabled, kids, people, history pre_20c, history modern, history recent, overview, introduction,
 warning, timezones, weights_measures, leaders, language_spokens, religion, currency, daylight_savings, orientation, geography,
-flora, fauna, political_region, geology, getting_there_and_away, getting_around {
+flora, fauna, political_region, geology, getting_there_and_away, getting_around, activity {
         display:block;
         margin: 2pt;
-        background-color:white;
-        left: 10px;
+        margin: 5px;
         font-size: 12pt;
         font-weight: bold;
         }
@@ -34,22 +230,28 @@ flora, fauna, political_region, geology, getting_there_and_away, getting_around 
 points_of_interest point_of_interest name, attractions destination name {
         display:block;
         background-color: lightgrey;
-        left: 0px;
+        margin: 0px;
         font-size: 12pt;
         font-weight: bold;
 }
 
 leader, language_spoken, weather month name {
-        left: 10px;
-        background: white;
+        margin: 5px;
         font-size:11pt;
         display: block;
         font-weight: bold;
         }
 
 
+capital_city:before {
+        margin: 5px;
+        font-size:12pt;
+        display: block;
+        font-weight: bold;
+        content: "Capital city";
+        }
 
-keyword, telfax, postcode, activity, tours, premium_departure_countries, amount, item, low, mid, high, deluxe,
+keyword, telfax, postcode, tours, premium_departure_countries, amount, item, low, mid, high, deluxe,
 p, timezone, gmt_utc, system, capital_city, start, end, timezone name, description, topic, topics, coins, gdp  {
         font-size:11pt;
         display: block;
@@ -60,7 +262,7 @@ p, timezone, gmt_utc, system, capital_city, start, end, timezone name, descripti
 
 tour name, copyright, plugs, plug, full_name, getting_there_and_away type, getting_there_and_away title, getting_around type, getting_around type  {
         display: block;
-        left: 10px;
+        margin: 5px;
         font-weight: bold;
         font-size:11pt;
         }
@@ -68,15 +270,15 @@ tour name, copyright, plugs, plug, full_name, getting_there_and_away type, getti
 
 destination {
         display: block;
-        background-color: white;
         margin: 20px;
         font-family: Baskerville;
         font-size:11pt;
         }
 
-destination name {
+destination name:before {content: " Destination: ";}
+destination > name {
         display: block;
-        left: 10px;
+        margin: 5px;
 
         background-color:orange;
         font-size:20pt;
@@ -93,8 +295,7 @@ map, map name, caption, factoid title, warning type, warning severity, governmen
 month, humidity {
         display: block;
         border-top-width: 1pt;
-        left: 10px;
-        background-color:white;
+        margin: 5px;
         font-size:11pt;
         font-weight:bold;
 }
@@ -111,7 +312,7 @@ part type, part text, telfax type, telfax subtype, telfax areacode, telfax numbe
 
 photographer, dailling_out, country_dailling_code, hours_variation time, hours time, e-mail, range, creditcards, hours time {
         display: block;
-        left: 10px;
+        margin: 5px;
         font-size:11pt;
         font-weight:normal;
 }
@@ -122,15 +323,14 @@ warning title {
         font-weight: bold;
 }
 
-ul { display: block; }
+ul { display: block;  }
 li { display: list-item;        list-style: square inside; }
 b {     font-weight: bold; }
 i { font-style: italic; }
 br{  display: list-item; list-style: none inside; }
 
+culture, history, pre_20c, mini, image { display: block; }
 
 
-image { display: block; }
 
-*:before { color: #88f; font-size: small; content: "<"; }
-*:after { color: #88f; font-size: small; content: ">"; }
+

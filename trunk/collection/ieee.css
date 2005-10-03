@@ -58,37 +58,6 @@ ref { color: #88b; font-weight: bold;}
 *:after { color: #88f; font-size: small; content: ">"; }
 
 
-/*
-general:before { content:"General";}
-transport:before { content:"Transport"; }
-government:before { content:"Government"; }
-environment:before { content:"Environment"; }
-society:before { content:"Society"; }
-economy:before { content:"Economy"; }
-money:before { content:"Money"; }
-pre-departure:before { content:"Pre-departure"; }
-weather:before { content:"Weather"; }
-communication:before { content:"Communication"; }
-transport:before { content:"Transport"; }
-culture:before { content:"Culture"; }
-images:before { content:"Images"; }
-points_of_interest:before { content:"Points of interest"; }
-attractions:before { content:"Attractions"; }
-factoids:before {content: "Facts"; }
-eat:before {content: "Eat"; }
-night:before {content: "Night"; }
-see:before {content: "See"; }
-shop:before {content: "Shop"; }
-sleep:before {content: "Sleep"; }
-health:before {content: "Health"; }
-doing_business:before {content: "doing business"; }
-warning:before {content: "Warning"; }
-currency:before {content: "Currency"; }
-timezones:before {content: "Timezones"; }
-introduction:before {content: "Introduction"; }
-weights_measures:before {content: "Weight measures"; }
-leaders:before {content: "Leaders"; }
-language_spokens:before {content: "Spoken languages"; }
-religion:before {content: "Religion"; }
-daylight_savings:before {content: "Daylight savings times"; }
-*/
+
+*|*[first]:before { background: blue; color: white; content : "{"; padding: 3px; font-size: larger; font-weight: bold; }
+*|*[last]:after { background: blue; color: white; content : "}"; padding: 3px;  font-size: larger;  font-weight: bold; }

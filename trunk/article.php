@@ -140,7 +140,9 @@ div#inex *[boxit] { border: 1px solid red !important; }
 
 div#inex [selected] { background: #8f8; }
 div#inex *[selected] *[marked] { background: #ff8; }
-*[marked] { background: yellow; }
+*[marked] { background: yellow !important; }
+*[marked]:before { background: yellow !important; }
+*[marked]:after { background: yellow !important; }
 *[marked] *[marked] { background: red !important; }
 *|*[error='1'] { background: red; }
 div#inex[support] *[support='1'] { border: 1px dashed blue; }
@@ -171,8 +173,6 @@ div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
 <?=$xraiatag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
 <?=$xraiatag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
 
-*|*[first]:before { background: blue; color: white; content : "{"; padding: 3px; font-size: larger; font-weight: bold; }
-*|*[last]:after { background: blue; color: white; content : "}"; padding: 3px;  font-size: larger;  font-weight: bold; }
 
 </style>
 <?
