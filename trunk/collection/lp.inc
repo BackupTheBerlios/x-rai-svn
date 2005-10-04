@@ -14,6 +14,9 @@ function collectionStartElement($name, $attrs) {
    if ($name == "image") {
             print "<html:img alt=\"[img]\" src=\"$base_url/media/lp" .  $attrs["filename"] . "\"/>";
    }
+   else if ($name == "map") {
+            print "<html:img alt=\"[map]\" src=\"$base_url/media/lp" .  $attrs["filename"] . "\"/>";
+   }
 }
 
 ?>
