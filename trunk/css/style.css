@@ -128,6 +128,17 @@ A:link {
 /*   background : inherit; */
 }
 
+a.normal {
+   border-bottom: 1px dotted black;
+   background: inherit;
+   color: blue;
+}
+a.normal:hover {
+   border-bottom: 1px solid red;
+   background: inherit;
+   color: blue;
+}
+
 a.img img {
   border: 1px solid white;
   padding: 1px; margin: 0;

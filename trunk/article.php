@@ -120,6 +120,7 @@ if ($id_pool > 0) {
 
 <? if ($id_pool > 0) { ?>
    var id_pool = <?=$id_pool?>;
+   var id_topic = "<?=$id_topic?>";
    var writeAccess = true;
    aversion = <?=$assessments->getVersion()?>;
    var docStatus = "<?=abs($assessments->getDone())?>";
@@ -239,6 +240,10 @@ if ($id_pool> 0) {
 <iframe src="about:blank" id="erasing" style="display: none; position: fixed; top: 10; left: 10"></iframe>
 
 <!-- Evaluation panel -->
+
+<div style="background: white; left: 20px; top: 3em; padding: 1em; border: 1px dotted blue; color: black; position: fixed; display: none; "><div style="font-weight: bold; font-size: larger">Informations</div><p id="infopassagediv">BLAH</p><div style="padding-top: 1em;"><a class="normal"  onclick="this.parentNode.parentNode.style.display='none'">Close</a></div></div>
+
+
 <div id="eval_div"  onclick="hideEval()" onmouseover="window.status='Click to assess the element(s)'" onmouseout="window.status=''">
 <div id="eval_path"><div></div></div>
 <div style="white-space: nowrap;"><?
@@ -398,6 +403,10 @@ if ($write_access) {
           <span><img src="<?=$base_url?>/img/highlight.png" alt="[h]"  title="Highlight" onclick="XRai.highlight()"/><div class="help_bottom">Highlight the selected region<br/><b>Shortcut</b>: press the key <code>h</code></div></span>
           <span><img src="<?=$base_url?>/img/unhighlight.png" alt="[u]"  title="Unhighlight" onclick="XRai.unhighlight()"/><div class="help_bottom">Remove the current highlighting of the selected region<br/><b>Shortcut</b>: press the key <code>u</code></div></span>
   </span>
+
+   <span id="infopassage">
+     <span><img src="<?=$base_url?>/img/report.png" alt="[i]"  title="Informations on the passage" onclick="XRai.localise()"/></span>
+   </span>
 
  </div>
 </div>

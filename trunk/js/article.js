@@ -842,6 +842,15 @@ if (!document.implementation.hasFeature("Range", "2.0")) {
 }
 
 
+XRai.localise = function() {
+   var sel = XRai.getSelection();
+   var div = document.getElementById("infopassagediv");
+   div.replaceChild(document.createTextNode("Topic id: " + id_topic + " (pool " + id_pool + "), collection '" + xrai_collection + "', file '" + xrai_file + "'"
+   + (sel ? "; passage " + XRai.getPath(sel.x) + " - " + XRai.getPath(sel.y)
+      : " no selected passage")
+   ), div.firstChild);
+   div.parentNode.style.display = "block";
+}
 
 // Return the start/end *elements* of the current selection
 XRai.getSelection = function() {
@@ -1529,15 +1538,15 @@ XRai.updateSaveIcon = function() {
    else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","Nothing to save"); }
 
    if (!highlight_only) {
-	var x = document.getElementById("UnknownA");
-   	x.replaceChild(document.createTextNode(XRai.toAssess.length), x.firstChild);
+        var x = document.getElementById("UnknownA");
+        x.replaceChild(document.createTextNode(XRai.toAssess.length), x.firstChild);
    }
 
    // Update the validation
    if (highlight_only) {
       if (docStatus == 2) XRai.setFinished(2);
       else XRai.setFinished(1);
-   } else if (docStatus > 0) {	
+   } else if (docStatus > 0) {
       if (docStatus == 2 && XRai.toAssess.length > 0) docStatus = 1;
       if (docStatus == 1 && XRai.toAssess.length == 0) { XRai.setFinished(1); }
       else if (docStatus == 2) XRai.setFinished(2);
