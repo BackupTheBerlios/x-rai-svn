@@ -44,7 +44,7 @@ if ($_REQUEST["view_jump"] == 1) {
 
 // Retrieve information on the current file & display the current assessments
 
-$file = $_REQUEST["file"];
+$file = stripcslashes($_REQUEST["file"]);
 $directory = dirname($file);
 $collection = $_REQUEST["collection"];
 $documentns = "urn:xrai:c:$collection";
@@ -68,7 +68,7 @@ while ($row["parent"] > 0 && $row = &$xrai_db->getRow("SELECT * FROM $db_files W
   array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]/$row[filename]?id_pool=$id_pool",$row["title"])));
 }
 $up_url = $localisation[sizeof($localisation)-1][1];
-$localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=$file&amp;collection=$collection","$title");
+$localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=". rawurlencode($file) . "&amp;collection=$collection","$title");
 
 
 

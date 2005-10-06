@@ -21,8 +21,8 @@ if (DB::isError($res)) fatal_error("DB error",$res);
 ?> <h1>Pools</h1><table class="stats"><thead><tr><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
 while ($row=$res->fetchRow()) {
    if (!is_array($topics[$row["topic"]])) $topics[$row["topic"]] = array(array(),array());
-   array_push($topics[$row["topic"]][$row["todo"] > 0 ? 0 : 1], $row["login"]);
-   ?><tr><td><?=$row["pool"]?></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row[done]?></td><td><?=$row[todo]?></td></tr><?
+   array_push($topics[$row["topic"]][$row["todo"] > 0 ? 0 : 1], "<a href=\"$base_url/pool?id_pool=$row[pool]\">$row[login]</a>");
+   ?><tr><td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row[done]?></td><td><?=$row[todo]?></td></tr><?
 }
 ?></tbody></table><?
 

@@ -4,7 +4,7 @@ require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 ignore_user_abort(false);
 
-$file=$_REQUEST["file"];
+$file=stripcslashes($_REQUEST["file"]);
 $collection=$_REQUEST["collection"];
 $aversion=&$_REQUEST["aversion"];
 $toadd=&$_REQUEST["a"];
