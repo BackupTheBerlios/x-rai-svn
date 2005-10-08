@@ -64,7 +64,8 @@ function startElement($parser, $name, $attrs) {
          if ($file > 0 && $pathid > 0) {
             print "Adding $file, $pathid\n";
             $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idpath" => $pathid));
-            if (DB::isError($res)) die($res->getUserInfo() . "\n");
+            if (DB::isError($res)) print "[ERROR: " . $res->getUserInfo() . "] Skipping $file, $pathid\n";
+            // die($res->getUserInfo() . "\n");
          } else print "[ERROR] Skipping $file, $pathid\n";
 
          break;

@@ -178,7 +178,7 @@ population:before { content: "Population: "; }
 e-mail:before { content: "E-mail: ";}
 range:before { content: "Range: ";}
 creditcards:before { content: "Creditcards accepted: ";}
-hours time:before { content:"Hours: "; }
+hours:before { content:"Hours: "; }
 hours_variation time:before { content: "Hours (variation): "; }
 variation:before { content: "Variation: "; }
 part type:after { content:": "; }
@@ -310,7 +310,7 @@ part type, part text, telfax type, telfax subtype, telfax areacode, telfax numbe
         font-weight: normal;
 }
 
-photographer, dailling_out, country_dailling_code, hours_variation time, hours time, e-mail, range, creditcards, hours time {
+photographer, dailling_out, country_dailling_code, hours_variation time,  e-mail, range, creditcards {
         display: block;
         margin: 5px;
         font-size:11pt;
@@ -329,7 +329,7 @@ b {     font-weight: bold; }
 i { font-style: italic; }
 br{  display: list-item; list-style: none inside; }
 
-culture, history, pre_20c, mini, image { display: block; }
+hours, events, books, media, culture, history, pre_20c, mini, image { display: block; }
 
 
 
