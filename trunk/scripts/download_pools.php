@@ -147,7 +147,7 @@ $done = array();
 
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
    if ($current[0] != $row["idpool"]) {
-      if ($current[0] != null) $addPool(&$current);
+      if ($current[0] != null) addPool(&$current);
       $current = array($row["idpool"],$row["idtopic"],true,null);
       $def = $xrai_db->getOne("SELECT definition FROM $db_topics WHERE id=?",array($row["idtopic"]));
       if (DB::isError($def)) {
