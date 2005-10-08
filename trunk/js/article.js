@@ -12,6 +12,7 @@
 // p7: user navigation
 
 XRai.loaded = false;
+XRai.noSave = !write_access; // no save prevent the assessments from being saved (error)...
 
 // Find the position of an XML node in the page:
 //    var x = document.getBoxObjectFor(event.target);
@@ -934,9 +935,10 @@ XRai.unhighlight = function() {
       }
 
       // Check overlap z/y
+      // z must be
       if (debug) if (z) XRai.debug("Check if we have to add a segment from y=" + XRai.getPath(y) + " to " + XRai.getPath(z.end) + "\n"); else XRai.debug("No more conflicting passage for rehighlighting after passage\n");
-      if (z && (compareDocumentPosition(z.end,y) && DOCUMENT_ORDER_BEFORE)) {
-         if (debug) XRai.debug("Removing last conflicting passage " + z.getPaths() + " for " + XRai.getPath(y) + "\n");
+      if (z && ((compareDocumentPosition(y, z.start) & DOCUMENT_ORDER_BEFORE) || (z.start == y))) {
+         if (debug) XRai.debug("Yes. Removing last conflicting passage " + z.getPaths() + " for " + XRai.getPath(y) + "\n");
          if (!firstRemoved) toremove.push(z);
          toadd.push(new Array(XRai.nextElementTo(y,z.end),z.end));
       }
@@ -1628,6 +1630,16 @@ XRai.save = function() {
       return;
    }
 
+   if (XRai.noSave) {
+      Message.show("error","Assessments cannot be saved (an *major* error occured before)\n",-1);
+      return;
+   }
+
+   if (!XRai.loaded) {
+      Message.show("error","Assessments cannot be saved (document not completly loaded)\n",-1);
+      return;
+   }
+
    if (XRai.saveForm != null) {
       Message.show("warning","Another save of assessments is being processed");
       return;
@@ -1769,19 +1781,19 @@ XRaiLoad = function() {
          var eStart = this.resolvePath(start);
          var eEnd = this.resolvePath(end);
          if (!eStart || (end != "" && !eEnd)) {
-            if (debug) XRai.debug("Error: " + eStart + "/" + eEnd + "\n");
+            if (debug) XRai.debug("[LDERROR] " + eStart + "/" + eEnd + "\n");
             this.loadErrors++;
          } else {
             if (eEnd) {
                try {
                   var p = new Passage(eStart, eEnd, a);
                   if ((p.start != eStart) || (p.end != eEnd)) {
-                     XRai.error("Loaded passage was not normalised!\n");
+                     XRai.error("[LDERROR] Loaded passage was not normalised!\n");
                      this.loadErrors++;
                   }
                } catch(e) {
                   this.loadErrors++;
-                  if (debug) XRai.debug("/!\\" + e + "\n");
+                  if (debug) XRai.debug("[LDERROR] " + e + "\n");
                }
             } else {
                this.toadd.push(new Array(eStart, a));
@@ -1806,8 +1818,10 @@ XRaiLoad = function() {
    this.end = function() {
       var toomuch = 0; // number of extra assessments (due to an old bug)
 
-      if (this.loadErrors != 0)
+      if (this.loadErrors != 0) {
          alert("Error while loading assessments. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar).");
+         XRai.noSave = true;
+      }
       try {
          // Update containers
          for(var p = XRai.firstPassage; p; p = p.next)

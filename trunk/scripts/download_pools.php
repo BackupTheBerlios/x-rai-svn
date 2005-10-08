@@ -266,7 +266,7 @@ while (list($id, $data) = each(&$done)) {
 
    // Loop on pools
    foreach($data[2] as $pool) {
-      print "  > In pool $pool [$data[0]/$data[1]]\n";
+      print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
       $error = false;
       $cp = &$p[$pool];
@@ -304,7 +304,9 @@ while (list($id, $data) = each(&$done)) {
             }
             $error = false;
             if ($spe <= 0 && ($s != $p)) {
-               print "[[Warning]] Specificity is null !?!\nfor $s:$e ($path) -> " . print_r($passages,true) ;
+               print "[[Warning]] Specificity is null !?!\nfor $s:$e ($path) -> " ;
+               foreach($passages as $seg) print "[$seg[0],$seg[1]]";
+               print "\n";
                fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");
                continue;
             }
