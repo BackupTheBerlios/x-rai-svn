@@ -1,7 +1,12 @@
 <?
 
 
-/* This script generates one assessment file by pool together with an HTML page with statistics
+/*
+   This script generates one assessment file by pool
+   (c) B. Piwowarski, 2004
+
+   Changes:
+   - october 2005: adaptation to the new highlighting method
 */
 
 
@@ -11,20 +16,26 @@ set_time_limit(0);
 chdir("..");
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
+require_once("include/xslt.inc");
 
-if (sizeof($argv) != 2) { 
-	print "download_pools <state>\n";
-	exit(1);
+function argerror($s="") {
+         print "$s";
+        print "download_pools <state> <outdir> [<restriction list>]\n";
+        exit(1);
 }
 
-$state = $argv[1];
-$outdir = "$assessmentsdir/$state";
+array_shift($argv);
+$state = array_shift($argv); if ($state == null) argerror("No state found\n");
+$outdir = array_shift($argv); if ($outdir == null) argerror("No output directory given\n");
 if (!is_dir($outdir)) {
   print "$outdir is not a directory\n";
   exit(1);
 }
 
-
+$restrict="";
+if (sizeof($argv) > 0) {
+   $rectrict = " AND idtopic in (" . implode(",",$argv) . ") ";
+}
 
 
 // DTD file
@@ -33,138 +44,237 @@ function write_dtd($subdir) {
 global $outdir;
 $dtd_file = fopen("$outdir/$subdir/assessments.dtd","w");
 fwrite($dtd_file,'
-  <!ELEMENT assessments (file*)>
-  <!ELEMENT file (path*)>
-  <!ELEMENT path EMPTY>
-  
-  <!ATTLIST assessments 
+  <!ELEMENT assessments (inex_topic, file*)>
+  <!ELEMENT file (element*)>
+  <!ELEMENT element EMPTY>
+
+  <!ATTLIST assessments
             pool CDATA #REQUIRED
-            topic CDATA #REQUIRED>
-  <!ATTLIST file file CDATA #REQUIRED>
-  <!ATTLIST path
-  	path	CDATA	#REQUIRED
-	exhaustiveness   (0|1|2|3|U)	"U"
-	specificity	(0|1|2|3|U)	"U"
-   inpool (true|false) "false"
-	inferred	(true|false) "false"
-	inconsistant (true|false) "false"
+            topic CDATA #REQUIRED
+            version CDATA #REQUIRED>
+  <!ATTLIST collection name CDATA #REQUIRED>
+  <!ATTLIST file collection CDATA #REQUIRED name CDATA #REQUIRED>
+
+  <!-- exhaustivity and specificity are real values beween 0 and 1; exhaustivity can also be ? if the element was assessed as "too small" -->
+  <!ATTLIST element
+        path    CDATA   #REQUIRED
+        exhaustivity   CDATA #REQUIRED
+        specificity     CDATA #REQUIRED
   >
+
+<!-- From topics DTD -->
+<!ELEMENT inex_topic  (title,castitle?,parent?,description,narrative,keywords?)>
+<!ELEMENT keywords (#PCDATA)>
+<!ATTLIST inex_topic
+  topic_id     CDATA     #REQUIRED
+  query_type  CDATA #REQUIRED
+  ct_no      CDATA         #REQUIRED
+>
+<!ELEMENT title (#PCDATA)>
+<!ELEMENT castitle     (#PCDATA)>
+<!ELEMENT parent      (#PCDATA)>
+<!ELEMENT description   (#PCDATA)>
+<!ELEMENT narrative     (#PCDATA)>
+
   ');
 fclose($dtd_file);
 }
 
-// Statistics 
-$stat_filename = "$outdir/statistics.html";
-$stat_file=fopen("$stat_filename","w");
-if (!$stat_file) { print "Can't open file '$stat_filename'\n"; exit(1); }
-
-$all_assessments = array_merge(array('I'),$sorted_assessments);
-
-fwrite($stat_file,"<table class='stats'><thead><tr><th>Pool name</th>");
-foreach($all_assessments as $a) fwrite($stat_file,"<th>" . get_assessment_img($a,false,false,true,$a == 'I') . "</th>");
-fwrite($stat_file,"<th>% Done</th></tr></thead>\n<tbody>\n");
-
-// -*- get the file of a given element
-function get_file($xid) {
-    $qhf = sql_get_row("SELECT xid,post,name FROM files WHERE $xid >= xid AND $xid <= post AND type='xml'");
-    return array($qhf["xid"],$qhf["post"],$qhf["name"]); 
-}
-
 // -*- Write assessment files
 
-function write_stats($fh,$pool_name,&$stats) {
-	global $all_assessments;
-	fwrite($fh,"<tr><td style='span: 2pt; border-right: 1pt solid black'>$pool_name</td>");
-	foreach($all_assessments as $a) 
-		fwrite($fh,"<td style='span: 2pt' title='" . intval(1000 * ($stats[$a]/$stats["T"]))/10 . " %'>" . intval($stats[$a])  . " </td>");
-	fwrite($fh,"<td style='border-left: 1pt solid black'>" . 
-			intval(100 * (1. - (($stats["U"]+$stats["I"])/$stats["T"]))) . " %</td></tr>\n");
-}
-// print "SELECT * FROM pools,topics WHERE state='$state' AND topics.id = pools.id_topic order by id_pool\n";
-$pools = sql_query("SELECT * FROM pools,topics WHERE state='$state' AND topics.id = pools.id_topic order by id_pool");
-$nb_pools = sql_num_rows($pools);
 
-// Loop on different pools
-
-mkdir("$outdir/done"); // Directory with links to done pools
+@mkdir("$outdir/done"); // Directory with links to done pools
 write_dtd("done");
-mkdir("$outdir/in_progress"); // Directory with links to done pools
+@mkdir("$outdir/in_progress"); // Directory with links to done pools
 write_dtd("in_progress");
 
-$no_pool = 0;
-$xsl = '<?xml version="1.0" encoding="iso-8859-1"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-<xsl:output encoding="iso-8859-1" method="text"/>
-<xsl:template match="/"><xsl:value-of select="/inex_topic/@query_type"/></xsl:template>
-</xsl:stylesheet>
-';
 
-while ($pool = sql_fetch_array($pools)) {
-   print "Downloading pool n°$pool[id_pool]\n";
-   $no_pool++;
-   $status_fh = @fopen("$assessmentsdir/waiting/$state.stats","w");
-   @fwrite($status_fh,"$no_pool\n$nb_pools\n");
-   @fclose($status_fh);
-     
-   $is_done = sql_query("SELECT * FROM assessments WHERE id_pool = $pool[id_pool] AND (assessment='U' OR inconsistant='Y') LIMIT 0,1");
-  
-  $params = array("/_xml" => $pool["definition"], "/_xsl" => $xsl); 
-  $pool_type = xslt_process($xslt,"arg:/_xml","arg:/_xsl", NULL, $params);
-  if (!$pool_type) $pool_type = "misc"; 
-  $dname = "$outdir/" 
-   . ( sql_num_rows($is_done) > 0 ? "in_progress" : "done") . "/$pool_type";
-  if (!is_dir($dname)) mkdir($dname); 
-  $dname .= "/topic-$pool[id_topic]"; 
+// -*- Initialise the XML parser
 
-  // We don't ask for filename yet as MySQL (4.0) is not very optimised for this type of query (range)    
-  $qh = sql_query("SELECT a.xid xid, p.path path, inferred, inconsistant, assessment, in_pool FROM assessments a, paths p, map m WHERE a.id_pool = $pool[id_pool] and a.xid = m.xid and p.id = m.path  ORDER BY m.xid");
-
-$current_file = "";
-unset($stats);
-if (!is_dir($dname)) mkdir($dname);
-
-$assess_file = fopen("$dname/pool-$pool[id_pool].xml","w");
-fwrite($assess_file,'<?xml version="1.0"?>
-<!DOCTYPE assessments SYSTEM "../../assessments.dtd">
-<assessments' . " pool='$pool[id_pool]' topic='$pool[id_topic]'>\n");
-  
+$xml_parser = xml_parser_create();
+xml_set_element_handler($xml_parser, "startElement", "endElement");
+xml_set_character_data_handler($xml_parser, "cdata");
+xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
+xml_parser_set_option($xml_parser,XML_OPTION_SKIP_WHITE,false);
 
 
-$file = array(-1,-1,""); // current pre post name
-while ($row = sql_fetch_array($qh)) {
-   // Retrieve the filename if needed
-   if ($row["xid"] < $file[0] || $row["xid"] > $file[1]) {
-      // update !
-      $file = get_file($row["xid"]);
-      $filename = $file[2];
-//      print "Cache updated ($file[0],$row[xid],$file[1])\n" ;
-} 
-// else print "Cache OK ($file[0],$row[xid],$file[1])\n";
-     
-	if ($current_file != $filename) {
-		if ($current_file) fwrite($assess_file,"\t\t</file>\n");
-		$current_file = $filename;
-		fwrite($assess_file,"\t\t<file file='$current_file'>\n");
-	}
-	fwrite($assess_file,"\t\t\t<path path='$row[path]'"
-		. ($row["assessment"] != 'U' ? " exhaustiveness='" . $row[assessment][0] . "' specificity='" . $row[assessment][1] . "'" : "")
-		. ($row["inferred"] == 'Y' ? " inferred='true'" : "")
-		. ($row["inconsistant"] == 'Y'? " inconsistant='true'" : "")
-      . ($row["in_pool"] == 'Y' ? " inpool='true'" : "")
-		. "/>\n");
-	$a = ($row["inconsistant"] == 'Y' ? 'I' : $row["assessment"]);
-	$stats[$a]++;
-	$stats["T"]++;
+$files = array();
+
+
+// ========================================
+// Selects all the files and begin to
+
+
+// $data = (idpool, idtopic, alldone, definition)
+function addPool(&$data) {
+   global $outdir, $files;
+   $dir = "$outdir/" . ($data[2] ? "done" : "in_progress") . "/$data[1]";
+   if (!is_dir($dir)) mkdir($dir);
+   $fh = $files[$data[0]] = fopen("$dir/$data[0].xml","w");
+   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
-  if ($current_file) fwrite($assess_file,"\t\t</file>\n");
-  fwrite($assess_file,"</assessments>");
-  fclose($assess_file);
-  write_stats($stat_file,$pool_name,$stats);
-  sql_free($qh);
-}
-sql_free($pools);
 
-fwrite($stat_file,"</tbody></table>\n");
-fclose($stat_file);
+$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename FROM filestatus, pools, files WHERE pools.id = idpool AND files.id = idfile AND state=? $restrict",array($state));
+if (DB::isError($status)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
+
+$current = array(null);
+$alldone = true;
+$done = array();
+$xslt = get_xslt_processor();
+$xsl = '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"><xsl:output encoding="UTF-8" method="xml" omit-xml-declaration="yes"/><xsl:template match="/"><xsl:copy-of select="."/></xsl:template></xsl:stylesheet>';
+if (!$xslt) die("No XSLT processor defined");
+if (!$xslt_mode) $xslt->importStyleSheet(DOMDocument::loadXML($xsl));
+
+while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
+   if ($current[0] != $row["idpool"]) {
+      if ($current[0] != null) $addPool(&$current);
+      $current = array($row["idpool"],$row["idtopic"],true,null);
+      $def = $xrai_db->getOne("SELECT definition FROM $db_topics WHERE id=?",array($row["idtopic"]));
+      if (DB::isError($def)) {
+         print "Topic definion cannot be retrieved: " . $def->getUserInfo() . "\n";
+         exit(1);
+      }
+      if ($xslt_mode) {
+         $params = array("/_xml" => $def, "/_xsl" => &$xsl);
+         $current[3] = xslt_process($xslt,"arg:/_xml","arg:/_xsl", NULL, $params);
+      } else {
+         $current[3] = $xslt->transformToXML(DOMDocument::loadXML($def));
+      }
+   }
+   if ($row["status"] != 2) $current[2] = false;
+   else {
+      if (!is_array($done[$row["idfile"]])) $done[$row["idfile"]] = array($row["collection"],$row["filename"],array());
+      array_push($done[$row["idfile"]][2],$row["idpool"]);
+   }
+}
+
+addPool(&$current);
+
+// ========================================
+// Loop on files
+
+// The stack
+// path, rank count
+$stack = array(array("",array(),0,false));
+$pos = 0;
+
+
+// -*- Read the XML file
+function startElement($parser, $name, $attrs) {
+   global $stack, $pos;
+   $last = &$stack[sizeof($stack)-1];
+   $rank = &$last[1][$name];
+   if (!isset($rank)) $rank = 1; else $rank++;
+   $path = $last[0] . "/{$name}[{$rank}]";
+   array_push($stack,array($path, array(), $pos, false));
+}
+
+function endElement($parser, $name) {
+   global $stack, $paths, $pos;
+   $data = array_pop($stack);
+   if ($data[3] || ($paths[$data[0]]) ) {
+      $i = sizeof($stack)-1;
+      while (($i>0) && (!$stack[$i][3])) { $stack[$i][3] = true; $i--; }
+      $paths[$data[0]] = array($data[2], $pos);
+   }
+}
+
+function cdata($parser, $data) {
+   global $pos;
+   $pos += strlen($data);
+}
+
+
+// -*- Loop on files
+// current contains the current file / collection, the different paths, the passages and assessments
+
+$query = "SELECT assessments.exhaustivity, assessments.idpool, exhaustivity, pathsstart.\"path\" AS pstart, pathsend.\"path\" AS pend
+   FROM assessments
+   JOIN paths pathsstart ON assessments.startpath = pathsstart.id
+   JOIN paths pathsend ON assessments.endpath = pathsend.id
+   WHERE assessments.idfile = ? AND idpool in (";
+
+reset($done);
+while (list($id, $data) = each(&$done)) {
+   $paths = array();
+   $p = array(); // passages
+   $j = array(); // judgments
+   print "[In $data[0]/$data[1] ($id)]\n";
+   if (sizeof($data[2]) == 0) die();
+//    print_r($data[2]);
+
+   $list = $xrai_db->query($query . implode(",", $data[2]) . ")", $id);
+   if (DB::isError($list)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
+   while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
+      $idpool = $row["idpool"];
+      if (!is_array($p[$idpool])) $p[$idpool] = array();
+      $paths[$row["pstart"]] = true;
+      if ($row["pend"]) {
+         $paths[$row["pend"]] = true;
+         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]]);
+      }
+      else {
+         $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
+         // do some inference
+         $path = $row["pstart"];
+         while ($path != "") {
+            $path = preg_replace('#/[^/]+$#','',$path);
+            if ($path == "") break;
+            $paths[$path] = true;
+            $cj = &$j[$idpool][$path];
+            if (!isset($cj)) $cj = $e;
+            else if ($e > $cj) $cj = $e;
+            else break;
+         }
+      }
+   }
+
+   // Read XML file (if necessary)
+   if (sizeof($paths) > 0) {
+      $pos = 0;
+      if (!($fp = fopen("$xml_documents/$data[0]/$data[1].xml", "r")))
+         die("could not open XML input");
+      while ($chars = fread($fp, 4096)) {
+         if (!xml_parse($xml_parser, $chars, feof($fp))) {
+            die(sprintf("XML error: %s at line %d",
+                        xml_error_string(xml_get_error_code($xml_parser)),
+                        xml_get_current_line_number($xml_parser)));
+         }
+      }
+   }
+
+   // Loop on pools
+   foreach($data[2] as $pool) {
+      print "  > In pool $pool\n";
+      fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
+      $cp = &$p[$pool];
+      foreach($j[$pool] as $path => $exh) {
+         $spe = 0;
+         $s = $paths[$path][0];
+         $e = $paths[$path][1];
+         for($i = 0; $i < sizeof($cp); $i++) {
+            $d = min($e,$cp[$i][1][1]) - max($s,$cp[$i][0][0]);
+//             print "$path, inter([$s:$e],[" . $cp[$i][0][0] . ":" . $cp[$i][1][1] . "]) = $d\n";
+            if ($d > 0) $spe += $d;
+         }
+         if ($spe == 0) die("Specificity is null !?!\n");
+         fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" specificity=\"" . intval(100*$spe/($e-$s))/100 . "\"/>\n");
+      }
+      fwrite($files[$pool]," </file>\n");
+   }
+}
+
+
+
+// =========================================
+
+// -*- Close everything
+xml_parser_free($xml_parser);
+$list->free();
+
+foreach($files as $id => $fh) {
+   fwrite($fh, "</assessments>\n");
+   fclose($fh);
+}
 
 ?>

@@ -1,6 +1,14 @@
 #!/usr/bin/php
 <?php
 
+/*
+
+   Add or update a collection in the X-Rai database
+   (c) 2005 B. Piwowarski
+
+*/
+
+
 $nopaths = false;
 
 $i = 1;
