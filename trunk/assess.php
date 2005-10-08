@@ -29,6 +29,15 @@ $hist=&$_REQUEST["hist"];
 <div><b>Base version:</b> <?="$aversion"?></div>
 <div><b>Doc status:</b> <?="$docstatus"?></div>
 <div><b>Stats:</b> <?=sizeof($toadd)?> element(s) to add/modify, <?=sizeof($toremove)?> to remove.</div>
+<?
+   if (!$write_access) {
+      ?><script type="text/javascript">
+            ref.Message.show("warning","Pool is read-only.");
+            ref.XRai.saved(false);
+      </script><?
+      exit();
+   }
+?>
 </div>
 <?
 

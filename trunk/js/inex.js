@@ -1,6 +1,6 @@
 /**
    INEX javascript code
-   B. Piwowarski, 2003
+   (c) 2003-2005 B. Piwowarski
 */
 var XRai = new Object(); // used for namespace
 
@@ -495,8 +495,19 @@ var Message = {
       div.setAttribute("class","message_" + type);
       Message.message_id++;
       div.id = "message_" + Message.message_id;
+      if (time > 0) setTimeout('Message.clear("' + div.id + '")',time);
+      else {
+        var a = document.createElement("a");
+        var div2 = document.createElement("div");
+        div2.style["font-size"] = "small";
+        a.appendChild(document.createTextNode("close"));
+        div2.appendChild(a);
+        div.appendChild(div2);
+
+        a.setAttribute("onclick",'Message.clear("' + div.id + '")');
+        a.setAttribute("href","javascript:void(0)");
+      }
       document.getElementById("body").appendChild(div);
-      setTimeout('Message.clear("' + div.id + '")',time);
    },
 
    clear: function (id) {

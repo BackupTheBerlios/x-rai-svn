@@ -110,7 +110,6 @@ if ($id_pool > 0) {
   var documentns = "<?=$documentns?>";
   var xrai_file = "<?=$file?>";
   var xrai_collection = "<?=$collection?>";
-  write_access = <?=$can_modify ? "true" : "false"?>;
   debug = <?=$do_debug ? "true": "false"?>;
   up_url = "<?=$up_url?>";
   var write_access = <?=($write_access ? "true":"false")?>;
@@ -472,7 +471,8 @@ if ($id_pool > 0) {
    var load = new XRaiLoad();
    <?
    while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
-      ?>load.add("<?=$row[startxpath]?>","<?=$row[endxpath]?>","<?=$row[exhaustivity]?>");<?
+      ?>load.add("<?=$row[startxpath]?>","<?=$row[endxpath]?>","<?=$row[exhaustivity]?>");
+<?
    }
 
    // Add topic elements

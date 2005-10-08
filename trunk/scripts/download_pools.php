@@ -34,9 +34,9 @@ if (!is_dir($outdir)) {
 
 $restrict="";
 if (sizeof($argv) > 0) {
-   $rectrict = " AND idtopic in (" . implode(",",$argv) . ") ";
+   $restrict = " AND idpool in (" . implode(",",$argv) . ") ";
 }
-
+print "Restrict to pools: " . implode(",",$argv) . "\n";
 
 // DTD file
 
@@ -88,20 +88,6 @@ write_dtd("done");
 @mkdir("$outdir/in_progress"); // Directory with links to done pools
 write_dtd("in_progress");
 
-
-// -*- Initialise the XML parser
-
-$xml_parser = xml_parser_create();
-xml_set_element_handler($xml_parser, "startElement", "endElement");
-xml_set_character_data_handler($xml_parser, "cdata");
-xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
-xml_parser_set_option($xml_parser,XML_OPTION_SKIP_WHITE,false);
-
-$xml_parser_cp = xml_parser_create();
-xml_set_element_handler($xml_parser_cp, "cp_startElement", "cp_endElement");
-xml_set_character_data_handler($xml_parser_cp, "cp_cdata");
-xml_parser_set_option($xml_parser_cp,XML_OPTION_CASE_FOLDING,false);
-xml_parser_set_option($xml_parser_cp,XML_OPTION_SKIP_WHITE,false);
 
 
 $files = array();
@@ -155,12 +141,17 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
          exit(1);
       }
       $cdef = &$current[3];
+      $xml_parser_cp = xml_parser_create();
+      xml_set_element_handler($xml_parser_cp, "cp_startElement", "cp_endElement");
+      xml_set_character_data_handler($xml_parser_cp, "cp_cdata");
+      xml_parser_set_option($xml_parser_cp,XML_OPTION_CASE_FOLDING,false);
+      xml_parser_set_option($xml_parser_cp,XML_OPTION_SKIP_WHITE,false);
       if (!xml_parse($xml_parser_cp, $def, true)) {
-         die(sprintf("XML error: %s at line %d",
-                     xml_error_string(xml_get_error_code($xml_parser)),
-                     xml_get_current_line_number($xml_parser)));
+         die(sprintf("(1) XML error while parsing definition\n\n$def\n\n: %s at line %d",
+                     xml_error_string(xml_get_error_code($xml_parser_cp)),
+                     xml_get_current_line_number($xml_parser_cp)));
       }
-
+      xml_parser_free($xml_parser_cp);
    }
    if ($row["status"] != 2) $current[2] = false;
    else {
@@ -173,12 +164,6 @@ addPool(&$current);
 
 // ========================================
 // Loop on files
-
-// The stack
-// path, rank count
-$stack = array(array("",array(),0,false));
-$pos = 0;
-
 
 // -*- Read the XML file
 function startElement($parser, $name, $attrs) {
@@ -193,6 +178,7 @@ function startElement($parser, $name, $attrs) {
 function endElement($parser, $name) {
    global $stack, $paths, $pos;
    $data = array_pop($stack);
+//    print "$data[0] has ($data[2],$pos)\n";
    if ($data[3] || ($paths[$data[0]]) ) {
       $i = sizeof($stack)-1;
       while (($i>0) && (!$stack[$i][3])) { $stack[$i][3] = true; $i--; }
@@ -210,6 +196,9 @@ function cdata($parser, $data) {
 
 // -*- Loop on files
 // current contains the current file / collection, the different paths, the passages and assessments
+function psort_order($a,$b) {
+   return $a[0][0] - $b[0][0];
+}
 
 $query = "SELECT assessments.exhaustivity, assessments.idpool, exhaustivity, pathsstart.\"path\" AS pstart, pathsend.\"path\" AS pend
    FROM assessments
@@ -224,7 +213,6 @@ while (list($id, $data) = each(&$done)) {
    $j = array(); // judgments
    print "[In $data[0]/$data[1] ($id)]\n";
    if (sizeof($data[2]) == 0) die();
-//    print_r($data[2]);
 
    $list = $xrai_db->query($query . implode(",", $data[2]) . ")", $id);
    if (DB::isError($list)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
@@ -251,38 +239,82 @@ while (list($id, $data) = each(&$done)) {
          }
       }
    }
+   $list->free();
 
    // Read XML file (if necessary)
    if (sizeof($paths) > 0) {
+      print "Parsing file $data[0]/$data[1] (" . sizeof($paths) . ")\n";
       $pos = 0;
+      $stack = array(array("",array(),0,false));
+      $xml_parser = xml_parser_create();
+      xml_set_element_handler($xml_parser, "startElement", "endElement");
+      xml_set_character_data_handler($xml_parser, "cdata");
+      xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
+      xml_parser_set_option($xml_parser,XML_OPTION_SKIP_WHITE,false);
       if (!($fp = fopen("$xml_documents/$data[0]/$data[1].xml", "r")))
          die("could not open XML input");
       while ($chars = fread($fp, 4096)) {
          if (!xml_parse($xml_parser, $chars, feof($fp))) {
-            die(sprintf("XML error: %s at line %d",
+            die(sprintf("XML error ($xml_documents/$data[0]/$data[1].xml): %s at line %d, column %d in [$chars]\n",
                         xml_error_string(xml_get_error_code($xml_parser)),
-                        xml_get_current_line_number($xml_parser)));
+                        xml_get_current_line_number($xml_parser),
+                        xml_get_current_column_number($xml_parser)));
          }
       }
+      xml_parser_free($xml_parser);
    }
 
    // Loop on pools
    foreach($data[2] as $pool) {
-      print "  > In pool $pool\n";
+      print "  > In pool $pool [$data[0]/$data[1]]\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
+      $error = false;
       $cp = &$p[$pool];
-      if (is_array($cp))
-      foreach($j[$pool] as $path => $exh) {
-         $spe = 0;
-         $s = $paths[$path][0];
-         $e = $paths[$path][1];
+      if (is_array($cp)) {
+         usort($cp,"psort_order");
+         $passages = array();
+         $last = -1;
          for($i = 0; $i < sizeof($cp); $i++) {
-            $d = min($e,$cp[$i][1][1]) - max($s,$cp[$i][0][0]);
-//             print "$path, inter([$s:$e],[" . $cp[$i][0][0] . ":" . $cp[$i][1][1] . "]) = $d\n";
-            if ($d > 0) $spe += $d;
+            $s = $cp[$i][0][0]; $e =  $cp[$i][1][1];
+            if ($s <= $last) {
+               $lp = &$passages[sizeof($passages)-1];
+               if ($s != $last) {
+                  print "[[Warning]] passage overlap ($s<=$last) - merging!\n";
+                  fwrite($files[$pool],"  <!-- Warning: passage overlap ($s<=$last) - merging -->\n");
+               }
+               $error = true;
+               $s = $lp[0];
+               $e = $lp[1] = max($lp[1],$e);
+            } else {
+               $passages[] = array($s, $e);
+            }
+            print "  P[" . $s . ":" . $e . "]\n";
+            $last = $e;
          }
-         if ($spe == 0) die("Specificity is null !?!\n");
-         fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" specificity=\"" . intval(100*$spe/($e-$s))/100 . "\"/>\n");
+
+         foreach($j[$pool] as $path => $exh) {
+            $spe = 0;
+            $s = $paths[$path][0];
+            $e = $paths[$path][1];
+            foreach($passages as $seg) {
+               if ($seg[0] > $e) break; // Stop if the start of the segment is after the end of the element
+               $d = min($e,$seg[1]) - max($s,$seg[0]);
+   //             print "$path, inter([$s:$e],[" . $cp[$i][0][0] . ":" . $cp[$i][1][1] . "]) = $d\n";
+               if ($d >= 0) $spe += $d + 1;
+            }
+            $error = false;
+            if ($spe <= 0 && ($s != $p)) {
+               print "[[Warning]] Specificity is null !?!\nfor $s:$e ($path) -> " . print_r($passages,true) ;
+               fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");
+               continue;
+            }
+
+            $spe = $spe / ($e - $s + 1);
+            if ($spe > 1)
+               die("Specificity is > 1 ($spe)!?!\nfor $s:$e ($path) -> " . print_r($passages,true) );
+
+            fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" specificity=\"" . intval(1000*$spe)/1000 . "\"/>\n");
+         }
       }
       fwrite($files[$pool]," </file>\n");
    }
@@ -292,9 +324,6 @@ while (list($id, $data) = each(&$done)) {
 
 // =========================================
 
-// -*- Close everything
-xml_parser_free($xml_parser);
-$list->free();
 
 foreach($files as $id => $fh) {
    fwrite($fh, "</assessments>\n");

@@ -352,7 +352,7 @@ XRai.isBefore = function(x, y) {
    return compareDocumentPosition(x,y) & Node.DOCUMENT_POSITION_FOLLOWING;
 }
 XRai.isBeforeOrContains= function(x, y) {
-   return compareDocumentPosition(x,y) & (Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED);
+   return compareDocumentPosition(x,y) & (Node.DOCUMENT_POSITION_FOLLOWING | Node.DOCUMENT_POSITION_CONTAINED_BY);
 }
 XRai.isAfter = function(x, y) {
    return compareDocumentPosition(x,y) & Node.DOCUMENT_POSITION_PRECEDING;
@@ -582,7 +582,7 @@ Passage = function(x,y,savedValue) {
       var range = { start: XRai.getFirstValidParent(this.start,1), end: XRai.getFirstValidParent(this.end,1) };
       if (range.start == range.end) return null;
       var c = compareDocumentPosition(range.start,range.end);
-      if ((c & Node.DOCUMENT_POSITION_CONTAINS) || (c & Node.DOCUMENT_POSITION_CONTAINED)) return null;
+      if ((c & Node.DOCUMENT_POSITION_CONTAINS) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) return null;
       return range;
    }
 
@@ -883,6 +883,7 @@ XRai.normalisePassage = function(x,y) {
 
 
 XRai.unhighlight = function() {
+   if (!write_access) return;
    if (docStatus != 0) return;
    var toremove = new Array();
    var toadd = new Array();
@@ -958,6 +959,7 @@ XRai.unhighlight = function() {
 
 
 XRai.highlight = function() {
+   if (!write_access) return;
    if (docStatus != 0) return;
    try {
 
@@ -1180,6 +1182,7 @@ XRai.removeContained = function(z, x, limit) {
 
 // Called to switch the view
 XRai.switchToAssess = function() {
+   if (!write_access) return;
    if (highlight_only) return true;
    try {
       // (1) Invalidate
@@ -1486,6 +1489,7 @@ XRai.setAssessment = function(e, a, loading) {
 // ==========
 
 XRai.updateStatusIcon = function() {
+   if (!write_access) return;
    var img = document.getElementById("switchImg");
    var divinex = document.getElementById("inex");
    var spanh = document.getElementById("highlight");
@@ -1533,6 +1537,7 @@ XRai.hasChanged = function() {
 }
 
 XRai.updateSaveIcon = function() {
+   if (!write_access) return;
    var save = document.getElementById("save");
    if (XRai.hasChanged()) { save.src = baseurl + "img/filesave.png"; save.setAttribute("title","Save current assessments (" + XRai.changeCount + " changes)");  }
    else { save.src =  baseurl + "img/filenosave.png"; save.setAttribute("title","Nothing to save"); }
@@ -1799,6 +1804,8 @@ XRaiLoad = function() {
    }
 
    this.end = function() {
+      var toomuch = 0; // number of extra assessments (due to an old bug)
+
       if (this.loadErrors != 0)
          alert("Error while loading assessments. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar).");
       try {
@@ -1810,19 +1817,32 @@ XRaiLoad = function() {
             else throw Error("An element in the old list should be validated!");
 
          for(var i = 0; i < this.toadd.length; i++) {
-            if (!this.toadd[i][0].cAssessment) throw new Error(XRai.getPath(this.toadd[i][0]) + " has not to be assessed, but an assessment has been saved");
-            XRai.setAssessment(this.toadd[i][0].cAssessment,this.toadd[i][1],true);
-            this.toadd[i][0].cAssessment.saved = this.toadd[i][1];
-            XRai.changeCount--;
+            if (!this.toadd[i][0].cAssessment) {
+               toomuch++;
+               XRai.changeCount++;
+               var p = document.createElementNS(xrains, xraiatag);
+               p.setAttribute("a",this.toadd[i][1]);
+               p.saved = this.toadd[i][1];
+               p.parent = this.toadd[i][0];
+               XRai.assessmentsToRemove.push(p);
+//                throw new Error(XRai.getPath(this.toadd[i][0]) + " has not to be assessed, but an assessment has been saved");
+            } else {
+               XRai.setAssessment(this.toadd[i][0].cAssessment,this.toadd[i][1],true);
+               this.toadd[i][0].cAssessment.saved = this.toadd[i][1];
+               XRai.changeCount--;
+            }
          }
+
+         if (toomuch > 0)
+            Message.show("warning","Some assessments were in non highlighted passages and have been removed",-1);
 
          if (XRai.firstOldPassage) docStatus = 0;
          XRai.updateSaveIcon();
          XRai.updateStatusIcon();
          if (debug) XRai.dumpPassages();
       } catch(e) {
-         if (debug) XRai.debug("Error while loading assessments: " + e + "\n");
-         alert("Error while loading assessments to this document. You MUST NOT assess this file");
+         if (debug) XRai.debug("Error while loading assessments: " + XRai.getError(e) + "\n");
+         alert("Error while loading assessments to this document. You MUST NOT assess this file. Please take the time to fill a bug report so this bug can be fixed.");
          throw e;
       }
    }
