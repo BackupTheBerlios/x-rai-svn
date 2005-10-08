@@ -97,13 +97,37 @@ xml_set_character_data_handler($xml_parser, "cdata");
 xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
 xml_parser_set_option($xml_parser,XML_OPTION_SKIP_WHITE,false);
 
+$xml_parser_cp = xml_parser_create();
+xml_set_element_handler($xml_parser_cp, "cp_startElement", "cp_endElement");
+xml_set_character_data_handler($xml_parser_cp, "cp_cdata");
+xml_parser_set_option($xml_parser_cp,XML_OPTION_CASE_FOLDING,false);
+xml_parser_set_option($xml_parser_cp,XML_OPTION_SKIP_WHITE,false);
+
 
 $files = array();
+
 
 
 // ========================================
 // Selects all the files and begin to
 
+// -*- Copy the file
+function cp_startElement($parser, $name, $attrs) {
+   global $cdef;
+   $cdef .= "<$name";
+   foreach($attrs as $k => $v) $cdef .= " $k=\"$v\"";
+   $cdef .= ">";
+}
+
+function cp_endElement($parser, $name) {
+   global $cdef;
+   $cdef .= "</$name>";
+}
+
+function cp_cdata($parser, $data) {
+   global $cdef;
+   $cdef .= $data;
+}
 
 // $data = (idpool, idtopic, alldone, definition)
 function addPool(&$data) {
@@ -120,10 +144,6 @@ if (DB::isError($status)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiti
 $current = array(null);
 $alldone = true;
 $done = array();
-$xslt = get_xslt_processor();
-$xsl = '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"><xsl:output encoding="UTF-8" method="xml" omit-xml-declaration="yes"/><xsl:template match="/"><xsl:copy-of select="."/></xsl:template></xsl:stylesheet>';
-if (!$xslt) die("No XSLT processor defined");
-if (!$xslt_mode) $xslt->importStyleSheet(DOMDocument::loadXML($xsl));
 
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
    if ($current[0] != $row["idpool"]) {
@@ -134,12 +154,13 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
          print "Topic definion cannot be retrieved: " . $def->getUserInfo() . "\n";
          exit(1);
       }
-      if ($xslt_mode) {
-         $params = array("/_xml" => $def, "/_xsl" => &$xsl);
-         $current[3] = xslt_process($xslt,"arg:/_xml","arg:/_xsl", NULL, $params);
-      } else {
-         $current[3] = $xslt->transformToXML(DOMDocument::loadXML($def));
+      $cdef = &$current[3];
+      if (!xml_parse($xml_parser_cp, $def, true)) {
+         die(sprintf("XML error: %s at line %d",
+                     xml_error_string(xml_get_error_code($xml_parser)),
+                     xml_get_current_line_number($xml_parser)));
       }
+
    }
    if ($row["status"] != 2) $current[2] = false;
    else {
@@ -183,6 +204,8 @@ function cdata($parser, $data) {
    global $pos;
    $pos += strlen($data);
 }
+
+
 
 
 // -*- Loop on files
@@ -248,6 +271,7 @@ while (list($id, $data) = each(&$done)) {
       print "  > In pool $pool\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
       $cp = &$p[$pool];
+      if (is_array($cp))
       foreach($j[$pool] as $path => $exh) {
          $spe = 0;
          $s = $paths[$path][0];
