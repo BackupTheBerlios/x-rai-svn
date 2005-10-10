@@ -101,7 +101,7 @@ print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
       <body id="body" onclick="return XRai.click(event)" onload="document_loaded()">
    <table id="menubar" class="localisation">
      <tr>
-      <td><span style="color: #333333; ">User <b<? if ($is_root) print " style='color:red'"; ?>><?=$inex_user?> </b> </span> |
+      <td><span style="color: #333333; ">User <b<? if ($is_root)  if ($pool["login"] != $inex_user) print " title='Acting as: $pool[login]' style='color:red; text-decoration: underline'"; else print " style='color:red'";  ?>><?=$inex_user?></b> </span> |
       <?
 
           // Menus

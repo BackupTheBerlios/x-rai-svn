@@ -35,7 +35,7 @@ else {
 //       print "$row[collection] / $s / $row[inpool] $db_true / $row[count]<br/>";
       $a[$row["collection"]][$s] = $row["count"];
       $t[$s] = $row["count"];
-      $total[$s]++;
+      $total[$s] += $row["count"];
       $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[collection]'";
    }
    $res->free();
