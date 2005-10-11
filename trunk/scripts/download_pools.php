@@ -44,25 +44,20 @@ function write_dtd($subdir) {
 global $outdir;
 $dtd_file = fopen("$outdir/$subdir/assessments.dtd","w");
 fwrite($dtd_file,'
-  <!ELEMENT assessments (inex_topic, file*)>
-  <!ELEMENT file (element*)>
-  <!ELEMENT element EMPTY>
+<!--
+      INEX 2005 Assessments DTD
 
-  <!ATTLIST assessments
-            pool CDATA #REQUIRED
-            topic CDATA #REQUIRED
-            version CDATA #REQUIRED>
-  <!ATTLIST collection name CDATA #REQUIRED>
-  <!ATTLIST file collection CDATA #REQUIRED name CDATA #REQUIRED>
+      The DTD has two parts:
+         (1) the topic definition (so as to have a complete file)
+         (2) the assessments
+  -->
 
-  <!-- exhaustivity and specificity are real values beween 0 and 1; exhaustivity can also be ? if the element was assessed as "too small" -->
-  <!ATTLIST element
-        path    CDATA   #REQUIRED
-        exhaustivity   CDATA #REQUIRED
-        specificity     CDATA #REQUIRED
-  >
+<!ELEMENT assessments (inex_topic, file*)>
 
-<!-- From topics DTD -->
+<!--
+         From topics DTD
+                              -->
+
 <!ELEMENT inex_topic  (title,castitle?,parent?,description,narrative,keywords?)>
 <!ELEMENT keywords (#PCDATA)>
 <!ATTLIST inex_topic
@@ -75,6 +70,31 @@ fwrite($dtd_file,'
 <!ELEMENT parent      (#PCDATA)>
 <!ELEMENT description   (#PCDATA)>
 <!ELEMENT narrative     (#PCDATA)>
+
+<!--
+         The assessments
+                              -->
+
+
+  <!ELEMENT file (element*)>
+  <!ELEMENT element EMPTY>
+
+  <!ATTLIST assessments
+            pool CDATA #REQUIRED
+            topic CDATA #REQUIRED
+            version CDATA #REQUIRED>
+  <!ATTLIST collection name CDATA #REQUIRED>
+  <!ATTLIST file collection CDATA #REQUIRED name CDATA #REQUIRED>
+
+  <!-- exhaustivity is 1 or 2, size is the size of the element (in characters) and rsize the # of highlighted chars within that element ->
+  <!ATTLIST element
+        path    CDATA   #REQUIRED
+        exhaustivity   CDATA #REQUIRED
+        size CDATA #REQUIRED
+        rsize CDATA #REQUIRED
+  >
+
+
 
   ');
 fclose($dtd_file);
@@ -293,29 +313,29 @@ while (list($id, $data) = each(&$done)) {
          }
 
          foreach($j[$pool] as $path => $exh) {
-            $spe = 0;
+            $rsize = 0;
             $s = $paths[$path][0];
             $e = $paths[$path][1];
             foreach($passages as $seg) {
                if ($seg[0] > $e) break; // Stop if the start of the segment is after the end of the element
                $d = min($e,$seg[1]) - max($s,$seg[0]);
    //             print "$path, inter([$s:$e],[" . $cp[$i][0][0] . ":" . $cp[$i][1][1] . "]) = $d\n";
-               if ($d >= 0) $spe += $d + 1;
+               if ($d >= 0) $rsize += $d + 1;
             }
             $error = false;
-            if ($spe <= 0 && ($s != $p)) {
+            if ($rsize <= 0 && ($s != $p)) {
                print "[[Warning]] Specificity is null !?!\nfor $s:$e ($path) -> " ;
                foreach($passages as $seg) print "[$seg[0],$seg[1]]";
                print "\n";
                fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");
                continue;
             }
-
-            $spe = $spe / ($e - $s + 1);
-            if ($spe > 1)
+            $size = ($e - $s + 1);
+            $spe = $rsize / $size;;
+            if ($rsize > $size)
                die("Specificity is > 1 ($spe)!?!\nfor $s:$e ($path) -> " . print_r($passages,true) );
 
-            fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" specificity=\"" . intval(1000*$spe)/1000 . "\"/>\n");
+            fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" size=\"$size\" rsize=\"$rsize\"/>\n");
          }
       }
       fwrite($files[$pool]," </file>\n");

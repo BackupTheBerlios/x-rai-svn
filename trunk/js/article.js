@@ -65,7 +65,11 @@ XRai.error = function(s) {
 // docStatus (and saved value oldDocStatus)
 // 0 => highlighting mode
 // 1 => assessing mode
-// 2 => finished
+// 2/3 => finished (no relevant / relevant)
+
+XRai.HIGHLIGHTING = 0;
+XRai.ASSESSING = 1;
+XRai.FINISHED = 2;
 
 // ==========  @p1
 // ========== Misc
@@ -1336,8 +1340,11 @@ XRai.upwardUpdate = function(x, olda, newa, updateOnly, skip) {
 */
 XRai.setBound = function(x, bound, force) {
    if (!x) return;
-   if (bound == -1 && (force || (x.getAttribute("a") == "0"))) XRai.setAssessment(x,-1);
-   else if (bound == 0 && x.getAttribute("a") == "-1") XRai.setAssessment(x,"0");
+   if (bound == -1 && (force || (x.getAttribute("a") == "0"))) {
+      var y = x.parentNode;
+      if ((y.realIntersection > 0 || y.reallyContained > 0) && XRai.containsPassage(y)) return;
+      XRai.setAssessment(x,-1);
+   } else if (bound == 0 && x.getAttribute("a") == "-1") XRai.setAssessment(x,"0");
    else if (bound > 0 && x.getAttribute("a") > bound) XRai.setAssessment(x,"0");
    else if (bound < -1) throw Error("Bound should be >= -1 in setTooSmall() [value is " + bound + "]");
 
@@ -1666,6 +1673,7 @@ XRai.save = function() {
    XRai.saveForm.appendChild(createHiddenInput("file",xrai_file));
    XRai.saveForm.appendChild(createHiddenInput("aversion",aversion));
    XRai.saveForm.appendChild(createHiddenInput("docstatus",docStatus));
+   XRai.saveForm.appendChild(createHiddenInput("hasrelevant",firstPassage != null));
 
    // Add history
    for(var i = 0; i < XRai.history.length; i++) {

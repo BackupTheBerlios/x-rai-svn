@@ -11,6 +11,7 @@ $toadd=&$_REQUEST["a"];
 $toremove=&$_REQUEST["r"];
 $id_pool=&$_REQUEST["id_pool"];
 $docstatus=&$_REQUEST["docstatus"];
+$hasrelevant=&$_REQUEST["hasrelevant"];
 $hist=&$_REQUEST["hist"];
 
 ?>
@@ -54,6 +55,8 @@ if (DB::isError($assessments)) {
       $res = $assessments->setNextVersion();
       if (DB::isError($res)) break;
       $res = $assessments->setStatus($docstatus);
+      if (DB::isError($res)) break;
+      $res = $assessments->setHasRelevant($hasrelevant);
       if (DB::isError($res)) break;
 
       if (is_array($toremove)) foreach($toremove as $a) {

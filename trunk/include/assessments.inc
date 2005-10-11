@@ -52,12 +52,13 @@ class Paths {
 
 /** Access to the assessments db */
 class Assessments {
-   function Assessments($idPool, $idFile, $version, $status, $inpool) {
+   function Assessments($idPool, $idFile, $version, $status, $inpool, $hasrelevant) {
       $this->version = $version;
       $this->idPool = $idPool;
       $this->idFile = $idFile;
       $this->status = $status;
       $this->inpool = $inpool;
+      $this->hasRelevant = $hasrelevant;
    }
 
    function create($idPool, $collection, $file) {
@@ -65,7 +66,7 @@ class Assessments {
       $idFile = Files::getFileId($collection,$file);
       if (DB::isError($idFile)) return $idFile;
 
-      $statusrow = $xrai_db->getRow("SELECT version, status, inpool FROM $db_filestatus WHERE idfile=? AND idpool=?",array($idFile,$idPool),DB_FETCHMODE_ROW);
+      $statusrow = $xrai_db->getRow("SELECT version, status, inpool, hasrelevant FROM $db_filestatus WHERE idfile=? AND idpool=?",array($idFile,$idPool),DB_FETCHMODE_ROW);
       if (DB::isError($statusrow)) return $statusrow;
 
       if (!is_array($statusrow)) {
@@ -73,10 +74,11 @@ class Assessments {
          $status = 0;
          $inpool = false;
       } else {
-         list($version,$status,$inpool) = $statusrow;
+         list($version,$status,$inpool,$hasrelevant) = $statusrow;
          $inpool = ($db_true == $inpool);
+         $hasrelevant= $db_true == $hasrelevant;
       }
-      return new Assessments($idPool, $idFile, $version, $status, $inpool);
+      return new Assessments($idPool, $idFile, $version, $status, $inpool, $hasrelevant);
    }
 
    function &getCursor() {
@@ -119,6 +121,15 @@ class Assessments {
       if ($this->status != $status) {
          $this->status = $status;
          return  $xrai_db->autoExecute($db_filestatus,array("status" => $this->status),DB_AUTOQUERY_UPDATE," idfile={$this->idFile} AND idpool={$this->idPool}");
+      }
+      return true;
+   }
+
+   function setHasRelevant($hasrelevant) {
+      global $xrai_db, $db_filestatus;
+      if ($this->hasrelevant != $hasrelevant) {
+         $this->hasrelevant = $hasrelevant;
+         return  $xrai_db->autoExecute($db_filestatus,array("hasrelevant" => $this->hasrelevant ? "true" : "false"),DB_AUTOQUERY_UPDATE," idfile={$this->idFile} AND idpool={$this->idPool}");
       }
       return true;
    }
