@@ -1632,6 +1632,7 @@ function createHiddenInput(name,value) {
 
 // Called when the user wants to save the document
 XRai.save = function() {
+
    if (!XRai.hasChanged()) {
       Message.show("notice","Nothing to save");
       return;
@@ -1673,7 +1674,7 @@ XRai.save = function() {
    XRai.saveForm.appendChild(createHiddenInput("file",xrai_file));
    XRai.saveForm.appendChild(createHiddenInput("aversion",aversion));
    XRai.saveForm.appendChild(createHiddenInput("docstatus",docStatus));
-   XRai.saveForm.appendChild(createHiddenInput("hasrelevant",firstPassage != null));
+   XRai.saveForm.appendChild(createHiddenInput("hasrelevant",XRai.firstPassage != null));
 
    // Add history
    for(var i = 0; i < XRai.history.length; i++) {
