@@ -58,7 +58,8 @@ fwrite($dtd_file,'
          From topics DTD
                               -->
 
-<!ELEMENT inex_topic  (title,castitle?,parent?,description,narrative,keywords?)>
+<!ELEMENT inex_topic  (InitialTopicStatement, title,castitle?,parent?,description,narrative,keywords?)>
+<!ELEMENT InitialTopicStatement (#PCDATA)>
 <!ELEMENT keywords (#PCDATA)>
 <!ATTLIST inex_topic
   topic_id     CDATA     #REQUIRED
@@ -86,7 +87,7 @@ fwrite($dtd_file,'
   <!ATTLIST collection name CDATA #REQUIRED>
   <!ATTLIST file collection CDATA #REQUIRED name CDATA #REQUIRED>
 
-  <!-- exhaustivity is 1 or 2, size is the size of the element (in characters) and rsize the # of highlighted chars within that element ->
+  <!-- exhaustivity is 1 or 2, size is the size of the element (in characters) and rsize the # of highlighted chars within that element -->
   <!ATTLIST element
         path    CDATA   #REQUIRED
         exhaustivity   CDATA #REQUIRED
@@ -138,9 +139,9 @@ function cp_cdata($parser, $data) {
 // $data = (idpool, idtopic, alldone, definition)
 function addPool(&$data) {
    global $outdir, $files;
-   $dir = "$outdir/" . ($data[2] ? "done" : "in_progress") . "/$data[1]";
+   $dir = "$outdir/" . ($data[2] ? "done" : "in_progress") . "/topic-$data[1]";
    if (!is_dir($dir)) mkdir($dir);
-   $fh = $files[$data[0]] = fopen("$dir/$data[0].xml","w");
+   $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
    fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
