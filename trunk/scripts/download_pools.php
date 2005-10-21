@@ -186,14 +186,28 @@ addPool(&$current);
 // ========================================
 // Loop on files
 
+
 // -*- Read the XML file
+
+// fill a global data array ($paths) only for paths already in the set of keys $paths (and their ancestors):
+// [0. path, 1. start offset, 2. end offset]
+// If the element is xrai:s, added to the array are [ parent path, offset in the parent path ]
+
+// The stack is composed of
+// [ 0. path, 1. [ ranks (ie mapping tag name => integer) ], 2. start offset, 3. boolean (ancestor of an included node), 4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 5. # of non-contiguous xrai:s tags]
+
 function startElement($parser, $name, $attrs) {
    global $stack, $pos;
    $last = &$stack[sizeof($stack)-1];
+
    $rank = &$last[1][$name];
    if (!isset($rank)) $rank = 1; else $rank++;
+   if ($name == "xrai:s") {
+      if ($last[4] == -1) { $last[4] = $pos; $last[5]++; }
+   } else $last[4] = -1;
+
    $path = $last[0] . "/{$name}[{$rank}]";
-   array_push($stack,array($path, array(), $pos, false));
+   array_push($stack,array($path, array(), $pos, false, -1, 0));
 }
 
 function endElement($parser, $name) {
@@ -204,6 +218,10 @@ function endElement($parser, $name) {
       $i = sizeof($stack)-1;
       while (($i>0) && (!$stack[$i][3])) { $stack[$i][3] = true; $i--; }
       $paths[$data[0]] = array($data[2], $pos);
+      $last = &$stack[sizeof($stack)-1];
+      if ($last[4] >= 0) { // it is an xrai:s tag
+        array_push($paths[$data[0]], "$last[2]/text()[$data[5]]", $data[2] - $last[4]);
+      }
    }
 }
 
@@ -212,10 +230,16 @@ function cdata($parser, $data) {
    $pos += strlen($data);
 }
 
-
+function getXPointer($path) {
+   global $paths;
+   $p = &$paths[$path];
+   if (sizeof($p) < 3) return $path;
+   return "$p[3].$p[4]";
+}
 
 
 // -*- Loop on files
+
 // current contains the current file / collection, the different paths, the passages and assessments
 function psort_order($a,$b) {
    return $a[0][0] - $b[0][0];
@@ -243,7 +267,7 @@ while (list($id, $data) = each(&$done)) {
       $paths[$row["pstart"]] = true;
       if ($row["pend"]) {
          $paths[$row["pend"]] = true;
-         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]]);
+         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"]);
       }
       else {
          $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
@@ -303,15 +327,20 @@ while (list($id, $data) = each(&$done)) {
                   print "[[Warning]] passage overlap ($s<=$last) - merging!\n";
                   fwrite($files[$pool],"  <!-- Warning: passage overlap ($s<=$last) - merging -->\n");
                }
+               if ($lp[1] >= $e) continue; // completly included in previous
                $error = true;
                $s = $lp[0];
-               $e = $lp[1] = max($lp[1],$e);
+               $lp[3] = $cp[$i][4];
             } else {
-               $passages[] = array($s, $e);
+               $passages[] = array($s, $e, $cp[$i][3], $cp[$i][4]);
             }
             print "  P[" . $s . ":" . $e . "]\n";
             $last = $e;
          }
+
+	foreach($passages as $psg) {
+		print "   <passage start=\"" . getXPointer($psg[2]) . "\" end=\"" . getXPointer($psg[2]) . "\"/>\n";
+        }
 
          foreach($j[$pool] as $path => $exh) {
             $rsize = 0;
