@@ -30,8 +30,12 @@ if (DB::isError($res)) fatal_error("DB error",$res);
 while ($row=$res->fetchRow()) {
    $row["enabled"] = $db_true == $row["enabled"];
    if (!is_array($topics[$row["topic"]])) $topics[$row["topic"]] = array(array(),array());
-   array_push($topics[$row["topic"]][$row["todo"] > 0 ? 0 : 1], "<a href=\"$base_url/pool?id_pool=$row[pool]\">$row[login]</a>");
-   ?><tr><td><img onclick="changeState(<?=$row["pool"]?>)" id="e-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["enabled"] ? "greenled" : "redled")?>" alt="<?=$row["enabled"]?"true" : "false"?>"/></td><td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row[done]?></td><td><?=$row[todo]?></td></tr><?
+   $login = $row["login"];
+   $is_done = ($row["todo"] == 0 && $row["done"] > 0) ? 1 : 0;
+   if (!is_array($logins[$login])) $logins[]  = array(0,0);
+   $logins[$login][$is_done]++;
+   array_push($topics[$row["topic"]][$is_done], "<a href=\"$base_url/pool?id_pool=$row[pool]\">$row[login]</a>");
+   ?><tr><td><img onclick="changeState(<?=$row["pool"]?>)" id="e-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["enabled"] ? "greenled" : "redled")?>" alt="<?=$row["enabled"]?"true" : "false"?>"/></td><td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row["done"]?></td><td><?=$row[todo]?></td></tr><?
 }
 ?></tbody></table><?
 
@@ -46,7 +50,12 @@ foreach($topics as $id => $status) {
  ?><tr><td><?=$id?></td><td><?=sizeof($status[1])?>
 <div style="font-size:small;"><?=implode(", ",$status[1])?></div></td><td><?=sizeof($status[0])?><div style="font-size:small;"><?=implode(", ",$status[0])?></div></td></tr><?
 }
-?></tbody></table><?
+?></tbody></table>
+
+<h2>Logins of finished pools</h2>
+<? foreach($logins as $login => $v) if ($v[0] == 0 && $v[1] > 0) print "<div>$login</div>"; ?>
+<?
+
 
 make_footer();
 
