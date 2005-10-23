@@ -77,7 +77,10 @@ fwrite($dtd_file,'
                               -->
 
 
-  <!ELEMENT file (element*)>
+  <!ELEMENT file ((passage+, element+)?)>
+  <!ELEMENT passage EMPTY>
+  <!ATTLIST passage start CDATA #REQUIRED end CDATA #REQUIRED size CDATA #REQUIRED>
+
   <!ELEMENT element EMPTY>
 
   <!ATTLIST assessments
@@ -141,11 +144,12 @@ function addPool(&$data) {
    global $outdir, $files;
    $dir = "$outdir/" . ($data[2] ? "done" : "in_progress") . "/topic-$data[1]";
    if (!is_dir($dir)) mkdir($dir);
+   if (isset($files[$data[0]])) exit("ERROR: file $data[0] is already opened!\n");
    $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
    fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
-$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename FROM filestatus, pools, files WHERE pools.id = idpool AND files.id = idfile AND state=? $restrict",array($state));
+$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename FROM filestatus, pools, files WHERE pools.id = idpool AND files.id = idfile AND state=? $restrict ORDER BY idpool",array($state));
 if (DB::isError($status)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
 
 $current = array(null);
@@ -220,7 +224,7 @@ function endElement($parser, $name) {
       $paths[$data[0]] = array($data[2], $pos);
       $last = &$stack[sizeof($stack)-1];
       if ($last[4] >= 0) { // it is an xrai:s tag
-        array_push($paths[$data[0]], "$last[2]/text()[$data[5]]", $data[2] - $last[4]);
+        array_push($paths[$data[0]], "$last[0]/text()[$last[5]]", $last[4]);
       }
    }
 }
@@ -230,11 +234,11 @@ function cdata($parser, $data) {
    $pos += strlen($data);
 }
 
-function getXPointer($path) {
+function getXPointer($path, $begin) {
    global $paths;
    $p = &$paths[$path];
    if (sizeof($p) < 3) return $path;
-   return "$p[3].$p[4]";
+   return "$p[2]." . ($p[$begin ? 0 : 1] - $p[3]);
 }
 
 
@@ -315,7 +319,10 @@ while (list($id, $data) = each(&$done)) {
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
       $error = false;
       $cp = &$p[$pool];
+
       if (is_array($cp)) {
+
+         // sort passages and remove overlapping passages (due to a bug in X-Rai)
          usort($cp,"psort_order");
          $passages = array();
          $last = -1;
@@ -330,16 +337,21 @@ while (list($id, $data) = each(&$done)) {
                if ($lp[1] >= $e) continue; // completly included in previous
                $error = true;
                $s = $lp[0];
+               $lp[1] = $e;
                $lp[3] = $cp[$i][4];
             } else {
-               $passages[] = array($s, $e, $cp[$i][3], $cp[$i][4]);
+               $passages[] = array($s, $e, $cp[$i][2], $cp[$i][3]);
             }
-            print "  P[" . $s . ":" . $e . "]\n";
+//          $lp = &$passages[sizeof($passages)-1];
+            print "  P[$s:$e]\n"; // . " / $lp[2], $lp[3]]\n";
             $last = $e;
          }
 
-	foreach($passages as $psg) {
-		print "   <passage start=\"" . getXPointer($psg[2]) . "\" end=\"" . getXPointer($psg[2]) . "\"/>\n";
+        // output the passages
+        foreach($passages as $psg) {
+//                 print "Output $psg[2] - $psg[3]\n";
+                 fwrite($files[$pool], "   <passage start=\"" . getXPointer($psg[2],true) . "\" end=\"" . getXPointer($psg[3],false)
+                                . "\" size=\"" . ($psg[1]-$psg[0]+1). "\"/>\n");
         }
 
          foreach($j[$pool] as $path => $exh) {
