@@ -13,10 +13,16 @@
 $remote=true;
 ignore_user_abort(false);
 set_time_limit(0);
-chdir("..");
+$old = getcwd();
+chdir(dirname(__FILE__) . "/..");
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 require_once("include/xslt.inc");
+chdir($old);
+
+define('ASSESSED',1);
+define('P_START',2);
+define('P_END',3);
 
 function argerror($s="") {
          print "$s";
@@ -141,16 +147,20 @@ function cp_cdata($parser, $data) {
 
 // $data = (idpool, idtopic, alldone, definition)
 function addPool(&$data) {
-   global $outdir, $files;
-   $dir = "$outdir/" . ($data[2] ? "done" : "in_progress") . "/topic-$data[1]";
-   if (!is_dir($dir)) mkdir($dir);
+   global $outdir, $files, $db_true;
    if (isset($files[$data[0]])) exit("ERROR: file $data[0] is already opened!\n");
+   $dir = "$outdir/" . ($data[2] ? "done" : "in_progress") . "/$data[4]";
+   if (!is_dir($dir)) mkdir($dir);
+   $dir = "$dir/" . ($data[5] ? "main" : "others");
+   if (!is_dir($dir)) mkdir($dir);
+   $dir = "$dir" . "/topic-$data[1]";
+   if (!is_dir($dir)) mkdir($dir);
    $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
-   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
+   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
-$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename FROM filestatus, pools, files WHERE pools.id = idpool AND files.id = idfile AND state=? $restrict ORDER BY idpool",array($state));
-if (DB::isError($status)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
+$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename, topics.type, main FROM filestatus, pools, files, topics WHERE topics.id = pools.idtopic AND pools.id = idpool AND files.id = idfile AND state=? $restrict ORDER BY idpool",array($state));
+if (DB::isError($status)) { print "Error.\n" . $status->getUserInfo() . "\n\nExiting\n"; exit(1); }
 
 $current = array(null);
 $alldone = true;
@@ -159,7 +169,7 @@ $done = array();
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
    if ($current[0] != $row["idpool"]) {
       if ($current[0] != null) addPool(&$current);
-      $current = array($row["idpool"],$row["idtopic"],true,null);
+      $current = array($row["idpool"],$row["idtopic"],true,null,$row["type"],$row["main"]  == $db_true);
       $def = $xrai_db->getOne("SELECT definition FROM $db_topics WHERE id=?",array($row["idtopic"]));
       if (DB::isError($def)) {
          print "Topic definion cannot be retrieved: " . $def->getUserInfo() . "\n";
@@ -201,7 +211,7 @@ addPool(&$current);
 // [ 0. path, 1. [ ranks (ie mapping tag name => integer) ], 2. start offset, 3. boolean (ancestor of an included node), 4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 5. # of non-contiguous xrai:s tags]
 
 function startElement($parser, $name, $attrs) {
-   global $stack, $pos;
+   global $stack, $pos, $paths, $nb_passages, $topicPassages, $highlight_only;
    $last = &$stack[sizeof($stack)-1];
 
    $rank = &$last[1][$name];
@@ -211,22 +221,56 @@ function startElement($parser, $name, $attrs) {
    } else $last[4] = -1;
 
    $path = $last[0] . "/{$name}[{$rank}]";
+   if ($highlight_only && is_array($topicPassages[$path])) {
+      $x = &$topicPassages[$path][0]; // a passage (the fifth element (idx = 4) is the pool id
+//       print "Size of starting passages is " . sizeof($x) . "\n";
+      for($k = 0; $k < sizeof($x); $k++) {
+         $nb_passages[$x[$k][4]]++;
+         if ($nb_passages[$x[$k][4]] > 1) print "WARNING: Number of passages is > 1 for topic " . $x[4][$k] . ": " . $nb_passages[$x[$k][4]] . "\n";
+
+      }
+   }
+//    print "PATH $path / $nb_passages passages\n";
    array_push($stack,array($path, array(), $pos, false, -1, 0));
 }
 
 function endElement($parser, $name) {
-   global $stack, $paths, $pos;
+   global $stack, $paths, $pos, $nb_passages, $topicPassages, $highlight_only, $j;
    $data = array_pop($stack);
 //    print "$data[0] has ($data[2],$pos)\n";
-   if ($data[3] || ($paths[$data[0]]) ) {
+
+   $path = $data[0];
+   if ($data[3] || ($paths[$path]) || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
       $i = sizeof($stack)-1;
-      while (($i>0) && (!$stack[$i][3])) { $stack[$i][3] = true; $i--; }
-      $paths[$data[0]] = array($data[2], $pos);
+      while (($i>0) && (!$stack[$i][3])) {
+         if ($highlight_only) { // we add an assessed elements for all the pools within a passage
+            foreach($nb_passages as $idpool => $count) {
+               if ($count > 0) {
+//                   print "ADDING [$count passage(s)] for $idpool THE PATH " . $stack[$i][0] . "\n";
+                  $j[$idpool][$stack[$i][0]] = 2;
+               }
+            }
+         }
+         $stack[$i][3] = true;
+         $i--;
+      }
+      $paths[$path] = array($data[2], $pos);
       $last = &$stack[sizeof($stack)-1];
       if ($last[4] >= 0) { // it is an xrai:s tag
         array_push($paths[$data[0]], "$last[0]/text()[$last[5]]", $last[4]);
       }
    }
+
+   // Remove passages
+   if ($highlight_only && is_array($topicPassages[$path])) {
+      $x = &$topicPassages[$path][1]; // a passage (the fifth element (idx = 4) is the pool id
+      for($k = 0; $k < sizeof($x); $k++) {
+         $nb_passages[$x[$k][4]]--;
+         if ($nb_passages[$x[$k][4]] < 0) print "WARNING: Number of passages is below 0 for topic " . $x[$k][4] . ": " . $nb_passages[$x[$k][4]] . "\n";
+         if ($nb_passages[$x[$k][4]] == 0) unset($nb_passages[$x[$k][4]]);
+      }
+   }
+
 }
 
 function cdata($parser, $data) {
@@ -258,6 +302,7 @@ $query = "SELECT assessments.exhaustivity, assessments.idpool, exhaustivity, pat
 reset($done);
 while (list($id, $data) = each(&$done)) {
    $paths = array();
+   $topicPassages = array(); // start-end of passages for the MM track (highlight only)
    $p = array(); // passages
    $j = array(); // judgments
    print "[In $data[0]/$data[1] ($id)]\n";
@@ -268,17 +313,25 @@ while (list($id, $data) = each(&$done)) {
 
    while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
       $idpool = $row["idpool"];
+
       if (!is_array($p[$idpool])) $p[$idpool] = array();
 
       if ($row["pend"]) {
+         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"], $idpool);
+         $psg = &$p[$idpool][sizeof($p[$idpool])-1];
+
+         if (!isset($topicPassages[$row["pstart"]])) $topicPassages[$row["pstart"]] = array(array(), array());
+         if (!isset($topicPassages[$row["pend"]])) $topicPassages[$row["pend"]] = array(array(),array());
+         array_push($topicPassages[$row["pstart"]][0], &$psg);
+         array_push($topicPassages[$row["pend"]][1], &$psg);
+
          $paths[$row["pstart"]] = true;
          $paths[$row["pend"]] = true;
-         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"]);
       } else {
-         $paths[$row["pstart"]] = true;
          $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
          // do some inference
          $path = $row["pstart"];
+         $paths[$path] = true;
          while ($path != "") {
             $path = preg_replace('#/[^/]+$#','',$path);
             if ($path == "") break;
@@ -296,6 +349,7 @@ while (list($id, $data) = each(&$done)) {
    if (sizeof($paths) > 0) {
       print "Parsing file $data[0]/$data[1] (" . sizeof($paths) . ")\n";
       $pos = 0;
+      $nb_passages = array();
       $stack = array(array("",array(),0,false));
       $xml_parser = xml_parser_create();
       xml_set_element_handler($xml_parser, "startElement", "endElement");
@@ -340,7 +394,7 @@ while (list($id, $data) = each(&$done)) {
                $error = true;
                $s = $lp[0];
                $lp[1] = $e;
-               $lp[3] = $cp[$i][4];
+               $lp[3] = $cp[$i][3];
             } else {
                $passages[] = array($s, $e, $cp[$i][2], $cp[$i][3]);
             }
@@ -356,7 +410,7 @@ while (list($id, $data) = each(&$done)) {
                                 . "\" size=\"" . ($psg[1]-$psg[0]+1). "\"/>\n");
         }
 
-         foreach($j[$pool] as $path => $exh) {
+         if ($j[$pool]) foreach($j[$pool] as $path => $exh) {
             $rsize = 0;
             $s = $paths[$path][0];
             $e = $paths[$path][1];

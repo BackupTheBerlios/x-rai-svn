@@ -14,19 +14,47 @@ function changeState(id) {
    var x = document.getElementById("changeStateFrame");
    x.src="<?=$base_url?>/iframe/change_state.php?idpool=" + id;
 }
+
+function changeMainAnswer() {
+ // if xmlhttp shows "loaded"
+
+ 
+   
+   x.alt = "<?=$old ? "false":"true"?>";
+}
+
+function changeMain(id) {
+  var xmlhttp=new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function() {
+     if (xmlhttp.readyState==4) {
+      // if "OK"
+      if (xmlhttp.status==200) {
+         var root = xmlhttp.responseXML.firstChild;
+         if (root.localName == "done") {
+             var x = document.getElementById("m-" + root.getAttribute("pool"));
+             x.src = "<?=$base_url?>/img/" + (root.getAttribute("value") == "false" ? "redled":"greenled");
+         } else alert("Error: " + root.firstChild.nodeValue);
+      } else alert("Problem retrieving XML data");
+   }
+  };
+  xmlhttp.open("GET","<?=$base_url?>/iframe/change_main.php?idpool=" + id,true);
+  xmlhttp.send(null);
+
+}
+
 </script>
 <?
 $res = $xrai_db->query("SELECT pools.id AS pool, pools.login as login, pools.idtopic as topic, ( SELECT count(*) AS count
            FROM filestatus
           WHERE filestatus.idpool = pools.id AND filestatus.status = 2) AS done, ( SELECT count(*) AS count
            FROM filestatus
-          WHERE filestatus.idpool = pools.id AND filestatus.status < 2) AS todo, enabled
+          WHERE filestatus.idpool = pools.id AND filestatus.status < 2) AS todo, enabled, main
    FROM pools
   WHERE pools.state::text = 'official' ORDER BY todo desc, done");
 
 $topics = array();
 if (DB::isError($res)) fatal_error("DB error",$res);
-?> <h1>Pools</h1><table class="stats"><thead><tr><th>Editable</th><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
+?> <h1>Pools</h1><table class="stats"><thead><tr><th>Main</th><th>Editable</th><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
 while ($row=$res->fetchRow()) {
    $row["enabled"] = $db_true == $row["enabled"];
    if (!is_array($topics[$row["topic"]])) $topics[$row["topic"]] = array(array(),array());
@@ -35,7 +63,9 @@ while ($row=$res->fetchRow()) {
    if (!is_array($logins[$login])) $logins[]  = array(0,0);
    $logins[$login][$is_done]++;
    array_push($topics[$row["topic"]][$is_done], "<a href=\"$base_url/pool?id_pool=$row[pool]\">$row[login]</a>");
-   ?><tr><td><img onclick="changeState(<?=$row["pool"]?>)" id="e-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["enabled"] ? "greenled" : "redled")?>" alt="<?=$row["enabled"]?"true" : "false"?>"/></td><td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row["done"]?></td><td><?=$row[todo]?></td></tr><?
+   ?><tr>
+<td><img onclick="changeMain(<?=$row["pool"]?>)" id="m-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["main"] ? "greenled" : "redled")?>" alt="<?=$row["main"]?"true" : "false"?>"/></td>
+<td><img onclick="changeState(<?=$row["pool"]?>)" id="e-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["enabled"] ? "greenled" : "redled")?>" alt="<?=$row["enabled"]?"true" : "false"?>"/></td><td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row["done"]?></td><td><?=$row[todo]?></td></tr><?
 }
 ?></tbody></table><?
 

@@ -82,9 +82,13 @@ CREATE TABLE pools (
     name text NOT NULL,
     state character varying(10) NOT NULL,
     enabled boolean NOT NULL,
-    login character varying(16) NOT NULL
+    login character varying(16) NOT NULL,
+    main boolean DEFAULT true,
+    CONSTRAINT unique_true_main UNIQUE (main),
+    CONSTRAINT true_main CHECK (main)
 ) WITHOUT OIDS;
 
+--- alter table pools add main boolean; alter table pools add constraint unique_true_main UNIQUE (idtopic,main);  alter table pools add constraint true_main check (main);
 
 --
 -- TOC entry 8 (OID 4150785)
@@ -147,6 +151,7 @@ CREATE TABLE topicelements (
     idtopic integer NOT NULL,
     idpath integer NOT NULL
 ) WITHOUT OIDS;
+
 
 
 --
