@@ -265,15 +265,17 @@ while (list($id, $data) = each(&$done)) {
 
    $list = $xrai_db->query($query . implode(",", $data[2]) . ")", $id);
    if (DB::isError($list)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
+
    while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
       $idpool = $row["idpool"];
       if (!is_array($p[$idpool])) $p[$idpool] = array();
-      $paths[$row["pstart"]] = true;
+
       if ($row["pend"]) {
+         $paths[$row["pstart"]] = true;
          $paths[$row["pend"]] = true;
          $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"]);
-      }
-      else {
+      } else {
+         $paths[$row["pstart"]] = true;
          $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
          // do some inference
          $path = $row["pstart"];
@@ -377,6 +379,7 @@ while (list($id, $data) = each(&$done)) {
             if ($rsize > $size)
                die("Specificity is > 1 ($spe)!?!\nfor $s:$e ($path) -> " . print_r($passages,true) );
 
+         if (!preg_match('#xrai:s#',$path))
             fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" size=\"$size\" rsize=\"$rsize\"/>\n");
          }
       }
