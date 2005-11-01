@@ -240,7 +240,7 @@ function endElement($parser, $name) {
 //    print "$data[0] has ($data[2],$pos)\n";
 
    $path = $data[0];
-   if ($data[3] || ($paths[$path]) || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
+   if ($data[3] || $paths[$path] || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
       $i = sizeof($stack)-1;
       while (($i>0) && (!$stack[$i][3])) {
          if ($highlight_only) { // we add an assessed elements for all the pools within a passage
@@ -256,8 +256,9 @@ function endElement($parser, $name) {
       }
       $paths[$path] = array($data[2], $pos);
       $last = &$stack[sizeof($stack)-1];
-      if ($last[4] >= 0) { // it is an xrai:s tag
-        array_push($paths[$data[0]], "$last[0]/text()[$last[5]]", $last[4]);
+      if ($last[4] >= 0) { // it is an xrai:s tag, we add an xpointer
+//          print "ADDED a xrai:s: $path, $data[2]\n";
+        array_push($paths[$path], "$last[0]/text()[$last[5]]", $last[4]);
       }
    }
 
@@ -314,24 +315,26 @@ while (list($id, $data) = each(&$done)) {
    while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
       $idpool = $row["idpool"];
 
-      if (!is_array($p[$idpool])) $p[$idpool] = array();
+
+      $paths[$row["pstart"]] = true;
 
       if ($row["pend"]) {
-         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"], $idpool);
-         $psg = &$p[$idpool][sizeof($p[$idpool])-1];
-
-         if (!isset($topicPassages[$row["pstart"]])) $topicPassages[$row["pstart"]] = array(array(), array());
-         if (!isset($topicPassages[$row["pend"]])) $topicPassages[$row["pend"]] = array(array(),array());
-         array_push($topicPassages[$row["pstart"]][0], &$psg);
-         array_push($topicPassages[$row["pend"]][1], &$psg);
-
-         $paths[$row["pstart"]] = true;
+         if (!is_array($p[$idpool])) $p[$idpool] = array();
          $paths[$row["pend"]] = true;
+         $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"], $idpool);
+
+         if ($highlight_only) {
+            $psg = &$p[$idpool][sizeof($p[$idpool])-1];
+            if (!isset($topicPassages[$row["pstart"]])) $topicPassages[$row["pstart"]] = array(array(), array());
+            if (!isset($topicPassages[$row["pend"]])) $topicPassages[$row["pend"]] = array(array(),array());
+            array_push($topicPassages[$row["pstart"]][0], &$psg);
+            array_push($topicPassages[$row["pend"]][1], &$psg);
+         }
+
       } else {
          $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
          // do some inference
          $path = $row["pstart"];
-         $paths[$path] = true;
          while ($path != "") {
             $path = preg_replace('#/[^/]+$#','',$path);
             if ($path == "") break;
@@ -384,10 +387,11 @@ while (list($id, $data) = each(&$done)) {
          $last = -1;
          for($i = 0; $i < sizeof($cp); $i++) {
             $s = $cp[$i][0][0]; $e =  $cp[$i][1][1];
+            if (!isset($s) || !isset($e)) { print "WARNING: skipping passage " . $cp[$i][2] . " - " . $cp[$i][3] . " (start ($s)/end ($e) empty)\n"; continue; }
             if ($s <= $last) {
                $lp = &$passages[sizeof($passages)-1];
                if ($s != $last) {
-                  print "[[Warning]] passage overlap ($s<=$last) - merging!\n";
+                  print "[[WARNING]] passage overlap ($s<=$last) - merging!\n";
                   fwrite($files[$pool],"  <!-- Warning: passage overlap ($s<=$last) - merging -->\n");
                }
                if ($lp[1] >= $e) continue; // completly included in previous
