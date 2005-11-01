@@ -156,7 +156,7 @@ function addPool(&$data) {
    $dir = "$dir" . "/topic-$data[1]";
    if (!is_dir($dir)) mkdir($dir);
    $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
-   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
+   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
 $status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename, topics.type, main FROM filestatus, pools, files, topics WHERE topics.id = pools.idtopic AND pools.id = idpool AND files.id = idfile AND state=? $restrict ORDER BY idpool",array($state));
