@@ -19,7 +19,7 @@ for table in "$@"; do
 
    LASTFILE="$DIR/last"
    CURRENT="$DIR/current"
-   /usr/bin/pg_dump --no-owner --schema $schema --table $table | /usr/bin/bzip2 -c > "$DIR/current"
+   /usr/bin/pg_dump -h localhost --no-owner --schema $schema --table $table | /usr/bin/bzip2 -c > "$DIR/current"
 
    if test -f "$LASTFILE" && /usr/bin/diff -q "$CURRENT" "$LASTFILE" > /dev/null
    then
