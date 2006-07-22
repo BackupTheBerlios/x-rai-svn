@@ -76,6 +76,10 @@ XRai.FINISHED = 2;
 // ========== Misc
 // ==========
 
+// Add action a with elements x and y
+XRai.addHistory = function(id, x, y) {
+   XRai.history.push(new Array(id,XRai.getTimeString(),x,y));
+}
 
 // *** Add/Remove a value in an array
 // A: no duplicate in the array
@@ -819,7 +823,7 @@ if (!document.implementation.hasFeature("Range", "2.0")) {
          var selection = window.getSelection();
          range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
          selection.collapseToStart();
-         return range.collapsed ? null : range;
+         return range && range.collapsed ? null : range;
       }
    } else {
       XRai.onmousedown = function(event) {
@@ -898,7 +902,7 @@ XRai.unhighlight = function() {
       if (sel == null) return;
       var x = sel.x;
       var y = sel.y;
-      XRai.history.push(new Array("U",XRai.getTimeString(),x,y));
+      XRai.addHistory("UNHIGH",x,y);
       if (debug) {
          if (debug) XRai.debug("\nUNHIGHLIGHTING START\n");
          if (debug) XRai.debug(XRai.getPath(x) + " -> " + XRai.getPath(y) + "\n");
@@ -976,9 +980,9 @@ XRai.highlight = function() {
       if (sel == null) return;
       var x = sel.x;
       var y = sel.y;
-      XRai.history.push(new Array("H",XRai.getTimeString(),x,y));
+      XRai.addHistory("HIGH",x,y);
       if (debug)
-         XRai.history.push(new Array("H",XRai.getTimeString(),x,y));
+         XRai.addHistory("HIGH",x,y);
 
       if (debug) {
          if (debug) XRai.debug("\nHIGHLIGHTING START\n");
@@ -1053,7 +1057,7 @@ XRai.dumpPassages = function() {
 }
 
 
-
+XRai.hasRelevant = function() { return XRai.firstPassage != null; }
 
 
 // ========== @p5
@@ -1478,9 +1482,9 @@ XRai.setAssessment = function(e, a, loading) {
 
       if (!loading) {
          if (e.passage)
-            XRai.history.push(new Array("A",XRai.getTimeString(),e.passage.start,e.passage.end));
+            XRai.addHistory("ASSESS",e.passage.start,e.passage.end);
          else
-            XRai.history.push(new Array("A",XRai.getTimeString(),e.parentNode,null));
+            XRai.addHistory("ASSESS",e.parentNode,null);
       }
       e.setAttribute("a",a);
       XRai.assessmentChanged(e);
@@ -1543,7 +1547,12 @@ XRai.assessmentChanged = function(a) {
 }
 
 XRai.hasChanged = function() {
-   return XRai.changeCount > 0 || (oldDocStatus != docStatus);
+   return XRai.changeCount > 0 || (XRai.originalBEP != XRai.BEPElement.parentNode) || (oldDocStatus != docStatus);
+}
+
+XRai.isConsistent = function() {
+  if (highlight_only) return !((XRai.BEPElement.parentNode != null) ^ XRai.hasRelevant());
+  return (docStatus == 1 && XRai.toAssess.length == 0);
 }
 
 XRai.updateSaveIcon = function() {
@@ -1560,7 +1569,8 @@ XRai.updateSaveIcon = function() {
    // Update the validation
    if (highlight_only) {
       if (docStatus == 2) XRai.setFinished(2);
-      else XRai.setFinished(1);
+      else if (XRai.isConsistent()) XRai.setFinished(1);
+      else XRai.setFinished(0);
    } else if (docStatus > 0) {
       if (docStatus == 2 && XRai.toAssess.length > 0) docStatus = 1;
       if (docStatus == 1 && XRai.toAssess.length == 0) { XRai.setFinished(1); }
@@ -1573,9 +1583,10 @@ XRai.updateSaveIcon = function() {
 XRai.onFinishClick = function() {
    var t = document.getElementById("finishImg");
    if (highlight_only) {
-     if (docStatus == 0) docStatus = 2; else docStatus = 0;
+     if (docStatus == 2 ) docStatus = 0; 
+     else if (XRai.isConsistent()) docStatus = 2;
    } else {
-     if (docStatus == 1 && XRai.toAssess.length == 0) { docStatus = 2; }
+     if (XRai.isConsistent()) { docStatus = 2; }
      else if (docStatus == 2) { docStatus = 1; }
    }
    XRai.updateSaveIcon();
@@ -1612,6 +1623,7 @@ XRai.saved = function(b) {
       XRai.assessmentsToRemove = new Array();
       XRai.history = new Array();
       XRai.changeCount = 0;
+      XRai.originalBEP = XRai.BEPElement.parentNode; 
       oldDocStatus = docStatus;
       for(var p = XRai.firstPassage; p; p = p.next) p.saved = p.validated ? Passage.VALIDATED : Passage.UNVALIDATED;
       for(var p = XRai.firstOldPassage; p; p = p.next) p.saved = Passage.OLDVALIDATED;
@@ -1678,6 +1690,7 @@ XRai.save = function() {
    XRai.saveForm.appendChild(createHiddenInput("hasrelevant",XRai.firstPassage != null));
 
    // Add history
+   XRai.addHistory("SAVE");
    for(var i = 0; i < XRai.history.length; i++) {
       var x = XRai.history[i];
       XRai.saveForm.appendChild(createHiddenInput("hist[]",x[0]+","+x[1]+","+ (x[2] ? XRai.getPath(x[2]) : "") + "," + (x[3] ? XRai.getPath(x[3]) : "")));
@@ -1711,6 +1724,9 @@ XRai.save = function() {
          XRai.saveForm.appendChild(createHiddenInput("a[]",s));
       }
    }
+   
+   // Add BEP
+   XRai.saveForm.appendChild(createHiddenInput("BEP",XRai.getPath(XRai.BEPElement.parentNode)));
 
    for(var p = XRai.firstOldPassage; p; p = p.next) {
       if (p.saved != Passage.OLDVALIDATED) {
@@ -1740,7 +1756,7 @@ XRai.save = function() {
 // Loading
 XRaiLoad = function() {
    if (document.implementation.hasFeature("XPath", "3.0")) {
-      this.xpe = new XPathEvaluator();
+      this.xpe = document; //new XPathEvaluator();
       this.nsResolver = this.xpe.createNSResolver(XRai.getRoot());
    }
 
@@ -1775,10 +1791,12 @@ XRaiLoad = function() {
    }
 
    this.resolvePath = function(path) {
-      if (path == "") return null;
+      if (path == "" || path == null || path == "null") return null;
       var x;
       if (this.xpe) {
-         x = this.xpe.evaluate("." + path.replace(/\/(?!xrai:)/g,"/xraic:"), XRai.getRoot().parentNode, this.nsResolver, 0, null).iterateNext();
+       path = "." + path.replace(/\/(?!xrai:)/g,"/xraic:");
+       if (debug) XRai.debug("Evaluating " + path);
+         x = this.xpe.evaluate(path, XRai.getRoot().parentNode, this.nsResolver, 0, null).iterateNext();
          return x;
       }
       stack = path.split("/");
@@ -1822,6 +1840,18 @@ XRaiLoad = function() {
          this.loadErrors++;
       } else {
          ePath.setAttribute("support",1);
+      }
+   }
+		 
+   this.setBEP = function(path) {
+      if (path == "" || path == null || path == "null") return;
+      var ePath = this.resolvePath(path);
+      if (!ePath) {
+         if (debug) XRai.debug("Error (BEP): path not resolved " + ePath  + "/" + path + "\n");
+         this.loadErrors++;
+      } else {
+         XRai.originalBEP = ePath;
+         XRai.setBEP(ePath);
       }
    }
 
@@ -1934,6 +1964,19 @@ XRai.erase = function() {
    }
 }
 
+XRai.hasFocus = true;
+
+XRai.onfocus = function(event) {
+ if (XRai.hasFocus) return;
+ XRai.hasFocus = true;
+ XRai.addHistory("FOCUS");
+}
+XRai.onblur= function(event) {
+ if (!XRai.hasFocus) return;
+ XRai.hasFocus = false;
+ XRai.addHistory("BLUR");
+}
+
 // Called when the XML is loaded
 XRai.init = function() {
    if (XRai.onmousedown) {
@@ -1943,9 +1986,10 @@ XRai.init = function() {
    if (XRai.numberNodes) XRai.numberNodes();
 
    XRai.loaded = true;
-   XRai.history.push(new Array("L",XRai.getTimeString(),null,null));
+   XRai.addHistory("LOAD");
+   window.addEventListener("blur", XRai.onblur, true);
+   window.addEventListener("focus", XRai.onfocus, true);
 }
-
 
 
 
@@ -1954,11 +1998,13 @@ XRai.init = function() {
 
 XRai.BEPMode = false;
 XRai.highlightedBEP = null;
+XRai.originalBEP = null;
 
 XRai.BEPElement = document.createElementNS(htmlns, "img");
 XRai.BEPElement.setAttribute("src", base_url + "/img/bep.png");
 XRai.BEPElement.setAttribute("title","Best Entry Point");
 XRai.BEPElement.setAttribute("alt","[BEP]");
+XRai.BEPElement.setAttribute("style","border: 1px solid red;");
 
 // This handler is called when the mouse moves
 XRai.bep_mouseover = function(event) {
@@ -1986,26 +2032,36 @@ XRai.bep_mouseup = function(event) {
    while (x && !XRai.isInDocument(x)) x = x.parentNode;
    if (!x) return;
 
-   var p = XRai.BEPElement.parentNode;
-   if (p) p.removeChild(XRai.BEPElement);
-   x.insertBefore(XRai.BEPElement, x.firstChild);
+   XRai.setBEP(x, true);
+   XRai.toggleBEPMode();
 }
 
+XRai.setBEP = function(x, addToHistory) {
+   var p = XRai.BEPElement.parentNode;
+   if (p) p.removeChild(XRai.BEPElement);
+   if (x) x.insertBefore(XRai.BEPElement, x.firstChild);
+   XRai.updateSaveIcon();
+   if (addToHistory) XRai.addHistory("BEP", x);
+}
 
 // This function is called when the judge clicks on
 // the "BEP button"
 XRai.toggleBEPMode = function(event) {
-   if (!XRai.loaded) return;
+   if (!XRai.loaded || docStatus == 2) return;
    
    if (!XRai.BEPMode) {
+      XRai.addHistory("BEP-ON");
       XRai.getRoot().addEventListener("mouseover",XRai.bep_mouseover,false);
       XRai.getRoot().addEventListener("mouseout",XRai.bep_mouseout,false);
       XRai.getRoot().addEventListener("mouseup",XRai.bep_mouseup,false);
-      XRai.getRoot().parentNode.style.cursor = "url(" + base_url + "/img/bep.cur),crosshair";
+      XRai.getRoot().parentNode.style.cursor = "url(" + base_url + "/img/bep.png),crosshair";
    } else {
+      XRai.addHistory("BEP-OFF");
       XRai.getRoot().removeEventListener("mouseover",XRai.bep_mouseover,false);
       XRai.getRoot().removeEventListener("mouseout",XRai.bep_mouseout,false);
       XRai.getRoot().removeEventListener("mouseup",XRai.bep_mouseup,false);
+      XRai.getRoot().parentNode.style.cursor = null;
+      XRai.bep_mouseout();
    }
    
    XRai.BEPMode = !XRai.BEPMode;

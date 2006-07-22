@@ -9,6 +9,7 @@ $collection=$_REQUEST["collection"];
 $aversion=&$_REQUEST["aversion"];
 $toadd=&$_REQUEST["a"];
 $toremove=&$_REQUEST["r"];
+$bep=&$_REQUEST["BEP"];
 $id_pool=&$_REQUEST["id_pool"];
 $docstatus=&$_REQUEST["docstatus"];
 $hasrelevant=&$_REQUEST["hasrelevant"];
@@ -19,7 +20,7 @@ $hist=&$_REQUEST["hist"];
 <head><title>Assessment</title></head>
 <body>
 <script type="text/javascript">
-   var ref = window.parent;
+   var ref = window.opener ? window.opener : window.parent;
    ref.setSavingMessage("Connected");
 </script>
 
@@ -57,6 +58,10 @@ if (DB::isError($assessments)) {
       $res = $assessments->setStatus($docstatus);
       if (DB::isError($res)) break;
       $res = $assessments->setHasRelevant($hasrelevant);
+      if (DB::isError($res)) break;
+      
+      if ($do_debug) print "<div>BEP is $bep</div>";
+      $res = $assessments->setBEP($bep);
       if (DB::isError($res)) break;
 
       if (is_array($toremove)) foreach($toremove as $a) {

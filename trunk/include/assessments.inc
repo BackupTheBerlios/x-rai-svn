@@ -32,11 +32,11 @@ class Files {
 /** Access to the paths db */
 class Paths {
      function getPathId($path, $create = false) {
-      global $xrai_db, $db_paths;
+      global $xrai_db, $db_paths, $create_paths;
       if (!is_string($path)) $path = "";
       $id = $xrai_db->getOne("SELECT id FROM $db_paths WHERE path=?",array($path));
       if (!$id) {
-         if (!$create && $path != "") {
+         if (!($create || $create_paths) && $path != "") {
             print "<div>Path $path not found</div>\n";
             return -1;
          }
@@ -52,13 +52,14 @@ class Paths {
 
 /** Access to the assessments db */
 class Assessments {
-   function Assessments($idPool, $idFile, $version, $status, $inpool, $hasrelevant) {
+   function Assessments($idPool, $idFile, $version, $status, $inpool, $hasrelevant, $bep) {
       $this->version = $version;
       $this->idPool = $idPool;
       $this->idFile = $idFile;
       $this->status = $status;
       $this->inpool = $inpool;
       $this->hasRelevant = $hasrelevant;
+      $this->bep = $bep;
    }
 
    function create($idPool, $collection, $file) {
@@ -66,19 +67,22 @@ class Assessments {
       $idFile = Files::getFileId($collection,$file);
       if (DB::isError($idFile)) return $idFile;
 
-      $statusrow = $xrai_db->getRow("SELECT version, status, inpool, hasrelevant FROM $db_filestatus WHERE idfile=? AND idpool=?",array($idFile,$idPool),DB_FETCHMODE_ROW);
+      $statusrow = $xrai_db->getRow("SELECT version, status, inpool, hasrelevant, bep FROM $db_filestatus WHERE idfile=? AND idpool=?",array($idFile,$idPool),DB_FETCHMODE_ROW);
       if (DB::isError($statusrow)) return $statusrow;
-
+      
+      
       if (!is_array($statusrow)) {
          $version = 0;
          $status = 0;
          $inpool = false;
+	 $bep = Paths::getPathId("", true);
+	 if (DB::isError($bep)) return $bep;
       } else {
-         list($version,$status,$inpool,$hasrelevant) = $statusrow;
+         list($version,$status,$inpool,$hasrelevant,$bep) = $statusrow;
          $inpool = ($db_true == $inpool);
          $hasrelevant= $db_true == $hasrelevant;
       }
-      return new Assessments($idPool, $idFile, $version, $status, $inpool, $hasrelevant);
+      return new Assessments($idPool, $idFile, $version, $status, $inpool, $hasrelevant, $bep);
    }
 
    function &getCursor() {
@@ -124,6 +128,22 @@ class Assessments {
       }
       return true;
    }
+   
+   function getBEP() {
+	global $xrai_db;
+	return $xrai_db->getOne("SELECT path FROM paths WHERE id=?",array($this->bep));
+	return $this->bep;
+   }
+   
+   function setBEP($path) {
+      global $xrai_db, $db_filestatus;
+      $bep = Paths::getPathId($path); if (DB::isError($bep)) return $bep;
+      if ($this->bep != $bep) {
+         $this->bep = $bep;
+         return  $xrai_db->autoExecute($db_filestatus,array("bep" => $this->bep),DB_AUTOQUERY_UPDATE," idfile={$this->idFile} AND idpool={$this->idPool}");
+      }
+      return true;
+   }
 
    function setHasRelevant($hasrelevant) {
       global $xrai_db, $db_filestatus;
@@ -139,7 +159,7 @@ class Assessments {
       $this->version++;
       if ($this->version > 1)
          return $xrai_db->autoExecute($db_filestatus,array("version" => $this->version),DB_AUTOQUERY_UPDATE," idfile={$this->idFile} AND idpool={$this->idPool}");
-      return $xrai_db->autoExecute($db_filestatus,array("version" => $this->version, "idfile" => $this->idFile, "idpool" => $this->idPool));
+      return $xrai_db->autoExecute($db_filestatus,array("version" => $this->version, "idfile" => $this->idFile, "idpool" => $this->idPool, "bep" => $this->bep));
    }
 
    function getVersion() { return $this->version; }

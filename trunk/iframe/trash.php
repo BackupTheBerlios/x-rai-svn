@@ -30,7 +30,7 @@ for($zzz = true; $zzz; $zzz = false) {
    if (DB::isError($res)) break;
    $res = $xrai_db->query("DELETE FROM $db_filestatus WHERE idpool=? AND idfile=? AND not(inpool)",array($idpool,$idfile));
    if (DB::isError($res)) break;
-   $res = $xrai_db->autoExecute($db_history, array("idpool" => $idpool, "idfile" => $idfile, "action" => "E", "time" => $_REQUEST["time"]));
+   $res = $xrai_db->autoExecute($db_history, array("idpool" => $idpool, "idfile" => $idfile, "action" => "ERASE", "time" => $_REQUEST["time"]));
 
    if (DB::isError($res)) break;
    $res = $xrai_db->commit();

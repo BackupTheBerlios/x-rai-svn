@@ -18,7 +18,7 @@ CREATE TABLE assessments (
     startpath integer NOT NULL,
     endpath integer NOT NULL,
     idpool integer NOT NULL
-);
+) without OID;
 
 
 
@@ -56,18 +56,9 @@ CREATE TABLE files (
     parent integer,
     pre integer,
     post integer
-);
-
-
-
---
--- Name: TABLE files; Type: COMMENT; Schema: inex_2006; Owner: inex
---
+) without OID;
 
 COMMENT ON TABLE files IS 'Files index by id';
-
-
-SET default_with_oids = true;
 
 --
 -- Name: paths; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -78,13 +69,6 @@ CREATE TABLE paths (
     path character varying(255) NOT NULL
 );
 ALTER TABLE ONLY paths ALTER COLUMN id SET STATISTICS 1;
-
-
-
---
--- Name: TABLE paths; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON TABLE paths IS 'Paths indexed by an ID';
 
 
@@ -94,10 +78,6 @@ COMMENT ON TABLE paths IS 'Paths indexed by an ID';
 
 CREATE VIEW assessmentsview AS
     SELECT assessments.exhaustivity, assessments.idpool, files.collection, files.filename, pathsstart."path" AS startpart, pathsend."path" AS endpath FROM (((assessments JOIN paths pathsstart ON ((assessments.startpath = pathsstart.id))) JOIN paths pathsend ON ((assessments.endpath = pathsend.id))) JOIN files ON ((assessments.idfile = files.id)));
-
-
-
-SET default_with_oids = false;
 
 --
 -- Name: filestatus; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -110,47 +90,23 @@ CREATE TABLE filestatus (
     inpool boolean DEFAULT false NOT NULL,
     status smallint DEFAULT 0 NOT NULL,
     hasrelevant boolean DEFAULT false NOT NULL,
+    bep int NOT NULL,
     CONSTRAINT "validVersion" CHECK (("version" > 0))
-);
+) WITHOUT OID;
 
+ALTER TABLE filestatus ADD CONSTRAINT bep_path FOREIGN KEY (bep) REFERENCES paths(id) ON UPDATE CASCADE;
 
-
---
--- Name: TABLE filestatus; Type: COMMENT; Schema: inex_2006; Owner: inex
---
 
 COMMENT ON TABLE filestatus IS 'Keeps information about the assessment process';
-
-
---
--- Name: COLUMN filestatus.version; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON COLUMN filestatus.version IS 'Current version of the file.';
-
-
---
--- Name: COLUMN filestatus.inpool; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON COLUMN filestatus.inpool IS 'Was the file in the original pool?';
-
-
---
--- Name: COLUMN filestatus.status; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON COLUMN filestatus.status IS '0 = highlighting, 1 = assessing, 2 = done';
-
-
---
--- Name: COLUMN filestatus.hasrelevant; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON COLUMN filestatus.hasrelevant IS 'Flag to know if there is some highlighted passages in the file';
 
 
-SET default_with_oids = true;
+--- BEP
+
+
 
 --
 -- Name: history; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -162,19 +118,10 @@ CREATE TABLE history (
     startpath integer,
     endpath integer,
     "time" numeric(14,0) NOT NULL,
-    "action" character(3) NOT NULL
+    "action" character(10) NOT NULL
 );
 
-
-
---
--- Name: TABLE history; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON TABLE history IS 'Log the assessor actions';
-
-
-SET default_with_oids = false;
 
 --
 -- Name: keywords; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 

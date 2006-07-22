@@ -8,7 +8,7 @@ function collectionStartDocument($collection,$file,$title) {
 function collectionStartElement($name, &$attrs) {
   global $base_url;
    if ($name == "image") {
-      print "<html:img alt=\"[img]\"  src=\"$base_url/img/bep\">"; //<html:div style='display: none'>";
+      print "<html:img alt=\"[img]\" title=\"\" src=\"$base_url/img/xxx\">"; //<html:div style='display: none'>";
    } 
 }
 

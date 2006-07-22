@@ -90,6 +90,7 @@ if ($id_pool > 0) {
    if (DB::isError($assessments))
       fatal_error("Error retrieving assessments",$assessments->getUserInfo());
    $cursor = &$assessments->getCursor();
+   $bep = $assessments->getBEP();
    if (DB::isError($cursor)) fatal_error("Could not retrieve assessments",$cursor->getUserInfo());
 
 }
@@ -176,6 +177,9 @@ div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
 <?=$xraiatag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
 <?=$xraiatag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
 
+* [xrai_BEP][marked] { 
+	background: no-repeat top left url(<?=$base_url?>/img/bep.png) yellow !important;
+}
 
 * [xrai_BEP] { 
 	background: no-repeat top left url(<?=$base_url?>/img/bep.png);
@@ -303,12 +307,12 @@ $load_errors = 0;
 
 
 function startElement($parser, $name, $attrs) {
-   global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors;
+   global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors, $xrains;
 
    if (function_exists("collectionPreStartElement")) collectionPreStartElement($name, $attrs);
 
    print "<$name";
-   if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns=\"$documentns\"";
+   if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns:xrai=\"$xrains\" xmlns=\"$documentns\"";
    $depth++;
    foreach($attrs as $aname => $value) {
       print " $aname=\"$value\"";
@@ -421,6 +425,7 @@ if ($write_access) {
 <? } ?>
       <span>
          <img  onclick="XRai.toggleBEPMode()" src="<?=$base_url?>/img/bep.png" alt="BEP" title="Set the BEP."/>
+         <img  onclick="XRai.setBEP(null, true)" src="<?=$base_url?>/img/nobep.png" alt="delete BEP" title="Remove the BEP."/>
 	 <img id="finishImg" onclick="XRai.onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
          <? if (!$highlight_only) { ?>&#8226; <span title="Unkown assessments" id="UnknownA">0</span><?}?>
       </span>
@@ -497,6 +502,7 @@ if ($id_pool > 0) {
    ?><script type="text/javascript">
    XRai.init();
    var load = new XRaiLoad();
+   load.setBEP("<?=$bep?>");
    <?
    while ($row=&$cursor->fetchRow(DB_FETCHMODE_ASSOC)) {
       ?>load.add("<?=$row[startxpath]?>","<?=$row[endxpath]?>","<?=$row[exhaustivity]?>");
