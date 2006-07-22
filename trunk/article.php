@@ -116,18 +116,21 @@ if ($id_pool > 0) {
   var xraiatag = "<?=$xraiatag?>";
   var highlight_only = <?=$highlight_only?"true":"false"?>;
   var goto_url = "<?="$_SERVER[PHP_SELF]?id_pool=$id_pool&amp;view_jump=1&amp;viewpos=$viewpos"?>";
+  var docStatus;
+  var oldDocStatus;
 
 <? if ($id_pool > 0) { ?>
    var id_pool = <?=$id_pool?>;
    var id_topic = "<?=$id_topic?>";
    var writeAccess = true;
    aversion = <?=$assessments->getVersion()?>;
-   var docStatus = "<?=abs($assessments->getDone())?>";
-   var oldDocStatus = docStatus;
+   docStatus = "<?=abs($assessments->getDone())?>";
+   oldDocStatus = docStatus;
 <? } ?>
 
 </script>
 <script language="javascript"  src="<?=$base_url?>/js/article.js"/>
+<script language="javascript"  src="<?=$base_url?>/collection/<?=$collection?>.js"/>
 <script language="javascript">
   document.onkeypress = XRai.keypressed;
   window.onbeforeunload = XRai.beforeunload;
@@ -172,6 +175,11 @@ div#inex[mode="highlight"] <?=$xraiatag?> { display: none; }
 <?=$xraiatag?>[missing]:after { content: url(<?=$base_url?>/img/warning.png); }
 <?=$xraiatag?>[deepmissing]:after { content: url(<?=$base_url?>/img/deepwarning.png); }
 <?=$xraiatag?>[missing][deepmissing]:after { content: url(<?=$base_url?>/img/warning.png) url(<?=$base_url?>/img/deepwarning.png); }
+
+
+* [xrai_BEP] { 
+	background: no-repeat top left url(<?=$base_url?>/img/bep.png);
+}
 
 
 </style>
@@ -281,6 +289,11 @@ if ($id_pool > 0) {
 // Functions called by the PHP (XML+XSL) file
 // ==========================================
 
+@include("collection/$collection.inc");
+
+if (function_exists("collectionStartDocument")) {
+	collectionStartDocument($collection,$file,$title);
+} 
 
 print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
@@ -288,10 +301,12 @@ print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection
 $stack = Array();
 $load_errors = 0;
 
-include("collection/$collection.inc");
 
 function startElement($parser, $name, $attrs) {
    global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors;
+
+   if (function_exists("collectionPreStartElement")) collectionPreStartElement($name, $attrs);
+
    print "<$name";
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns=\"$documentns\"";
    $depth++;
@@ -313,8 +328,8 @@ function endElement($parser, $name) {
    global $depth, $stack;
    $depth--;
    array_pop($stack);
-   print "</$name>";
    if (function_exists("collectionEndElement")) collectionEndElement($name);
+   print "</$name>";
 }
 
 function cdata($parser, $data) {
@@ -337,17 +352,29 @@ $xml_parser = xml_parser_create();
 xml_set_element_handler($xml_parser, "startElement", "endElement");
 xml_set_character_data_handler($xml_parser, "cdata");
 xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
-if (!($fp = fopen("$xml_documents/$collection/$file.xml", "r")))
+
+
+if (function_exists("getArticle")) {
+  if (!($fp = getArticle("$collection","$file")))
+     die("could not open XML input");
+} else if (!($fp = fopen("$xml_documents/$collection/$file.xml", "r")))
    die("could not open XML input");
 
 
+$count = 0;
 while ($data = fread($fp, 4096)) {
+   $count += strlen($data);
    if (!xml_parse($xml_parser, $data, feof($fp))) {
        die(sprintf("XML error: %s at line %d",
                    xml_error_string(xml_get_error_code($xml_parser)),
                    xml_get_current_line_number($xml_parser)));
    }
 }
+
+if ($count == 0) {
+   print "<div class='error'>Error: empty document</div>";
+}
+
 xml_parser_free($xml_parser);
 
 print "</div>";
@@ -393,7 +420,8 @@ if ($write_access) {
       </span>
 <? } ?>
       <span>
-         <img id="finishImg" onclick="XRai.onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
+         <img  onclick="XRai.toggleBEPMode()" src="<?=$base_url?>/img/bep.png" alt="BEP" title="Set the BEP."/>
+	 <img id="finishImg" onclick="XRai.onFinishClick()" src="<?=$base_url?>/img/disabled_nok.png" alt="Finish" title="Set this article as assessed."/>
          <? if (!$highlight_only) { ?>&#8226; <span title="Unkown assessments" id="UnknownA">0</span><?}?>
       </span>
    </span>

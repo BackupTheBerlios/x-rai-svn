@@ -17,7 +17,7 @@ require_once("include/xslt.inc");
 $PHP_SELF = $_SERVER["PHP_SELF"];
 set_time_limit(360); // Time limit = 6 minutes
 
-preg_match('#^/([^/]*)(?:|/(.*))$#',$_SERVER["PATH_INFO"], $matches);
+preg_match('#^/([^/]*)(?:|/(.*[^\/])/?)$#',$_SERVER["PATH_INFO"], $matches);
 $collection = $matches[1];
 $path = $matches[2];
 if (!$path) $path ="";
@@ -47,7 +47,21 @@ $up_url = $localisation[sizeof($localisation)-2][1];
 
 make_header("$title");
 $xslfilename = dirname(__FILE__) . "/xsl/$xslname.xsl";
-$xmlfilename = "$xml_documents/$_SERVER[PATH_INFO]/index.xrai";
+
+
+
+$aPath =  "/$collection" . ($path != "" ? "/$path" : ""); 
+if (is_file("$xrai_documents$aPath.xrai")) {
+	$xmlfilename = "$xml_documents/$aPath.xrai";
+	$thebasepath = $_SERVER["SCRIPT_NAME"] . preg_replace("#/[^/]+$#","", $aPath);
+	if (preg_match("#/#",$basepath)) $basepath = preg_replace("#/[^/]+$#","",$basepath);
+	else $basepath = "";
+} else {
+
+	$xmlfilename = "$xrai_documents$aPath/index.xrai";
+	$thebasepath = $_SERVER["SCRIPT_NAME"] . $aPath;
+}
+// print "***$thebasepath***<br/>";
 
 // --- Retrieve assessments ---
 
@@ -94,10 +108,10 @@ function xmlspecialchars($s) {
 }
 
 function begin_subcollection($path) {
-  global $PHP_SELF, $id_pool, $basepath;
+  global $PHP_SELF, $id_pool, $thebasepath;
   $id = get_full_path($basepath, $path);
   print_assessments($id);
-   print "<a id=\"" . xmlspecialchars($id) . "\" href=\"$PHP_SELF/$path?id_pool=$id_pool\"> ";
+   print "<a id=\"" . xmlspecialchars($id) . "\" href=\"$thebasepath/$path?id_pool=$id_pool\"> ";
 }
 
 function end_subcollection() { print "</a>"; }

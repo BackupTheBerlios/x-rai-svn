@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-chdir("..");
+chdir(dirname(__FILE__) . "/..");
 
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");

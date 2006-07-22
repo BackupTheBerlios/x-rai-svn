@@ -19,16 +19,18 @@ while ($i < sizeof($_SERVER["argv"])) {
    }
 }
 
-$collection = $_SERVER["argv"][$i];
-$title=$_SERVER["argv"][$i+1];
-$basedir=realpath($_SERVER["argv"][$i+2]);
-chdir("..");
+chdir(dirname(__FILE__) . "/..");
 
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 
 if (sizeof($_SERVER["argv"])-$i != 3)
-   die("xrai2sql [-nopaths] <collection id> <collection title> <collection base dir>\n");
+   die("addCollection [-nopaths] <collection id> <collection title> <collection base dir>\n");
+
+$collection = $_SERVER["argv"][$i];
+$title=$_SERVER["argv"][$i+1];
+$basedir=realpath($_SERVER["argv"][$i+2]);
+
 if (!is_dir($basedir))
    die("'$basedir' is not a directory\n");
 
@@ -86,9 +88,10 @@ function parseXML($file) {
       die("could not open XML input");
    while ($data = fread($fp, 4096)) {
       if (!xml_parse($xml_parser, $data, feof($fp))) {
-         die(sprintf("XML error: %s at line %d",
+         die(sprintf("XML error: %s at line %d in %s\n",
                      xml_error_string(xml_get_error_code($xml_parser)),
-                     xml_get_current_line_number($xml_parser)));
+                     xml_get_current_line_number($xml_parser),
+                     $file));
       }
    }
    xml_parser_free($xml_parser);
@@ -116,6 +119,7 @@ function startElement($parser, $name, $attrs) {
          $path = "$currentdir/$attrs[path]";
           if (!is_file($path)) {
             if (is_dir("$path")) { $path .= "/index.xrai"; }
+	    else $path = "$path.xrai";
           }
           if (!is_file($path)) die("Can't find subcollection with path $path (search for $path{.xrai,index,})\n");
           $currentdir = dirname($path);
@@ -170,6 +174,7 @@ function cdata($parser, $data) {
 
 
 function parse($xraifile) {
+   set_time_limit(360);
    $xml_parser = xml_parser_create();
    xml_set_element_handler($xml_parser, "startElement", "endElement");
    xml_set_character_data_handler($xml_parser, "cdata");
@@ -178,9 +183,9 @@ function parse($xraifile) {
       die("could not open XML input");
    while ($data = fread($fp, 4096)) {
       if (!xml_parse($xml_parser, $data, feof($fp))) {
-         die(sprintf("XML error: %s at line %d",
+         die(sprintf("XML error: %s at line %d in %s\n",
                      xml_error_string(xml_get_error_code($xml_parser)),
-                     xml_get_current_line_number($xml_parser)));
+                     xml_get_current_line_number($xml_parser), $xraifile));
       }
    }
    xml_parser_free($xml_parser);
@@ -192,4 +197,5 @@ startElement(null,"subcollection",array());
 cdata(null,$title);
 endElement(null,"subcollection");
 
+print "Done.\n";
 ?>

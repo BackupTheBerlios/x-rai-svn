@@ -239,6 +239,7 @@ function check_valid_pool() {
 
 require_once("./include/settings.inc");
 $is_root = $root_users[$inex_user];
+if (!isset($xrai_documents)) $xraidocuments = $xmldocuments;
 
 // Connection to database
 $xrai_db = &DB::connect($xrai_dsn);

@@ -51,7 +51,7 @@ if (DB::isError($assessments)) {
 } else {
    // Start the transaction
    $xrai_db->autoCommit(false);
-   for($aaaa = true; $aaaa; $aaaa = false) { // useful for the breaking the process without exceptions
+   for($aaaa = true; $aaaa; $aaaa = false) { // useful for breaking the process without exceptions
       $res = $assessments->setNextVersion();
       if (DB::isError($res)) break;
       $res = $assessments->setStatus($docstatus);

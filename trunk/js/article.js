@@ -13,6 +13,7 @@
 
 XRai.loaded = false;
 XRai.noSave = !write_access; // no save prevent the assessments from being saved (error)...
+var htmlns = document.documentElement.namespaceURI;
 
 // Find the position of an XML node in the page:
 //    var x = document.getBoxObjectFor(event.target);
@@ -196,7 +197,7 @@ XRai.findHighlighted = function(x) {
 
 XRai.onclick = function(event) {
    if (!event) return;
-   if (docStatus >= 1) {
+   if (docStatus && docStatus >= 1) {
       var t = event.target;
       if (t.localName == xraiatag && t.namespaceURI == xrains) {
       if (event.shiftKey) {
@@ -205,9 +206,9 @@ XRai.onclick = function(event) {
             XRai.showEvalPanel(t,event.pageX, event.pageY);
          }
       }
-/*      var x = XRai.findHighlighted(XRai.isInDocument(event.target) ? event.target : XRai.previous(event.target));
-      if (x) XRai.showEvalPanel(x,event.pageX,event.pageY);*/
   }
+
+  if (collectionOnClick) return collectionOnClick(event);
 }
 
 XRai.onmouseover = function(event) {
@@ -1944,3 +1945,69 @@ XRai.init = function() {
    XRai.loaded = true;
    XRai.history.push(new Array("L",XRai.getTimeString(),null,null));
 }
+
+
+
+
+
+// =================== @p7 BEP handling
+
+XRai.BEPMode = false;
+XRai.highlightedBEP = null;
+
+XRai.BEPElement = document.createElementNS(htmlns, "img");
+XRai.BEPElement.setAttribute("src", base_url + "/img/bep.png");
+XRai.BEPElement.setAttribute("title","Best Entry Point");
+XRai.BEPElement.setAttribute("alt","[BEP]");
+
+// This handler is called when the mouse moves
+XRai.bep_mouseover = function(event) {
+   var x = event.target;
+   if (x.nodeType == Node.TEXT_NODE) x = x.parentNode;
+   while (x && !XRai.isInDocument(x)) x = x.parentNode;
+   if (!x) return;
+   if (XRai.highlightedBEP) XRai.highlightedBEP.removeAttribute("xrai_BEP");
+   x.setAttribute("xrai_BEP",1);
+   XRai.highlightedBEP = x;
+}
+
+
+XRai.bep_mouseout = function(event) {
+   if (XRai.highlightedBEP) {
+   	XRai.highlightedBEP.removeAttribute("xrai_BEP");
+	XRai.highlightedBEP = null;
+   }
+}
+
+// The user clicked
+XRai.bep_mouseup = function(event) {
+   var x = event.target;
+   if (x.nodeType == Node.TEXT_NODE) x = x.parentNode;
+   while (x && !XRai.isInDocument(x)) x = x.parentNode;
+   if (!x) return;
+
+   var p = XRai.BEPElement.parentNode;
+   if (p) p.removeChild(XRai.BEPElement);
+   x.insertBefore(XRai.BEPElement, x.firstChild);
+}
+
+
+// This function is called when the judge clicks on
+// the "BEP button"
+XRai.toggleBEPMode = function(event) {
+   if (!XRai.loaded) return;
+   
+   if (!XRai.BEPMode) {
+      XRai.getRoot().addEventListener("mouseover",XRai.bep_mouseover,false);
+      XRai.getRoot().addEventListener("mouseout",XRai.bep_mouseout,false);
+      XRai.getRoot().addEventListener("mouseup",XRai.bep_mouseup,false);
+      XRai.getRoot().parentNode.style.cursor = "url(" + base_url + "/img/bep.cur),crosshair";
+   } else {
+      XRai.getRoot().removeEventListener("mouseover",XRai.bep_mouseover,false);
+      XRai.getRoot().removeEventListener("mouseout",XRai.bep_mouseout,false);
+      XRai.getRoot().removeEventListener("mouseup",XRai.bep_mouseup,false);
+   }
+   
+   XRai.BEPMode = !XRai.BEPMode;
+}
+

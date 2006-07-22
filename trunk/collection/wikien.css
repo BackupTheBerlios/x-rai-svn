@@ -1,0 +1,51 @@
+
+
+
+article > name, p, section, title,  conversionwarning, body {
+ display: block;
+}
+
+conversionwarning { color: #888; }
+conversionwarning:after { content: " conversion warning(s)"; }
+
+article > body {
+ margin: 1em;
+}
+
+article > name {
+ font-size: 188%;
+ margin-bottom: 0.1em;
+ padding-top: 0.5em;
+ padding-bottom: 0.17em;
+ border-bottom: 1px solid rgb(170,170,170);
+}
+
+section > title {
+ font-size: 150%;
+ border-bottom: 1px solid rgb(170,170,170);
+ margin-bottom: 0.6em;
+}
+
+p {
+ margin: 0.4em 0 0.5em 0;
+}
+
+collectionlink {
+ color: #800;
+}
+
+b { font-weight: bold }
+
+emph3 { font-weight: bold; }
+emph2 { font-style: italic; }
+
+collectionlink {
+ text-decoration: none;
+ color: rgb(0,43,184);
+}
+
+normallist { display: block; padding-left: 2em; list-style: outside disc; }
+item { display: list-item; }
+
+tr { display: table-row; }
+td { display: table-cell; }

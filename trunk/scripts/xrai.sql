@@ -2,22 +2,49 @@
 -- PostgreSQL database dump
 --
 
-SET client_encoding = 'SQL_ASCII';
+-- pg_dump --no-owner --schema_only --schema=inex_2006
+
+-- SET search_path = inex_2006, pg_catalog;
+
+SET default_with_oids = false;
 
 --
--- TOC entry 17 (OID 4150753)
--- Name: paths; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: assessments; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
-CREATE TABLE paths (
-    id serial NOT NULL,
-    "path" character varying(255) NOT NULL
+CREATE TABLE assessments (
+    exhaustivity integer,
+    idfile integer NOT NULL,
+    startpath integer NOT NULL,
+    endpath integer NOT NULL,
+    idpool integer NOT NULL
 );
 
 
+
 --
--- TOC entry 19 (OID 4150758)
--- Name: files; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: TABLE assessments; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON TABLE assessments IS 'Assessments';
+
+
+--
+-- Name: COLUMN assessments.exhaustivity; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN assessments.exhaustivity IS 'For a passage: positive is exh, 0 is unknown, negative for old (exh=-1-value), null for not validated';
+
+
+--
+-- Name: COLUMN assessments.endpath; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN assessments.endpath IS 'Might point to an empty path';
+
+
+--
+-- Name: files; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 CREATE TABLE files (
@@ -29,26 +56,128 @@ CREATE TABLE files (
     parent integer,
     pre integer,
     post integer
-) WITHOUT OIDS;
+);
+
 
 
 --
--- TOC entry 21 (OID 4150764)
--- Name: assessments; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: TABLE files; Type: COMMENT; Schema: inex_2006; Owner: inex
 --
 
-CREATE TABLE assessments (
-    exhaustivity integer,
+COMMENT ON TABLE files IS 'Files index by id';
+
+
+SET default_with_oids = true;
+
+--
+-- Name: paths; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE TABLE paths (
+    id serial NOT NULL,
+    path character varying(255) NOT NULL
+);
+ALTER TABLE ONLY paths ALTER COLUMN id SET STATISTICS 1;
+
+
+
+--
+-- Name: TABLE paths; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON TABLE paths IS 'Paths indexed by an ID';
+
+
+--
+-- Name: assessmentsview; Type: VIEW; Schema: inex_2006; Owner: inex
+--
+
+CREATE VIEW assessmentsview AS
+    SELECT assessments.exhaustivity, assessments.idpool, files.collection, files.filename, pathsstart."path" AS startpart, pathsend."path" AS endpath FROM (((assessments JOIN paths pathsstart ON ((assessments.startpath = pathsstart.id))) JOIN paths pathsend ON ((assessments.endpath = pathsend.id))) JOIN files ON ((assessments.idfile = files.id)));
+
+
+
+SET default_with_oids = false;
+
+--
+-- Name: filestatus; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE TABLE filestatus (
+    idpool integer NOT NULL,
     idfile integer NOT NULL,
-    startpath integer NOT NULL,
-    endpath integer NOT NULL,
-    idpool integer NOT NULL
-) WITHOUT OIDS;
+    version integer DEFAULT 0 NOT NULL,
+    inpool boolean DEFAULT false NOT NULL,
+    status smallint DEFAULT 0 NOT NULL,
+    hasrelevant boolean DEFAULT false NOT NULL,
+    CONSTRAINT "validVersion" CHECK (("version" > 0))
+);
+
 
 
 --
--- TOC entry 25 (OID 4150766)
--- Name: keywords; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: TABLE filestatus; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON TABLE filestatus IS 'Keeps information about the assessment process';
+
+
+--
+-- Name: COLUMN filestatus.version; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN filestatus.version IS 'Current version of the file.';
+
+
+--
+-- Name: COLUMN filestatus.inpool; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN filestatus.inpool IS 'Was the file in the original pool?';
+
+
+--
+-- Name: COLUMN filestatus.status; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN filestatus.status IS '0 = highlighting, 1 = assessing, 2 = done';
+
+
+--
+-- Name: COLUMN filestatus.hasrelevant; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN filestatus.hasrelevant IS 'Flag to know if there is some highlighted passages in the file';
+
+
+SET default_with_oids = true;
+
+--
+-- Name: history; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE TABLE history (
+    idpool integer NOT NULL,
+    idfile integer NOT NULL,
+    startpath integer,
+    endpath integer,
+    "time" numeric(14,0) NOT NULL,
+    "action" character(3) NOT NULL
+);
+
+
+
+--
+-- Name: TABLE history; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON TABLE history IS 'Log the assessor actions';
+
+
+SET default_with_oids = false;
+
+--
+-- Name: keywords; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 CREATE TABLE keywords (
@@ -56,24 +185,12 @@ CREATE TABLE keywords (
     colour character(6) NOT NULL,
     keywords text NOT NULL,
     "mode" character varying(10) NOT NULL
-) WITHOUT OIDS;
+);
 
-
---
--- TOC entry 26 (OID 4150773)
--- Name: topics; Type: TABLE; Schema: inex_2005; Owner: inex
---
-
-CREATE TABLE topics (
-    id serial NOT NULL,
-    definition text NOT NULL,
-    "type" character varying(10)
-) WITHOUT OIDS;
 
 
 --
--- TOC entry 28 (OID 4150779)
--- Name: pools; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: pools; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 CREATE TABLE pools (
@@ -83,16 +200,21 @@ CREATE TABLE pools (
     state character varying(10) NOT NULL,
     enabled boolean NOT NULL,
     login character varying(16) NOT NULL,
-    main boolean DEFAULT true,
-    CONSTRAINT unique_true_main UNIQUE (main),
+    main boolean,
     CONSTRAINT true_main CHECK (main)
-) WITHOUT OIDS;
+);
 
---- alter table pools add main boolean; alter table pools add constraint unique_true_main UNIQUE (idtopic,main);  alter table pools add constraint true_main check (main);
+
 
 --
--- TOC entry 8 (OID 4150785)
--- Name: pools_id_seq; Type: SEQUENCE; Schema: inex_2005; Owner: inex
+-- Name: COLUMN pools.state; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON COLUMN pools.state IS 'Distinguish official topics, etc.';
+
+
+--
+-- Name: pools_id_seq; Type: SEQUENCE; Schema: inex_2006; Owner: inex
 --
 
 CREATE SEQUENCE pools_id_seq
@@ -102,61 +224,46 @@ CREATE SEQUENCE pools_id_seq
     CACHE 1;
 
 
+
 --
--- TOC entry 30 (OID 4150787)
--- Name: filestatus; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: progress; Type: VIEW; Schema: inex_2006; Owner: inex
 --
 
-CREATE TABLE filestatus (
-    idpool integer NOT NULL,
-    idfile integer NOT NULL,
-    "version" integer DEFAULT 0 NOT NULL,
-    inpool boolean DEFAULT false NOT NULL,
-    status smallint DEFAULT 0 NOT NULL,
-    CONSTRAINT "validVersion" CHECK (("version" > 0))
-) WITHOUT OIDS;
+CREATE VIEW progress AS
+    SELECT pools.id AS pool, pools.login, pools.idtopic, (SELECT count(*) AS count FROM filestatus WHERE ((filestatus.idpool = pools.id) AND (filestatus.status = 2))) AS done, (SELECT count(*) AS count FROM filestatus WHERE ((filestatus.idpool = pools.id) AND (filestatus.status < 2))) AS todo FROM pools WHERE ((pools.state)::text = 'official'::text);
+
 
 
 --
--- TOC entry 35 (OID 4150793)
--- Name: history; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: progressbytopic; Type: VIEW; Schema: inex_2006; Owner: inex
 --
 
-CREATE TABLE history (
-    idpool integer NOT NULL,
-    idfile integer NOT NULL,
-    startpath integer NOT NULL,
-    endpath integer NOT NULL,
-    "time" numeric(14,0) NOT NULL,
-    "action" character(3) NOT NULL
-);
+CREATE VIEW progressbytopic AS
+    SELECT progress.idtopic, sum(CASE WHEN (progress.todo = 0) THEN 1 ELSE 0 END) AS done, sum(CASE WHEN (progress.todo > 0) THEN 1 ELSE 0 END) AS todo FROM progress GROUP BY progress.idtopic ORDER BY sum(CASE WHEN (progress.todo = 0) THEN 1 ELSE 0 END), progress.idtopic;
+
 
 
 --
--- TOC entry 37 (OID 4150797)
--- Name: assessmentsview; Type: VIEW; Schema: inex_2005; Owner: inex
---
-
-CREATE VIEW assessmentsview AS
-    SELECT assessments.exhaustivity, assessments.idpool, files.collection, files.filename, pathsstart."path" AS startpart, pathsend."path" AS endpath FROM (((assessments JOIN paths pathsstart ON ((assessments.startpath = pathsstart.id))) JOIN paths pathsend ON ((assessments.endpath = pathsend.id))) JOIN files ON ((assessments.idfile = files.id)));
-
-
---
--- TOC entry 38 (OID 4150798)
--- Name: topicelements; Type: TABLE; Schema: inex_2005; Owner: inex
+-- Name: topicelements; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 CREATE TABLE topicelements (
     idfile integer NOT NULL,
     idtopic integer NOT NULL,
     idpath integer NOT NULL
-) WITHOUT OIDS;
+);
 
 
 
 --
--- TOC entry 40 (OID 4150805)
--- Name: topicelementsview; Type: VIEW; Schema: inex_2005; Owner: inex
+-- Name: TABLE topicelements; Type: COMMENT; Schema: inex_2006; Owner: inex
+--
+
+COMMENT ON TABLE topicelements IS 'Keeps the elements which should be highlighted for a topic';
+
+
+--
+-- Name: topicelementsview; Type: VIEW; Schema: inex_2006; Owner: inex
 --
 
 CREATE VIEW topicelementsview AS
@@ -164,91 +271,72 @@ CREATE VIEW topicelementsview AS
 
 
 
-
 --
--- TOC entry 56 (OID 4150806)
--- Name: unique_file_id; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: topics; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
-ALTER TABLE ONLY files
-    ADD CONSTRAINT unique_file_id PRIMARY KEY (id);
+CREATE TABLE topics (
+    id serial NOT NULL,
+    definition text NOT NULL,
+    "type" character varying(10)
+);
 
-
---
--- TOC entry 55 (OID 4150808)
--- Name: unique_file; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY files
-    ADD CONSTRAINT unique_file UNIQUE (collection, filename);
 
 
 --
--- TOC entry 53 (OID 4150810)
--- Name: unique_path_id; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: COLUMN topics."type"; Type: COMMENT; Schema: inex_2006; Owner: inex
 --
 
-ALTER TABLE ONLY paths
-    ADD CONSTRAINT unique_path_id PRIMARY KEY (id);
+COMMENT ON COLUMN topics."type" IS 'Type of the query: CO, CO+S, CAS';
 
 
 --
--- TOC entry 52 (OID 4150812)
--- Name: unique_path; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY paths
-    ADD CONSTRAINT unique_path UNIQUE ("path");
-
-
---
--- TOC entry 60 (OID 4150814)
--- Name: pkPool; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY pools
-    ADD CONSTRAINT "pkPool" PRIMARY KEY (id);
-
-
---
--- TOC entry 59 (OID 4150816)
--- Name: pkTopic; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY topics
-    ADD CONSTRAINT "pkTopic" PRIMARY KEY (id);
-
-
---
--- TOC entry 58 (OID 4150818)
--- Name: pkKeywords; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY keywords
-    ADD CONSTRAINT "pkKeywords" PRIMARY KEY (idpool, colour, "mode");
-
-
---
--- TOC entry 61 (OID 4150820)
--- Name: pkAssessmentVersion; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: pkAssessmentVersion; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 ALTER TABLE ONLY filestatus
     ADD CONSTRAINT "pkAssessmentVersion" PRIMARY KEY (idpool, idfile);
 
 
+
 --
--- TOC entry 57 (OID 4150822)
--- Name: pk_assessments; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: pkKeywords; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY keywords
+    ADD CONSTRAINT "pkKeywords" PRIMARY KEY (idpool, colour, "mode");
+
+
+
+--
+-- Name: pkPool; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY pools
+    ADD CONSTRAINT "pkPool" PRIMARY KEY (id);
+
+
+
+--
+-- Name: pkTopic; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY topics
+    ADD CONSTRAINT "pkTopic" PRIMARY KEY (id);
+
+
+
+--
+-- Name: pk_assessments; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 ALTER TABLE ONLY assessments
     ADD CONSTRAINT pk_assessments PRIMARY KEY (idpool, idfile, startpath, endpath);
 
 
+
 --
--- TOC entry 62 (OID 4150824)
--- Name: pk_topicelements; Type: CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: pk_topicelements; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
 ALTER TABLE ONLY topicelements
@@ -257,17 +345,84 @@ ALTER TABLE ONLY topicelements
 
 
 --
--- TOC entry 68 (OID 4150826)
--- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: unique_file; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
-ALTER TABLE ONLY assessments
-    ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY files
+    ADD CONSTRAINT unique_file UNIQUE (collection, filename);
+
 
 
 --
--- TOC entry 69 (OID 4150830)
--- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: unique_file_id; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY files
+    ADD CONSTRAINT unique_file_id PRIMARY KEY (id);
+
+
+
+--
+-- Name: unique_path; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY paths
+    ADD CONSTRAINT unique_path UNIQUE (path);
+
+
+
+--
+-- Name: unique_path_id; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY paths
+    ADD CONSTRAINT unique_path_id PRIMARY KEY (id);
+
+
+
+--
+-- Name: unique_true_main; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+ALTER TABLE ONLY pools
+    ADD CONSTRAINT unique_true_main UNIQUE (idtopic, main);
+
+
+
+--
+-- Name: action; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE INDEX "action" ON history USING btree ("action");
+
+
+
+--
+-- Name: file_pre_post; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE UNIQUE INDEX file_pre_post ON files USING btree (pre, post);
+
+
+
+--
+-- Name: lower_filename; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE INDEX lower_filename ON files USING btree (lower((collection)::text), lower((filename)::text));
+
+
+
+--
+-- Name: time; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
+--
+
+CREATE INDEX "time" ON history USING btree ("time");
+
+
+
+--
+-- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
@@ -275,35 +430,15 @@ ALTER TABLE ONLY assessments
 
 
 --
--- TOC entry 72 (OID 4150834)
--- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
-ALTER TABLE ONLY pools
-    ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 71 (OID 4150838)
--- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY keywords
-    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY history
+    ADD CONSTRAINT "validEndPath" FOREIGN KEY (endpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
--- TOC entry 73 (OID 4150842)
--- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY filestatus
-    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 74 (OID 4150846)
--- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
 ALTER TABLE ONLY filestatus
@@ -311,8 +446,23 @@ ALTER TABLE ONLY filestatus
 
 
 --
--- TOC entry 67 (OID 4150850)
--- Name: validParent; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
+--
+
+ALTER TABLE ONLY history
+    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
+--
+
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: validParent; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
 ALTER TABLE ONLY files
@@ -320,62 +470,7 @@ ALTER TABLE ONLY files
 
 
 --
--- TOC entry 75 (OID 4150854)
--- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 76 (OID 4150858)
--- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 77 (OID 4150862)
--- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 78 (OID 4150866)
--- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validEndPath" FOREIGN KEY (endpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 79 (OID 4150870)
--- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- TOC entry 80 (OID 4150874)
--- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
---
-
-ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 81 (OID 4150878)
--- Name: validPath; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: validPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
 ALTER TABLE ONLY topicelements
@@ -383,8 +478,31 @@ ALTER TABLE ONLY topicelements
 
 
 --
--- TOC entry 70 (OID 4150882)
--- Name: validPoolFile; Type: FK CONSTRAINT; Schema: inex_2005; Owner: inex
+-- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
+--
+
+ALTER TABLE ONLY keywords
+    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
+--
+
+ALTER TABLE ONLY filestatus
+    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
+--
+
+ALTER TABLE ONLY history
+    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: validPoolFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
@@ -392,106 +510,38 @@ ALTER TABLE ONLY assessments
 
 
 --
--- TOC entry 18 (OID 4150753)
--- Name: TABLE paths; Type: COMMENT; Schema: inex_2005; Owner: inex
+-- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
-COMMENT ON TABLE paths IS 'Paths indexed by an ID';
-
-
---
--- TOC entry 20 (OID 4150758)
--- Name: TABLE files; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON TABLE files IS 'Files index by id';
+ALTER TABLE ONLY assessments
+    ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
--- TOC entry 22 (OID 4150764)
--- Name: TABLE assessments; Type: COMMENT; Schema: inex_2005; Owner: inex
+-- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
-COMMENT ON TABLE assessments IS 'Assessments';
-
-
---
--- TOC entry 23 (OID 4150764)
--- Name: COLUMN assessments.exhaustivity; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON COLUMN assessments.exhaustivity IS 'For a passage: positive is exh, 0 is unknown, negative for old (exh=-1-value), null for not validated';
+ALTER TABLE ONLY history
+    ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
--- TOC entry 24 (OID 4150764)
--- Name: COLUMN assessments.endpath; Type: COMMENT; Schema: inex_2005; Owner: inex
+-- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
-COMMENT ON COLUMN assessments.endpath IS 'Might point to an empty path';
-
-
---
--- TOC entry 27 (OID 4150773)
--- Name: COLUMN topics."type"; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON COLUMN topics."type" IS 'Type of the query: CO, CO+S, CAS';
+ALTER TABLE ONLY pools
+    ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
--- TOC entry 29 (OID 4150779)
--- Name: COLUMN pools.state; Type: COMMENT; Schema: inex_2005; Owner: inex
+-- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
-COMMENT ON COLUMN pools.state IS 'Distinguish official topics, etc.';
-
-
---
--- TOC entry 31 (OID 4150787)
--- Name: TABLE filestatus; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON TABLE filestatus IS 'Keeps information about the assessment process';
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- TOC entry 32 (OID 4150787)
--- Name: COLUMN filestatus."version"; Type: COMMENT; Schema: inex_2005; Owner: inex
+-- PostgreSQL database dump complete
 --
-
-COMMENT ON COLUMN filestatus."version" IS 'Current version of the file.';
-
-
---
--- TOC entry 33 (OID 4150787)
--- Name: COLUMN filestatus.inpool; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON COLUMN filestatus.inpool IS 'Was the file in the original pool?';
-
-
---
--- TOC entry 34 (OID 4150787)
--- Name: COLUMN filestatus.status; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON COLUMN filestatus.status IS '0 = highlighting, 1 = assessing, 2 = done';
-
-
---
--- TOC entry 36 (OID 4150793)
--- Name: TABLE history; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON TABLE history IS 'Log the assessor actions';
-
-
---
--- TOC entry 39 (OID 4150798)
--- Name: TABLE topicelements; Type: COMMENT; Schema: inex_2005; Owner: inex
---
-
-COMMENT ON TABLE topicelements IS 'Keeps the elements which should be highlighted for a topic';
-
 
