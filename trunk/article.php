@@ -358,25 +358,27 @@ xml_set_character_data_handler($xml_parser, "cdata");
 xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
 
 
-if (function_exists("getArticle")) {
-  if (!($fp = getArticle("$collection","$file")))
-     die("could not open XML input");
-} else if (!($fp = fopen("$xml_documents/$collection/$file.xml", "r")))
-   die("could not open XML input");
+if (function_exists("getArticle")) 
+  $fp = getArticle("$collection","$file");
+else
+  $fp = fopen("$xml_documents/$collection/$file.xml", "r");
+    
+if (!$fp) 
+   fatal_error("<script language='javascript'>  document.getElementById('saving_div').style.visibility = 'hidden'</script><div class='error'>Could not open XML file</div></div>");
 
 
 $count = 0;
 while ($data = fread($fp, 4096)) {
    $count += strlen($data);
    if (!xml_parse($xml_parser, $data, feof($fp))) {
-       die(sprintf("XML error: %s at line %d",
+       die(sprintf("XML error: %s at line %d</div>",
                    xml_error_string(xml_get_error_code($xml_parser)),
                    xml_get_current_line_number($xml_parser)));
    }
 }
 
 if ($count == 0) {
-   print "<div class='error'>Error: empty document</div>";
+   fatal_error("<div class='error'>Error: empty document</div></div><script language='javascript'>  document.getElementById('saving_div').style.visibility = 'hidden'</script>");
 }
 
 xml_parser_free($xml_parser);
@@ -393,8 +395,9 @@ if ($load_errors) {
 }
 
 if ($write_access) {
+   $res = $xrai_db->autoExecute($db_history, array("idpool" => $assessments->idPool, "idfile" => $assessments->idFile, "time" => strftime("%G%m%d%H%M%S")));
+   if (DB::isError($res)) print "<div class='warning'>Error when adding file to history: " . ($do_debug ? $xrai_db->last_query : "") ."</div>";
 ?>
-
 
 <div id="s_div" class="status">
   <div>

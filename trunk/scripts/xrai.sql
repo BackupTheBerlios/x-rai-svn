@@ -59,6 +59,7 @@ CREATE TABLE files (
 ) without OID;
 
 COMMENT ON TABLE files IS 'Files index by id';
+CREATE INDEX "parents" ON files USING btree (parent);
 
 --
 -- Name: paths; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -104,15 +105,26 @@ COMMENT ON COLUMN filestatus.status IS '0 = highlighting, 1 = assessing, 2 = don
 COMMENT ON COLUMN filestatus.hasrelevant IS 'Flag to know if there is some highlighted passages in the file';
 
 
---- BEP
+--
+-- Name: history; Type: TABLE
+--
 
-
+CREATE TABLE history (
+    idpool integer NOT NULL,
+    idfile integer NOT NULL,
+    "time" numeric(14,0) NOT NULL,
+    CONSTRAINT pk_history PRIMARY KEY (idpool, idfile, time)
+);
+ALTER TABLE ONLY history
+    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY history
+    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 --
 -- Name: history; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
-CREATE TABLE history (
+CREATE TABLE log (
     idpool integer NOT NULL,
     idfile integer NOT NULL,
     startpath integer,
@@ -121,7 +133,19 @@ CREATE TABLE history (
     "action" character(10) NOT NULL
 );
 
-COMMENT ON TABLE history IS 'Log the assessor actions';
+COMMENT ON TABLE log IS 'Log the assessor actions';
+CREATE INDEX "action" ON log USING btree ("action");
+CREATE INDEX "time" ON log USING btree ("time");
+ALTER TABLE ONLY log
+    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY log
+    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY log
+    ADD CONSTRAINT "validEndPath" FOREIGN KEY (endpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY log
+    ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
 
 --
 -- Name: keywords; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -337,14 +361,6 @@ ALTER TABLE ONLY pools
 
 
 --
--- Name: action; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
---
-
-CREATE INDEX "action" ON history USING btree ("action");
-
-
-
---
 -- Name: file_pre_post; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
 --
 
@@ -361,27 +377,12 @@ CREATE INDEX lower_filename ON files USING btree (lower((collection)::text), low
 
 
 --
--- Name: time; Type: INDEX; Schema: inex_2006; Owner: inex; Tablespace: 
---
-
-CREATE INDEX "time" ON history USING btree ("time");
-
-
-
---
 -- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
 
 ALTER TABLE ONLY assessments
     ADD CONSTRAINT "validEndPath" FOREIGN KEY (endpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
---
--- Name: validEndPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validEndPath" FOREIGN KEY (endpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -392,12 +393,6 @@ ALTER TABLE ONLY filestatus
     ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
---
--- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -439,15 +434,6 @@ ALTER TABLE ONLY keywords
 ALTER TABLE ONLY filestatus
     ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
---
--- Name: validPool; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY history
-    ADD CONSTRAINT "validPool" FOREIGN KEY (idpool) REFERENCES pools(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
 --
 -- Name: validPoolFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
 --
@@ -461,14 +447,6 @@ ALTER TABLE ONLY assessments
 --
 
 ALTER TABLE ONLY assessments
-    ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: validStartPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY history
     ADD CONSTRAINT "validStartPath" FOREIGN KEY (startpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 

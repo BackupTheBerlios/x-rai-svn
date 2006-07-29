@@ -29,6 +29,15 @@ sub is_space {
    return $_[0] =~ /^[\n\r\s\t]*$/;
 }
 
+sub xmlentities {
+   $_[0] =~ s/</&lt;/g;
+   $_[0] =~ s/>/&gt;/g;
+   $_[0] =~ s/'/&apos;/g;
+   $_[0] =~ s/"/&quote;/g;
+   $_[0] =~ s/&/&amp;/g;
+   return $_[0];
+}
+
 sub check_end {
    if ($#endtag >= 0) {
       if (!is_space($cdata)) {
@@ -53,7 +62,7 @@ sub handle_start {
 
    print "<$_[1]";
    for(my $i = 2; $i < $#_; $i+=2) {
-      print " $_[$i]=\"" . $_[$i+1] . "\"";
+      print " $_[$i]=\"" . xmlentities($_[$i+1]) . "\"";
    }
    print ">";
    push @stack, 0;

@@ -45,7 +45,20 @@ collectionlink {
 }
 
 normallist { display: block; padding-left: 2em; list-style: outside disc; }
+numberlist { display: block; padding-left: 2em; list-style: decimal; }
 item { display: list-item; }
 
 tr { display: table-row; }
 td { display: table-cell; }
+collectionlink { cursor: pointer; }
+
+languagelink { display: block; margin-top: 1cm; border-top: 1px solid black; }
+languagelink::before { display: block; content: "Other languages:"; text-decoration: underline; }
+languagelink ~ languagelink { display: block; border: 0; margin: 0;}
+languagelink ~ languagelink::before { content: ""; }
+
+template { display: table;  border: 1px solid #888; }
+template > template:before { content: attr(name); display: table-cell; font-weight: bold; }
+template > template { display: table-row; padding: 3px; border: 1px solid #888; }
+
+

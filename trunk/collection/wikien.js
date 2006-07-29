@@ -1,7 +1,14 @@
+/** Specific code for wikipedia */
+
 function collectionOnClick(event) {
-  // alert(event);
   if (event.target.localName == "collectionlink") {
-//     window.location = "coucou";
+     var l = event.target.getAttributeNS("http://www.w3.org/1999/xlink","href")
+     if (l) window.location = l;
+     else Message.show("warning","Could not find the URL for this document");
   }
   event.stopPropagation();
 }
+
+document.addEventListener("load", function() { 
+   XRai.getRoot().addEventListener("mouseup", collectionOnClick);
+},false);

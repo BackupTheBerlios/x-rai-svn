@@ -76,6 +76,12 @@ function hasCache($src1,$src2,$dest) {
 
 */
 
+function print_xhtml_header() {
+header("Content-type: application/xhtml+xml");
+header("Content-encoding: UTF-8");
+print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
+<?}
 
 function make_header($title = "") {
      global $menu, $is_root;
@@ -85,12 +91,8 @@ function make_header($title = "") {
    if ($header_done) return;
    $header_done = 1;
 
-
-header("Content-type: application/xhtml+xml");
-header("Content-encoding: UTF-8");
-print '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
+print_xhtml_header();
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:xrai="<?=$xrains?>" xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="en">
    <head>
       <title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
@@ -157,6 +159,10 @@ window.open("<?=$base_url?>/colours.php?id_pool=<?=$id_pool?>","inex_colors","to
 
 function show_topic() {
 window.open("<?=$base_url?>/show_topic.php?id_topic=<?=$id_topic?>","inex_topic","width=450,height=400,toolbar=no,location=no,directories=no,status=yes,menubar=no,copyhistory=no");
+}
+
+function show_history() {
+window.open("<?=$base_url?>/show_history.php?id_pool=<?=$id_pool?>","xrai_history","width=450,height=500,toolbar=no,location=no,directories=no,status=yes,menubar=no,copyhistory=no");
 }
 ]]>
 </script>
@@ -262,6 +268,7 @@ if ($id_pool > 0) {
    $write_access = $can_modify = ($pool["enabled"] == 't');
    add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
    add_menu("Pool","javascript:show_colors()","Keywords","Edit keyword highlighting");
+   add_menu("Pool","javascript:show_history()","History","List of recently viewed files");
 }
 
 if ($is_root) {

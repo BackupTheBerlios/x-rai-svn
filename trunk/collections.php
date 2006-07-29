@@ -52,7 +52,7 @@ $xslfilename = dirname(__FILE__) . "/xsl/$xslname.xsl";
 
 $aPath =  "/$collection" . ($path != "" ? "/$path" : ""); 
 if (is_file("$xrai_documents$aPath.xrai")) {
-	$xmlfilename = "$xml_documents/$aPath.xrai";
+	$xmlfilename = "$xrai_documents/$aPath.xrai";
 	$thebasepath = $_SERVER["SCRIPT_NAME"] . preg_replace("#/[^/]+$#","", $aPath);
 	if (preg_match("#/#",$basepath)) $basepath = preg_replace("#/[^/]+$#","",$basepath);
 	else $basepath = "";
@@ -65,8 +65,13 @@ if (is_file("$xrai_documents$aPath.xrai")) {
 
 // --- Retrieve assessments ---
 
+// select f.filename, fs.status, fs.hasrelevant, count(*) from files f JOIN filestatus fs ON fs.idfile BETWEEN f.pre AND f.post JOIN files fc ON fc.id = f.id WHERE f.parent = (select id from files fp where fp.filename = '4-11-x') GROUP BY f.filename, fs.status, fs.hasrelevant;
+
+
 if ($id_pool) {
-   $res = &$xrai_db->query("SELECT ta.idpool, anc.type, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.collection=root.collection AND anc.collection=f.collection AND anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.type, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
+    $res = &$xrai_db->query("select f.filename, f.type, fs.inpool, fs.status, fs.hasrelevant, count(*) as count from files f JOIN filestatus fs ON fs.idfile BETWEEN f.pre AND f.post AND fs.idpool=? JOIN files fc ON fc.id = f.id WHERE f.parent = (select id from files fp where fp.id = ?) GROUP BY f.filename, f.type, fs.inpool, fs.status, fs.hasrelevant", array($id_pool,$rootid));
+//     print $xrai_db->last_query;
+//    $res = &$xrai_db->query("SELECT ta.idpool, anc.type, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.collection=root.collection AND anc.collection=f.collection AND anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.type, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
       while ($row = $res->fetchRow()) {
@@ -81,6 +86,8 @@ if ($id_pool) {
       }
       $res->free();
    }
+		 
+// 	print_r($assessed);
 }
 
 
@@ -93,11 +100,21 @@ function get_full_path($base,$path) {
   return $path;
 }
 
+function printStatistics(&$assessments) {
+   global $base_url;
+   $x = $assessments[-1] + $assessments[1];
+   if ($x > 0) print "<img title=\"$x not validated document(s)\" style=\"vertical-align: center;\" src=\"$base_url/img/nok\" alt=\"[assessing]\"/>"; 
+   
+   $x = $assessments[-2] + $assessments[2];
+   if ($x > 0) print "<img title='$x validated document(s)' style=\"vertical-align: center;\"  src=\"$base_url/img/ok\"  alt=\"[validated]\"/>"; 
+}
+
 function print_assessments($id) {
 global $assessments, $id_pool, $all_assessments;
   if ($id_pool >0) {
-//       print_r($assessments[$id]);
+//       print "Assessments: " . print_r($assessments[$id], true ) . " for '$id'. ";
       printStatus($assessments[$id], $all_assessments);
+      printStatistics($assessments[$id]);
       print " ";
 
    }

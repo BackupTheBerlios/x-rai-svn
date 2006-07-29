@@ -1,5 +1,4 @@
 <?php
-
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 ignore_user_abort(false);
@@ -20,7 +19,7 @@ $hist=&$_REQUEST["hist"];
 <head><title>Assessment</title></head>
 <body>
 <script type="text/javascript">
-   var ref = window.opener ? window.opener : window.parent;
+   var ref = window.parent ? window.parent : window.opener;
    ref.setSavingMessage("Connected");
 </script>
 
@@ -108,7 +107,7 @@ if (DB::isError($assessments)) {
          while (true) {
             $res = $startid = Paths::getPathId($h[2]); if (DB::isError($startid)) break;
             $res = $endid = Paths::getPathId($h[3]); if (DB::isError($endid)) break;
-            $res = $xrai_db->autoExecute($db_history, array("idpool" => $assessments->idPool, "idfile" => $assessments->idFile,
+            $res = $xrai_db->autoExecute($db_log, array("idpool" => $assessments->idPool, "idfile" => $assessments->idFile,
                      "startpath" => $startid, "endpath" => $endid, "action" => $h[0], "time" => $h[1]));
             break;
          }
