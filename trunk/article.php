@@ -410,7 +410,9 @@ if ($write_access) {
       <span><img src="<?=$base_url?>/img/saveandprevious.png" title="Validate, save and go to the previous view" alt="&lt;&lt;" onclick="XRai.saveAndGo(false)"/><div class="help_bottom">Switch to assessment mode, validate, save and go to the previous article to assess</div></span>
 <? if (!$highlight_only) { ?>
       <span><img src="<?=$base_url?>/img/left.png" title="Go to the previous element to assess (1)" alt="&lt;-" onclick="todo_previous(event.shiftKey)"/><div class="help_bottom">Go to the previous element (or to the previous view with shift + click) to assess.<br/><b>Shortcut</b>: <code>1</code> for previous element and <code>9</code> for previous view</div></span>
+<? } ?>
       <span><img src="<?=$base_url?>/img/up.png" title="Go to the container (2)" alt="^" onclick="XRai.goUp()"/><div class="help_bottom">Go to the innermost containing collection. <br/><b>Shortcut</b>: <code>2</code></div></span>
+<? if (!$highlight_only) { ?>
       <span><img src="<?=$base_url?>/img/right.png" title="Go to the next element to assess (3)" alt="-&gt;" onclick="todo_next(event.shiftKey)"/><div class="help_bottom">Go to the next element (or to the next view with shift + click) to assess.<br/><b>Shortcut</b>: <code>3</code>  and <code>0</code> for next view</div></span>
 <? } ?>      <span><img src="<?=$base_url?>/img/saveandnext.png" title="Validate, save and go to the previous view" alt="&gt;&gt;" onclick="XRai.saveAndGo(true)"/><div class="help_bottom">Switch to assessment mode, validate, save and go to the next article to assess</div></span>
    </span>

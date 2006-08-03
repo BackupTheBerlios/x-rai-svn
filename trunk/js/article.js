@@ -1690,7 +1690,6 @@ XRai.save = function() {
    XRai.saveForm.appendChild(createHiddenInput("file",xrai_file));
    XRai.saveForm.appendChild(createHiddenInput("aversion",aversion));
    XRai.saveForm.appendChild(createHiddenInput("docstatus",docStatus));
-   XRai.saveForm.appendChild(createHiddenInput("hasrelevant",XRai.firstPassage != null));
 
    // Add history
    XRai.addHistory("SAVE");

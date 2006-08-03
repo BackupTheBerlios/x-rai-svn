@@ -57,6 +57,7 @@ if (DB::isError($assessments)) {
       $res = $assessments->setStatus($docstatus);
       if (DB::isError($res)) break;
       $res = $assessments->setHasRelevant($hasrelevant);
+      if ($do_debug) print "<div>Relevance status: " . ($hasrelevant ? "true" : "false") . "</div>";
       if (DB::isError($res)) break;
       
       if ($do_debug) print "<div>BEP is $bep</div>";
