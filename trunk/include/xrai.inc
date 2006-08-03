@@ -24,7 +24,7 @@ $id_pool = $_REQUEST["id_pool"];
 $directory = $_REQUEST["directory"];
 $file = $_REQUEST["file"];
 
-
+if ($inex_user == "") exit("Invalid user");
 
 $sorted_assessments = array("0","-1","1","2");
 
@@ -34,23 +34,6 @@ $relevances = array(
     1 => array("a1","partially exhaustive"),
     2 => array("a2","highly exhaustive")
 );
-
-
-
-$REVIEW = array(
-      "id" => 0,
-      "url" => 1,
-      "title" => 2,
-      "years" => 3
-   );
-
-
-function find_byid($id) {
-   global $inex_documents;
-   for($i=0; $i < sizeof($inex_documents); $i++)
-      if ($inex_documents[$i][0] == "$id") return $inex_documents[$i];
-   return false;
-}
 
 
 
