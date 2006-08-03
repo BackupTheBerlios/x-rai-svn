@@ -256,6 +256,8 @@ XRai.keypressed = function (event) {
   return false;
 }
 
+XRai.checkBeforeUnload = function() {
+}
 
 // Check that everything is saved before allowing the user to go out of this view
 XRai.beforeunload = function(event) {
@@ -323,6 +325,7 @@ if (Node.DOCUMENT_POSITION_CONTAINS) {
    }
 
    XRai.numberNodes = function() {
+      XRai.debug("Numbering the nodes");
       var n = XRai.numberNode(XRai.getRoot(),1);
       XRai.numbered = true;
    }
@@ -1977,6 +1980,8 @@ XRai.onblur= function(event) {
  XRai.addHistory("BLUR");
 }
 
+XRai.initFunctions = Array();
+
 // Called when the XML is loaded
 XRai.init = function() {
    if (XRai.onmousedown) {
@@ -1989,6 +1994,9 @@ XRai.init = function() {
    XRai.addHistory("LOAD");
    window.addEventListener("blur", XRai.onblur, true);
    window.addEventListener("focus", XRai.onfocus, true);
+   for(var i = 0; i < XRai.initFunctions.length; i++)
+      XRai.initFunctions[i]();
+   XRai.debug("Document loaded");
 }
 
 
@@ -2027,6 +2035,7 @@ XRai.bep_mouseout = function(event) {
 
 // The user clicked
 XRai.bep_mouseup = function(event) {
+   XRai.debug("BEP: mouse up");
    var x = event.target;
    if (x.nodeType == Node.TEXT_NODE) x = x.parentNode;
    while (x && !XRai.isInDocument(x)) x = x.parentNode;
@@ -2065,5 +2074,6 @@ XRai.toggleBEPMode = function(event) {
    }
    
    XRai.BEPMode = !XRai.BEPMode;
+   XRai.debug("BEP mode is " + XRai.BEPMode);
 }
 
