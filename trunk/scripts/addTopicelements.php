@@ -1,6 +1,7 @@
 #!/usr/bin/php
 <?php
 
+$_SERVER["REMOTE_USER"] = "root";
 chdir(dirname(__FILE__) . "/..");
 
 require_once("include/xrai.inc");

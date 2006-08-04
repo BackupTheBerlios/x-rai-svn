@@ -91,6 +91,14 @@ if ($id_pool > 0) {
       fatal_error("Error retrieving assessments",$assessments->getUserInfo());
    $cursor = &$assessments->getCursor();
    $bep = $assessments->getBEP();
+         
+   $has_poolelements = false;
+   $te_result = $xrai_db->query("SELECT path FROM $db_topicelementsview WHERE idfile=? and idtopic=?",array($fileid,$id_topic));
+   if (DB::isError($res)) 
+      print "Message.show(\"warning\",\"Could not retrieve support elements\");\n";
+   else 
+      $has_poolelements = $te_result->numRows() > 0;
+
    if (DB::isError($cursor)) fatal_error("Could not retrieve assessments",$cursor->getUserInfo());
 
 }
@@ -418,7 +426,7 @@ if ($write_access) {
    </span>
 
    <span>
-   <? if ($assessments && $assessments->inpool) { ?>
+   <? if ($assessments && $has_poolelements) { ?>
       <span>
          <img id="supportImg" onclick="XRai.switchSupport()" src="<?=$base_url?>/img/eyes.png" alt="[Support]"  title="Show/hide the support elements"/><div class="help_bottom">Support elements are the elements returned by participating systems that were selected during the pooling phase. They are shown in blue dotted boxes.</div>
       </span>
@@ -515,12 +523,8 @@ if ($id_pool > 0) {
    }
 
    // Add topic elements
-   $res = $xrai_db->query("SELECT path FROM $db_topicelementsview WHERE idfile=? and idtopic=?",array($fileid,$id_topic));
-   if (DB::isError($res)) print "Message.show(\"warning\",\"Could not retrieve support elements\");\n";
-   else {
-/*      print "alert(\"$fileid, $id_topic\");";
-      print "Message.show(\"notice\",\"Retrieved " . $res->numRows() . " support elements\");\n";*/
-      while ($row=&$res->fetchRow(DB_FETCHMODE_ROW)) {
+   if (!DB::isError($te_result)) {
+      while ($row=&$te_result->fetchRow(DB_FETCHMODE_ROW)) {
          ?>load.addSupport("<?=$row[0]?>");<?
       }
    }

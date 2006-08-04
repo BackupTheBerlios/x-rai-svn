@@ -1,6 +1,7 @@
 #!/usr/bin/php
 <?php
 
+$_SERVER["REMOTE_USER"] = "root";
 chdir(dirname(__FILE__) . "/..");
 
 require_once("include/xrai.inc");
@@ -32,7 +33,7 @@ if (!is_file($filename))
 $xrai_db->autoCommit(false);
 print "Starting processing of pool file '$filename'\n";
 
-
+$emptypathid = Paths::getPathId("", true);
 
 // ==================================================
 // Parse of file
@@ -48,7 +49,7 @@ function getFileId($path) {
 $file = -1;
 
 function startElement($parser, $name, $attrs) {
-   global $id, $file, $xrai_db, $db_filestatus, $db_pools, $poolid, $poolstate, $userid, $poolname;
+   global $id, $file, $emptypathid, $xrai_db, $db_filestatus, $db_pools, $poolid, $poolstate, $userid, $poolname;
    if ($name == "pool") {
       $id = $attrs["topic"];
       if (!$id) die("No topic id defined!\n");
@@ -71,7 +72,7 @@ function startElement($parser, $name, $attrs) {
             if (DB::isError($res)) die($res->getUserInfo() . "\n");
             if ($res > 0) { print "/!\\ Skipping $file ($attrs[file])\n"; break; }
             print "Adding $file ($attrs[file])\n";
-            $res = $xrai_db->autoExecute($db_filestatus, array("idfile" => $file, "idpool" => $poolid, "status" => "0", "inpool" => "t", "version" => 1));
+            $res = $xrai_db->autoExecute($db_filestatus, array("idfile" => $file, "idpool" => $poolid, "status" => "0", "inpool" => "t", "version" => 1, "bep" => $emptypathid));
             if (DB::isError($res)) die($res->getUserInfo() . "\n");
          }
          break;
