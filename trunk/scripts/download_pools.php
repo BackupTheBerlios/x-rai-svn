@@ -1,6 +1,4 @@
 <?
-
-
 /*
    This script generates one assessment file by pool
    (c) B. Piwowarski, 2004
@@ -15,6 +13,7 @@ ignore_user_abort(false);
 set_time_limit(0);
 $old = getcwd();
 chdir(dirname(__FILE__) . "/..");
+$_SERVER["REMOTE_USER"] = "root";
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 require_once("include/xslt.inc");
@@ -83,9 +82,12 @@ fwrite($dtd_file,'
                               -->
 
 
-  <!ELEMENT file ((passage+, element+)?)>
+  <!ELEMENT file ((best-entry-point, passage+, element+)?)>
   <!ELEMENT passage EMPTY>
   <!ATTLIST passage start CDATA #REQUIRED end CDATA #REQUIRED size CDATA #REQUIRED>
+
+  <!ELEMENT best-entry-point EMPTY>
+  <!ATTLIST best-entry-point path CDATA #REQUIRED>
 
   <!ELEMENT element EMPTY>
 
@@ -159,7 +161,8 @@ function addPool(&$data) {
    fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
-$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename, topics.type, main FROM filestatus, pools, files, topics WHERE topics.id = pools.idtopic AND pools.id = idpool AND files.id = idfile AND state=? $restrict ORDER BY idpool",array($state));
+// Select the pools for a given file
+$status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename, topics.type, main, paths.path as bep FROM filestatus, pools, files, topics, paths WHERE topics.id = pools.idtopic AND pools.id = idpool AND files.id = idfile AND state=? $restrict AND paths.id=bep ORDER BY idpool",array($state));
 if (DB::isError($status)) { print "Error.\n" . $status->getUserInfo() . "\n\nExiting\n"; exit(1); }
 
 $current = array(null);
@@ -176,6 +179,8 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
          exit(1);
       }
       $cdef = &$current[3];
+         
+      // Parse the topic and output it to the file
       $xml_parser_cp = xml_parser_create();
       xml_set_element_handler($xml_parser_cp, "cp_startElement", "cp_endElement");
       xml_set_character_data_handler($xml_parser_cp, "cp_cdata");
@@ -190,7 +195,7 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
    }
    if ($row["status"] != 2) $current[2] = false;
    else {
-      if (!is_array($done[$row["idfile"]])) $done[$row["idfile"]] = array($row["collection"],$row["filename"],array());
+      if (!is_array($done[$row["idfile"]])) $done[$row["idfile"]] = array($row["collection"],$row["filename"],array(),$row["bep"]);
       array_push($done[$row["idfile"]][2],$row["idpool"]);
    }
 }
@@ -208,7 +213,7 @@ addPool(&$current);
 // If the element is xrai:s, added to the array are [ parent path, offset in the parent path ]
 
 // The stack is composed of
-// [ 0. path, 1. [ ranks (ie mapping tag name => integer) ], 2. start offset, 3. boolean (ancestor of an included node), 4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 5. # of non-contiguous xrai:s tags]
+// [ 0. path, 1. [ ranks (ie mapping tag name => integer) ], 2. start offset, 3. boolean (ancestor of an included node), 4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 5. # of non-contiguous xrai:s tags, 6. BEP]
 
 function startElement($parser, $name, $attrs) {
    global $stack, $pos, $paths, $nb_passages, $topicPassages, $highlight_only;
@@ -359,7 +364,12 @@ while (list($id, $data) = each(&$done)) {
       xml_set_character_data_handler($xml_parser, "cdata");
       xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
       xml_parser_set_option($xml_parser,XML_OPTION_SKIP_WHITE,false);
-      if (!($fp = fopen("$xml_documents/$data[0]/$data[1].xml", "r")))
+      if (function_exists("getArticle")) {
+         $fp = getArticle("$data[0]","$data[1]");
+      } else
+         $fp = fopen("$xml_documents/$data[0]/$data[1].xml", "r");
+      
+      if (!$fp)
          die("could not open XML input");
       while ($chars = fread($fp, 4096)) {
          if (!xml_parse($xml_parser, $chars, feof($fp))) {
@@ -376,6 +386,7 @@ while (list($id, $data) = each(&$done)) {
    foreach($data[2] as $pool) {
       print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
+      if ($data[3] != "") fwrite($files[$pool],"   <best-entry-point path=\"$data[3]\"/>\n");
       $error = false;
       $cp = &$p[$pool];
 
