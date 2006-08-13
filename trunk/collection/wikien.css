@@ -1,7 +1,7 @@
 
 
 
-article > name, p, section, title,  conversionwarning, body {
+article, article > name, p, section, title,  conversionwarning, body {
  display: block;
 }
 
@@ -48,9 +48,12 @@ normallist { display: block; padding-left: 2em; list-style: outside disc; }
 numberlist { display: block; padding-left: 2em; list-style: decimal; }
 item { display: list-item; }
 
-tr { display: table-row; }
-td { display: table-cell; }
+tr, row { display: table-row; }
+td, cell { display: table-cell; }
+table { display: table; }
 collectionlink { cursor: pointer; }
+
+
 
 languagelink { display: block; margin-top: 1cm; border-top: 1px solid black; }
 languagelink::before { display: block; content: "Other languages:"; text-decoration: underline; }

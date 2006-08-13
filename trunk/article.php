@@ -354,7 +354,7 @@ function cdata($parser, $data) {
     print "<html:span error=\"1\">";
   }
 
-  $data = preg_replace(array("/&/"),array("&amp;"),$data);
+  $data = htmlspecialchars($data); 
   if ($in_mathml == 1 || !$keywords) print $data;
   else print preg_replace($keywords,$colours,$data);
   if ($error) print "</html:span>";
