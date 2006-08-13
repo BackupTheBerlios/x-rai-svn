@@ -21,7 +21,7 @@ var htmlns = document.documentElement.namespaceURI;
 
 
 XRai.lastX = 0;
-XRai.lastY = 0,
+XRai.lastY = 0;
 
 // -*- For load and save
 
@@ -248,7 +248,16 @@ XRai.keypressed = function (event) {
   else if (C && (event.which == 83 || event.which == 115)) XRai.save();
   else if (!C && event.which == 57) todo_previous(true);
   else if (!C && event.which == 48) todo_previous(true);
-
+  
+  // f (switch mode)
+  else if (!C && event.which == 102) XRai.switchMode();
+  // p (show/hide pool elements)
+  else if (!C && event.which == 112) XRai.switchSupport();
+  // b
+  else if (!S && event.which == 98) XRai.toggleBEPMode();
+  // shift+b
+  else if (S && event.which == 66) XRai.setBEP(null, true);
+  
   else {
    return collection_keypress(event);
   }
@@ -2062,13 +2071,13 @@ XRai.toggleBEPMode = function(event) {
       XRai.getRoot().addEventListener("mouseover",XRai.bep_mouseover,false);
       XRai.getRoot().addEventListener("mouseout",XRai.bep_mouseout,false);
       XRai.getRoot().addEventListener("mouseup",XRai.bep_mouseup,false);
-      XRai.getRoot().parentNode.style.cursor = "url(" + base_url + "/img/bep.png),crosshair";
+      XRai.getRoot().parentNode.style.cursor = "crosshair !important";
    } else {
       XRai.addHistory("BEP-OFF");
       XRai.getRoot().removeEventListener("mouseover",XRai.bep_mouseover,false);
       XRai.getRoot().removeEventListener("mouseout",XRai.bep_mouseout,false);
       XRai.getRoot().removeEventListener("mouseup",XRai.bep_mouseup,false);
-      XRai.getRoot().parentNode.style.cursor = null;
+      XRai.getRoot().parentNode.style.cursor = "";
       XRai.bep_mouseout();
    }
    

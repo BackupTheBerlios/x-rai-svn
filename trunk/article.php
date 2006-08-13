@@ -323,7 +323,7 @@ function startElement($parser, $name, $attrs) {
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns:xrai=\"$xrains\" xmlns=\"$documentns\"";
    $depth++;
    foreach($attrs as $aname => $value) {
-      print " $aname=\"$value\"";
+      print " $aname=\"" . htmlspecialchars($value) . "\"";
    }
 
    if (sizeof($stack) > 0)
