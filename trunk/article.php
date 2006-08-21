@@ -260,7 +260,7 @@ if ($id_pool> 0) {
 
 <!-- Evaluation panel -->
 
-<div style="background: white; left: 20px; top: 3em; padding: 1em; border: 1px dotted blue; color: black; position: fixed; display: none; "><div style="font-weight: bold; font-size: larger">Informations</div><p id="infopassagediv">BLAH</p><div style="padding-top: 1em;"><a class="normal"  onclick="this.parentNode.parentNode.style.display='none'">Close</a></div></div>
+<div style="background: white; left: 20px; top: 3em; padding: 1em; border: 1px dotted blue; color: black; position: fixed; display: none; "><div style="font-weight: bold; font-size: larger">Informations</div><p id="infopassagediv">BLAH</p><div style="padding-top: 1em; cursor: pointer"><a class="normal"  onclick="this.parentNode.parentNode.style.display='none'">Close</a></div></div>
 
 
 <div id="eval_div"  onclick="hideEval()" onmouseover="window.status='Click to assess the element(s)'" onmouseout="window.status=''">
@@ -316,29 +316,34 @@ $stack_ns = Array();
 $defined_ns = array("html" => true, "xrai" => true, "xraic" => true);
 $load_errors = 0;
 
-// function transformInvalidName($name) {
-//    if (!preg_match("#^([a-zA-Z][^:]*)(:[a-zA-Z][^:]*)?#", $name)) 
-//       return "xrai_" .  rawurlencode($name);
-//    
-//    return $name;
-// }
+function isInvalidTagName($name) {
+   return !preg_match("#^(xrai:)?[a-zA-Z][^:]*$#", $name); 
+}
 
 function startElement($parser, $name, $attrs) {
    global $defined_ns, $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors, $xrains, $stack_ns;
 
    if (function_exists("collectionPreStartElement")) collectionPreStartElement($name, $attrs);
 
-//    $name = transformInvalidName($name);
+   if (isInvalidTagName($name)) {
+      print "<xrai_itag xrai_tagname=\"$name\"";
+   } else {
       print "<$name";
       if (preg_match("#^([^:]+):#", $name, $matches) && !$defined_ns[$matches[1]]) {
             print " xmlns:$matches[1]=\"$documentns\"";
             $defined_ns[$matches[1]] = true;
             array_push($stack_ns, $matches[1]);
       } else array_push($stack_ns, false);
+   }
+   
+            
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns:xrai=\"$xrains\" xmlns=\"$documentns\"";
    $depth++;
    foreach($attrs as $aname => $value) {
-      print " $aname=\"" . htmlspecialchars($value) . "\"";
+      if (preg_match("#^([^:]+):#", $aname, $matches) && !$defined_ns[$matches[1]])
+         print " " . preg_replace("#:#","_",$aname);
+      else print " $aname";
+      print "=\"" . htmlspecialchars($value) . "\"";
    }
 
    if (sizeof($stack) > 0)
@@ -359,8 +364,8 @@ function endElement($parser, $name) {
    if ($ns) $defined_ns[$ns] =  false;
    if (function_exists("collectionEndElement")) collectionEndElement($name);
    
-//    $name = transformInvalidName($name);
-   print "</$name>";
+   if (isInvalidTagName($name)) print "</xrai_itag>";
+   else print "</$name>";
 }
 
 function cdata($parser, $data) {

@@ -506,6 +506,10 @@ XRai.previousElementTo = function(x,y,b) {
    return x;
 }
 
+XRai.getTagName = function(x) {
+   if (x.tagName == "xrai_itag") return x.getAttribute("xrai_tagname");
+   return x.tagName;
+}
 
 XRai.getPath = function(e) {
    if (e == null) return null;
@@ -516,10 +520,11 @@ XRai.getPath = function(e) {
    do {
       f = XRai.parent(e);
       var n = 1;
+      var tagName = XRai.getTagName(e);
       if (f) for(var x = XRai.firstChild(f); x !=  e; x = XRai.nextSibling(x)) {
-         if (x.tagName == e.tagName) n++;
+         if (XRai.getTagName(x) == tagName) n++;
       }
-      s = "/" + e.tagName + "[" + n + "]" + s;
+      s = "/" + tagName + "[" + n + "]" + s;
    } while (e = f);
    return s;
 }
@@ -1666,7 +1671,7 @@ XRai.save = function() {
    }
 
    if (XRai.noSave) {
-      Message.show("error","Assessments cannot be saved (an *major* error occured before)\n",-1);
+      Message.show("error","Assessments cannot be saved (a *major* error occured before)\n",-1);
       return;
    }
 
@@ -1766,6 +1771,10 @@ XRai.save = function() {
 }
 
 
+function isInvalidTagName(name) {
+   return name.match(/^([a-zA-Z][^:]*)(:[a-zA-Z][^:]*)?$/) == null;
+}
+
 // Loading
 XRaiLoad = function() {
    if (document.implementation.hasFeature("XPath", "3.0")) {
@@ -1798,7 +1807,7 @@ XRaiLoad = function() {
 //       if (debug) XRai.debug("Resolving " + s[1] + ", " + s[2] + ", fs=" + XRai.getPath(child) + "\n");
       var rank = s[2];
       for(; child && rank; child = XRai.nextSibling(child)) {
-         if (child.tagName == s[1]) rank--;
+         if (XRai.getTagName(child) == s[1]) rank--;
          if (!rank) break;
       }
       if (!child) {
@@ -1814,7 +1823,16 @@ XRaiLoad = function() {
       if (path == "" || path == null || path == "null") return null;
       var x;
       if (this.xpe) {
-       path = "." + path.replace(/\/(?!xrai:)/g,"/xraic:");
+       var matches = path.split("/");
+       var s = "";
+       var m;
+       for(var i = 1; i < matches.length; i++)
+         if (m = matches[i].match(/^(?!xrai:)(.*:.*)(\[.+)$/)) 
+                  s += "/xraic:xrai_itag[@xrai_tagname=\"" + m[1] + "\"]" + m[2];
+         else if (matches[i].indexOf("xrai:") == 0) s += "/" + matches[i];
+         else s += "/xraic:" + matches[i];
+              
+       path = "." + s; // path.replace(/\/(?!xrai:)/g,"/xraic:");
        if (debug) XRai.debug("Evaluating " + path);
          x = this.xpe.evaluate(path, XRai.getRoot().parentNode, this.nsResolver, 0, null).iterateNext();
          return x;
