@@ -1774,6 +1774,7 @@ XRaiLoad = function() {
    }
 
    this.loadErrors = 0;
+   this.loadWarnings = 0;
    this.errorCode = 0;
    
    this.BEP_ERROR = 1;
@@ -1859,7 +1860,7 @@ XRaiLoad = function() {
       var ePath = this.resolvePath(path);
       if (!ePath) {
          if (debug) XRai.debug("Error: " + ePath + "\n");
-         this.loadErrors++;
+         this.loadWarnings++;
          this.errorCode |= this.SUPPORT_ELEMENT_ERROR;
       } else {
          ePath.setAttribute("support",1);
@@ -1879,12 +1880,17 @@ XRaiLoad = function() {
       }
    }
 
-   this.showError = function() {
+   this.getErrorMessage = function(html) {  
          var s = "";
-         if (this.errorCode & this.ASSESSMENT_ERROR) s += "\nError while loading assessments";
-         if (this.errorCode & this.BEP_ERROR) s += "\nError while loading BEP";
-         if (this.errorCode & this.SUPPORT_ELEMENT_ERROR) s += "\nError while loading support elements";
-         alert("Error while loading assessment context. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar)." + s);
+         var br = html ? "<br/>" : "\n";
+         if (this.errorCode & this.ASSESSMENT_ERROR) s += br + "Error while loading assessments";
+         if (this.errorCode & this.BEP_ERROR) s += br + "Error while loading BEP";
+         if (this.errorCode & this.SUPPORT_ELEMENT_ERROR) s += br + "Error while loading support elements";
+         return s;
+   }
+   
+   this.showError = function() {
+         alert("Error while loading assessment context. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar)." + this.getErrorMessage());
          XRai.noSave = true;
    }
    
@@ -1926,6 +1932,8 @@ XRaiLoad = function() {
          XRai.updateSaveIcon();
          XRai.updateStatusIcon();
          if (debug) XRai.dumpPassages();
+         if (this.loadWarnings > 0) 
+            Message.show("warning","There were some warnings while loading the documents, but you can still assess this document: " + this.getErrorMessage(),-1);
       } catch(e) {
          if (debug) XRai.debug("Error while loading assessments: " + XRai.getError(e) + "\n");
          this.showError();
