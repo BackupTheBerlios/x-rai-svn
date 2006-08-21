@@ -316,18 +316,25 @@ $stack_ns = Array();
 $defined_ns = array("html" => true, "xrai" => true, "xraic" => true);
 $load_errors = 0;
 
+// function transformInvalidName($name) {
+//    if (!preg_match("#^([a-zA-Z][^:]*)(:[a-zA-Z][^:]*)?#", $name)) 
+//       return "xrai_" .  rawurlencode($name);
+//    
+//    return $name;
+// }
 
 function startElement($parser, $name, $attrs) {
    global $defined_ns, $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors, $xrains, $stack_ns;
 
    if (function_exists("collectionPreStartElement")) collectionPreStartElement($name, $attrs);
 
-   print "<$name";
-   if (preg_match("#^([^:]+):#", $name, $matches) && !$defined_ns[$matches[1]]) {
-         print " xmlns:$matches[1]=\"$documentns\"";
-         $defined_ns[$matches[1]] = true;
-         array_push($stack_ns, $matches[1]);
-   } else array_push($stack_ns, false);
+//    $name = transformInvalidName($name);
+      print "<$name";
+      if (preg_match("#^([^:]+):#", $name, $matches) && !$defined_ns[$matches[1]]) {
+            print " xmlns:$matches[1]=\"$documentns\"";
+            $defined_ns[$matches[1]] = true;
+            array_push($stack_ns, $matches[1]);
+      } else array_push($stack_ns, false);
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns:xrai=\"$xrains\" xmlns=\"$documentns\"";
    $depth++;
    foreach($attrs as $aname => $value) {
@@ -351,6 +358,8 @@ function endElement($parser, $name) {
    $ns = array_pop($stack_ns);
    if ($ns) $defined_ns[$ns] =  false;
    if (function_exists("collectionEndElement")) collectionEndElement($name);
+   
+//    $name = transformInvalidName($name);
    print "</$name>";
 }
 

@@ -933,7 +933,7 @@ XRai.unhighlight = function() {
          if (debug) XRai.debug("Next conflicting passage is " + z.getPaths() +"\n");
       }
 
-      if (y != z.start && XRai.isBefore(y,z.start) && !XRai.isIn(z.start,y)) return;
+      if (!z || (y != z.start && XRai.isBefore(y,z.start) && !XRai.isIn(z.start,y))) return;
 
       var firstRemoved = false;
 
