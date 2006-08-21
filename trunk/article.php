@@ -311,15 +311,23 @@ print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection
 // // print "<h1>$title</h1>\n";
 
 $stack = Array();
+$stack_ns = Array();
+// Defined namespaces
+$defined_ns = array("html" => true, "xrai" => true, "xraic" => true);
 $load_errors = 0;
 
 
 function startElement($parser, $name, $attrs) {
-   global $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors, $xrains;
+   global $defined_ns, $depth, $base_url, $stack, $media_url, $collection, $directory, $documentns, $load_errors, $xrains, $stack_ns;
 
    if (function_exists("collectionPreStartElement")) collectionPreStartElement($name, $attrs);
 
    print "<$name";
+   if (preg_match("#^([^:]+):#", $name, $matches) && !$defined_ns[$matches[1]]) {
+         print " xmlns:$matches[1]=\"$documentns\"";
+         $defined_ns[$matches[1]] = true;
+         array_push($stack_ns, $matches[1]);
+   } else array_push($stack_ns, false);
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns:xrai=\"$xrains\" xmlns=\"$documentns\"";
    $depth++;
    foreach($attrs as $aname => $value) {
@@ -337,9 +345,11 @@ function startElement($parser, $name, $attrs) {
 }
 
 function endElement($parser, $name) {
-   global $depth, $stack;
+   global $depth, $stack, $stack_ns, $defined_ns;
    $depth--;
    array_pop($stack);
+   $ns = array_pop($stack_ns);
+   if ($ns) $defined_ns[$ns] =  false;
    if (function_exists("collectionEndElement")) collectionEndElement($name);
    print "</$name>";
 }

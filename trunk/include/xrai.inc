@@ -5,7 +5,8 @@ header("Pragma: no-cache");
 // error_reporting (E_ALL);
 
 require_once 'DB.php';
-
+require_once 'astatus.inc';
+   
 // Report all errors except E_NOTICE
 error_reporting (E_ALL ^ E_NOTICE);
 

@@ -17,7 +17,7 @@ require_once("include/xslt.inc");
 $PHP_SELF = $_SERVER["PHP_SELF"];
 set_time_limit(360); // Time limit = 6 minutes
 
-preg_match('#^/([^/]*)(?:|/(.*[^\/])/?)$#',$_SERVER["PATH_INFO"], $matches);
+preg_match('#^/([^/]*)(?:|/(.*[^\/])/*)$#',$_SERVER["PATH_INFO"], $matches);
 $collection = $matches[1];
 $path = $matches[2];
 if (!$path) $path ="";
@@ -40,7 +40,7 @@ if ($id_pool)
 $i = sizeof($localisation);
 do {
   if (DB::isError($row)) fatal_error("Database error",$row->getUserInfo());
-  array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]/$row[filename]?id_pool=$id_pool",$row["title"])));
+  array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]" . ($row["filename"] ? "/$row[filename]" : "") . "?id_pool=$id_pool",$row["title"])));
 } while ($row["parent"] > 0 && $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE id=?",array($row["parent"])));
 $up_url = $localisation[sizeof($localisation)-2][1];
 
@@ -168,7 +168,7 @@ print "<h1>" . htmlspecialchars($title) . "</h1>\n";
  </script>
 <?
 
-print "<div class='inex'>";
+print "<div class='inex' style='margin-bottom: 3cm;'>";
 
 // Has no cache
  if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";

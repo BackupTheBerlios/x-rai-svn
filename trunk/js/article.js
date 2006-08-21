@@ -905,8 +905,10 @@ XRai.normalisePassage = function(x,y) {
 
 
 XRai.unhighlight = function() {
-   if (!write_access) return;
-   if (docStatus != 0) return;
+   // Check if we can unhighlight (status is open, write access, and there is
+   // already an highlighted passage)
+   if (!write_access || (docStatus != 0) || (!XRai.firstPassage)) return;
+   
    var toremove = new Array();
    var toadd = new Array();
    try {
@@ -1772,6 +1774,12 @@ XRaiLoad = function() {
    }
 
    this.loadErrors = 0;
+   this.errorCode = 0;
+   
+   this.BEP_ERROR = 1;
+   this.SUPPORT_ELEMENT_ERROR = 2;
+   this.ASSESSMENT_ERROR = 4;
+   
    this.toadd = new Array();
 
    if (debug) {
@@ -1822,6 +1830,7 @@ XRaiLoad = function() {
          if (!eStart || (end != "" && !eEnd)) {
             if (debug) XRai.debug("[LDERROR] " + eStart + "/" + eEnd + "\n");
             this.loadErrors++;
+            this.errorCode |= this.ASSESSMENT_ERROR;
          } else {
             if (eEnd) {
                try {
@@ -1829,6 +1838,7 @@ XRaiLoad = function() {
                   if ((p.start != eStart) || (p.end != eEnd)) {
                      XRai.error("[LDERROR] Loaded passage was not normalised!\n");
                      this.loadErrors++;
+                     this.errorCode |= this.ASSESSMENT_ERROR;
                   }
                } catch(e) {
                   this.loadErrors++;
@@ -1841,6 +1851,7 @@ XRaiLoad = function() {
       } catch(e) {
          if (debug) XRai.debug("Error while loading assessments: " + XRai.getError(e) + "\n");
          this.loadErrors++;
+         this.errorCode |= this.ASSESSMENT_ERROR;
       }
    }
 
@@ -1849,6 +1860,7 @@ XRaiLoad = function() {
       if (!ePath) {
          if (debug) XRai.debug("Error: " + ePath + "\n");
          this.loadErrors++;
+         this.errorCode |= this.SUPPORT_ELEMENT_ERROR;
       } else {
          ePath.setAttribute("support",1);
       }
@@ -1860,18 +1872,27 @@ XRaiLoad = function() {
       if (!ePath) {
          if (debug) XRai.debug("Error (BEP): path not resolved " + ePath  + "/" + path + "\n");
          this.loadErrors++;
+         this.errorCode |= this.BEP_ERROR;
       } else {
          XRai.originalBEP = ePath;
          XRai.setBEP(ePath);
       }
    }
 
+   this.showError = function() {
+         var s = "";
+         if (this.errorCode & this.ASSESSMENT_ERROR) s += "\nError while loading assessments";
+         if (this.errorCode & this.BEP_ERROR) s += "\nError while loading BEP";
+         if (this.errorCode & this.SUPPORT_ELEMENT_ERROR) s += "\nError while loading support elements";
+         alert("Error while loading assessment context. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar)." + s);
+         XRai.noSave = true;
+   }
+   
    this.end = function() {
       var toomuch = 0; // number of extra assessments (due to an old bug)
 
       if (this.loadErrors != 0) {
-         alert("Error while loading assessments. You MUST NOT assess this file (or you can try to erase all the assessments by clicking on the trash icon in the status bar).");
-         XRai.noSave = true;
+         this.showError();
       }
       try {
          // Update containers
@@ -1907,7 +1928,7 @@ XRaiLoad = function() {
          if (debug) XRai.dumpPassages();
       } catch(e) {
          if (debug) XRai.debug("Error while loading assessments: " + XRai.getError(e) + "\n");
-         alert("Error while loading assessments to this document. You MUST NOT assess this file. Please take the time to fill a bug report so this bug can be fixed.");
+         this.showError();
          throw e;
       }
    }

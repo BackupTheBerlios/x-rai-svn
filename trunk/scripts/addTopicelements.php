@@ -46,7 +46,7 @@ function getPathId($path) {
 $file = -1;
 
 function startElement($parser, $name, $attrs) {
-   global $id, $file, $xrai_db, $db_topicelements;
+   global $filepath, $id, $file, $xrai_db, $db_topicelements;
    if ($name == "pool") {
       $id = $attrs["topic"];
       if (!$id) die("No topic id defined!\n");
@@ -58,12 +58,13 @@ function startElement($parser, $name, $attrs) {
    if (!$id) die("No topic id defined!\n");
    switch($name) {
       case "file":
+         $filepath = $attrs["file"];
          $file = getFileId($attrs["file"]);
          break;
       case "path":
          $pathid = getPathId($attrs["path"]);
          if ($file > 0 && $pathid > 0) {
-            print "Adding $file, $pathid\n";
+            print "Adding $file, $pathid ($filepath, $attrs[path])\n";
             $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idpath" => $pathid));
             if (DB::isError($res)) print "[ERROR: " . $res->getUserInfo() . "] Skipping $file, $pathid\n";
             // die($res->getUserInfo() . "\n");

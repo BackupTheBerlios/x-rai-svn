@@ -4,6 +4,7 @@ function getPercentage($x,$y) {
    return $y > 0 ? intval(10000*($x / $y))/100 : 0;
 }
 
+
 /** Draw a bar which length
 */
 function drawABar($inpool, $n, $te, $total) {
