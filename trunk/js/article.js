@@ -1632,7 +1632,6 @@ XRai.setFinished = function(v) {
 // Called when the assessments were saved
 XRai.saved = function(b) {
    if (XRai.saveForm) {
-      XRai.saveForm.parentNode.removeChild(XRai.saveForm);
       XRai.saveForm = null;
    }
    if (b) {
@@ -1688,8 +1687,16 @@ XRai.save = function() {
    var saving_div = document.getElementById("saving_div");
    var saving_message = document.getElementById("saving_message");
    var saving_iframe = document.getElementById("assessing");
-   if (!saving_iframe) alert("Hmmm. Bug! Can't retrieve the iframe 'assessing' for assessing");
-
+   if (!saving_iframe) {
+      alert("Hmmm. Bug! Can't retrieve the iframe 'assessing' for assessing");
+      return;
+   }
+   var bdy = saving_iframe.contentDocument.getElementsByTagName("body");
+   if (!bdy || !bdy[0]) {
+      Message.show("error","Assessments cannot be saved (cannot find the assessment frame)\n",-1);
+      return;
+   }
+   
    // Prepare the frame
 
    setSavingMessage("Preparing assessments");
@@ -1698,7 +1705,7 @@ XRai.save = function() {
   // Static information
    XRai.saveForm = document.createElement("form");
    XRai.saveForm.style.display = "none";
-   XRai.saveForm.setAttribute("target","xrai-assessing");
+//    XRai.saveForm.setAttribute("target","xrai-assessing");
    XRai.saveForm.setAttribute("action",base_url + "/assess.php");
    XRai.saveForm.setAttribute("method","post");
    XRai.saveForm.appendChild(createHiddenInput("id_pool",id_pool));
@@ -1765,7 +1772,7 @@ XRai.save = function() {
    }
 
   // Submit
-   document.getElementById("body").appendChild(XRai.saveForm);
+   bdy[0].appendChild(XRai.saveForm);
    setSavingMessage("Connecting to server...");
    XRai.saveForm.submit();
 }
