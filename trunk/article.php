@@ -65,7 +65,7 @@ if ($id_pool)
 $i = sizeof($localisation);
 while ($row["parent"] > 0 && $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE id=?",array($row["parent"])))  {
   if (DB::isError($row)) fatal_error("Database error",$row->getUserInfo());
-  array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]/$row[filename]?id_pool=$id_pool",$row["title"])));
+  array_splice($localisation,$i,0,array(array( ($row["filename"] != "" ? $row["filename"] : $row["collection"]), "$base_url/collections/$row[collection]" . ($row["filename"] ? "/$row[filename]" : "") . "?id_pool=$id_pool",$row["title"])));
 }
 $up_url = $localisation[sizeof($localisation)-1][1];
 $localisation[] = array("File $file","$PHP_SELF?id_pool=$id_pool&amp;file=". rawurlencode($file) . "&amp;collection=$collection","$title");
@@ -384,7 +384,8 @@ function cdata($parser, $data) {
   if ($error) print "</html:span>";
 }
 
-$xml_parser = xml_parser_create();
+$xml_parser = xml_parser_create("UTF-8");
+// xml_parser_set_option($parser, XML_OPTION_TARGET_ENCODING, "UTF-8");
 xml_set_element_handler($xml_parser, "startElement", "endElement");
 xml_set_character_data_handler($xml_parser, "cdata");
 xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
