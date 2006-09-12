@@ -22,7 +22,7 @@ function collectionStartElement($name, &$attrs) {
 
 function collectionPreStartElement($name, &$attrs) {
   if ($name == "collectionlink") {
-   	$attrs["xlink:href"] =  htmlspecialchars(preg_replace("#&file=\d+#","&file=".preg_replace("#.xml$#","",$attrs["xlink:href"]),$_SERVER["REQUEST_URI"]));
+   	$attrs["xlink:href"] =  preg_replace("#&file=\d+#","&file=".preg_replace("#.xml$#","",$attrs["xlink:href"]),$_SERVER["REQUEST_URI"]);
    }
 }   
    

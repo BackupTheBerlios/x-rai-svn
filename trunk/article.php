@@ -313,7 +313,7 @@ print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection
 $stack = Array();
 $stack_ns = Array();
 // Defined namespaces
-$defined_ns = array("html" => true, "xrai" => true, "xraic" => true);
+$defined_ns = array("html" => true, "xrai" => true, "xraic" => true, "xlink" => true);
 $load_errors = 0;
 
 function isInvalidTagName($name) {
