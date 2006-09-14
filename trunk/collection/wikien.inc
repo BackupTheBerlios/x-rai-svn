@@ -1,6 +1,11 @@
 <?
 
 function collectionStartDocument($collection,$file,$title) {
+?>
+<script language="javascript">
+
+</script>
+<?
   print "<p style=\"color: #888; text-align: center; margin: 3px;\">Wikipedia link: <a href=\"http://en.wikipedia.org/wiki/" . rawurlencode($title) . "\">" . htmlspecialchars($title) . "</a></p>";
   global $xml_documents;
   if (!is_dir($xml_documents))

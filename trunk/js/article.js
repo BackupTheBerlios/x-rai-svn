@@ -1652,8 +1652,8 @@ XRai.saved = function(b) {
    if (XRai.onsaved) XRai.onsaved();
 }
 
-function createHiddenInput(name,value) {
-   var x = document.createElement("input");
+function createHiddenInput(name,value,doc) {
+   var x = (doc ? doc : document).createElement("input");
    x.setAttribute("type","hidden");
    x.setAttribute("name",name);
    x.setAttribute("value",value);
@@ -1663,6 +1663,7 @@ function createHiddenInput(name,value) {
 
 // Called when the user wants to save the document
 XRai.save = function() {
+   if (debug) XRai.debug("Save: checking");
 
    if (!XRai.hasChanged()) {
       Message.show("notice","Nothing to save");
@@ -1684,6 +1685,8 @@ XRai.save = function() {
       return;
    }
 
+   if (debug) XRai.debug("Save: initialisation");
+
    var saving_div = document.getElementById("saving_div");
    var saving_message = document.getElementById("saving_message");
    var saving_iframe = document.getElementById("assessing");
@@ -1691,34 +1694,39 @@ XRai.save = function() {
       alert("Hmmm. Bug! Can't retrieve the iframe 'assessing' for assessing");
       return;
    }
-   var bdy = saving_iframe.contentDocument.getElementsByTagName("body");
-   if (!bdy || !bdy[0]) {
+      
+   var saving_doc = saving_iframe.contentDocument;
+   var bdy = saving_doc ? saving_doc.getElementsByTagName("body") : null;
+
+  if (!bdy || !bdy[0]) {
       Message.show("error","Assessments cannot be saved (cannot find the assessment frame)\n",-1);
       return;
    }
    
    // Prepare the frame
 
+   if (debug) XRai.debug("Save: preparing the assessments");
    setSavingMessage("Preparing assessments");
    saving_div.style.visibility = "visible";
 
   // Static information
-   XRai.saveForm = document.createElement("form");
+   XRai.saveForm = saving_doc.createElement("form");
    XRai.saveForm.style.display = "none";
 //    XRai.saveForm.setAttribute("target","xrai-assessing");
    XRai.saveForm.setAttribute("action",base_url + "/assess.php");
    XRai.saveForm.setAttribute("method","post");
-   XRai.saveForm.appendChild(createHiddenInput("id_pool",id_pool));
-   XRai.saveForm.appendChild(createHiddenInput("collection",xrai_collection));
-   XRai.saveForm.appendChild(createHiddenInput("file",xrai_file));
-   XRai.saveForm.appendChild(createHiddenInput("aversion",aversion));
-   XRai.saveForm.appendChild(createHiddenInput("docstatus",docStatus));
+   XRai.saveForm.appendChild(createHiddenInput("id_pool",id_pool, saving_doc));
+   XRai.saveForm.appendChild(createHiddenInput("collection",xrai_collection, saving_doc));
+   XRai.saveForm.appendChild(createHiddenInput("file",xrai_file, saving_doc));
+   XRai.saveForm.appendChild(createHiddenInput("aversion",aversion, saving_doc));
+   XRai.saveForm.appendChild(createHiddenInput("docstatus",docStatus,saving_doc));
+   
 
    // Add history
    XRai.addHistory("SAVE");
    for(var i = 0; i < XRai.history.length; i++) {
       var x = XRai.history[i];
-      XRai.saveForm.appendChild(createHiddenInput("hist[]",x[0]+","+x[1]+","+ (x[2] ? XRai.getPath(x[2]) : "") + "," + (x[3] ? XRai.getPath(x[3]) : "")));
+      XRai.saveForm.appendChild(createHiddenInput("hist[]",x[0]+","+x[1]+","+ (x[2] ? XRai.getPath(x[2]) : "") + "," + (x[3] ? XRai.getPath(x[3]) : ""), saving_doc));
    }
 
    // Add assessments
@@ -1735,7 +1743,7 @@ XRai.save = function() {
          if (res.passage) s += XRai.getPath(res.passage.start) + "," + XRai.getPath(res.passage.end);
          else s += XRai.getPath(res.parentNode) + ",";
          if (debug) XRai.debug("Adding " + s + " (" + res.saved + "/" + res.value + ")\n");
-         XRai.saveForm.appendChild(createHiddenInput("a[]",s));
+         XRai.saveForm.appendChild(createHiddenInput("a[]",s,saving_doc));
       }
       }
 
@@ -1746,19 +1754,19 @@ XRai.save = function() {
                   + (p.validated ?  Passage.VALIDATED : Passage.UNVALIDATED) + ",";
          s += XRai.getPath(p.start) + "," + XRai.getPath(p.end);
          if (debug) XRai.debug("Adding " + s + " (" + p.getPaths() + ")\n");
-         XRai.saveForm.appendChild(createHiddenInput("a[]",s));
+         XRai.saveForm.appendChild(createHiddenInput("a[]",s,saving_doc));
       }
    }
    
    // Add BEP
-   XRai.saveForm.appendChild(createHiddenInput("BEP",XRai.getPath(XRai.BEPElement.parentNode)));
+   XRai.saveForm.appendChild(createHiddenInput("BEP",XRai.getPath(XRai.BEPElement.parentNode),saving_doc));
 
    for(var p = XRai.firstOldPassage; p; p = p.next) {
       if (p.saved != Passage.OLDVALIDATED) {
          var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.OLDVALIDATED + ",";
          s += XRai.getPath(p.start) + "," + XRai.getPath(p.end);
          if (debug) XRai.debug("Adding " + s + " (" + p.getPaths() + ")\n");
-         XRai.saveForm.appendChild(createHiddenInput("a[]",s));
+         XRai.saveForm.appendChild(createHiddenInput("a[]",s,saving_doc));
       }
    }
 
@@ -1768,11 +1776,12 @@ XRai.save = function() {
       res = XRai.assessmentsToRemove[i];
       if (res.isPassage) s += XRai.getPath(res.start) + "," + XRai.getPath(res.end);
       else s += XRai.getPath(res.parent) + ",";
-      XRai.saveForm.appendChild(createHiddenInput("r[]",s));
+      XRai.saveForm.appendChild(createHiddenInput("r[]",s,saving_doc));
    }
 
   // Submit
    bdy[0].appendChild(XRai.saveForm);
+   if (debug) XRai.debug("Save: connecting to server");
    setSavingMessage("Connecting to server...");
    XRai.saveForm.submit();
 }
@@ -1800,8 +1809,8 @@ XRaiLoad = function() {
    this.toadd = new Array();
 
    if (debug) {
-      if (debug) XRai.debug("\n\nLOADING\n");
-      if (debug && this.xpe) XRai.debug("NS resolver: xraic = " + this.nsResolver.lookupNamespaceURI("xraic") + "; xrai = " + this.nsResolver.lookupNamespaceURI("xrai") + "\n");
+      XRai.debug("\n\nLOADING\n");
+      if (this.xpe) XRai.debug("NS resolver: xraic = " + this.nsResolver.lookupNamespaceURI("xraic") + "; xrai = " + this.nsResolver.lookupNamespaceURI("xrai") + "\n");
    }
 
    // step regexp => 2 prefix, 3 localname, 4 rank

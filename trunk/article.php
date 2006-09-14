@@ -253,7 +253,7 @@ if ($id_pool> 0) {
 //  $statistics = $doc_assessments->get_statistics();
 
 ?>
-<iframe src="about:blank" id="assessing" name="xrai-assessing" align="middle" onclick="this.visibility='hide'"
+<iframe src="<?="$base_url/blank"?>" id="assessing" name="xrai-assessing" align="middle" onclick="this.visibility='hide'"
   style="visibility: hidden; position: fixed; left: 10%; top: 10%; bottom: 10%; right: 10%; z-index: 1; background: white">
 </iframe>
 <iframe src="about:blank" id="erasing" style="display: none; position: fixed; top: 10; left: 10"></iframe>
