@@ -10,6 +10,7 @@
 
 
 $nopaths = false;
+$_SERVER["REMOTE_USER"] = "root";
 
 $i = 1;
 while ($i < sizeof($_SERVER["argv"])) {
