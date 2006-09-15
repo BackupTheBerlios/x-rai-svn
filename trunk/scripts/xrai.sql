@@ -4,9 +4,6 @@
 
 -- pg_dump --no-owner --schema_only --schema=inex_2006
 
--- SET search_path = inex_2006, pg_catalog;
-
-SET default_with_oids = false;
 
 --
 -- Name: assessments; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -18,7 +15,7 @@ CREATE TABLE assessments (
     startpath integer NOT NULL,
     endpath integer NOT NULL,
     idpool integer NOT NULL
-) without OID;
+); 
 
 
 
@@ -56,7 +53,7 @@ CREATE TABLE files (
     parent integer,
     pre integer,
     post integer
-) without OID;
+);
 
 COMMENT ON TABLE files IS 'Files index by id';
 CREATE INDEX "parents" ON files USING btree (parent);
@@ -93,7 +90,7 @@ CREATE TABLE filestatus (
     hasrelevant boolean DEFAULT false NOT NULL,
     bep int NOT NULL,
     CONSTRAINT "validVersion" CHECK (("version" > 0))
-) WITHOUT OID;
+);
 
 ALTER TABLE filestatus ADD CONSTRAINT bep_path FOREIGN KEY (bep) REFERENCES paths(id) ON UPDATE CASCADE;
 

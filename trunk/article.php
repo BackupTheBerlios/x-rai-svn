@@ -224,7 +224,7 @@ if ($id_pool > 0) {
     if (!preg_match("-\w-",$kw)) continue;
     $kw= preg_replace("-\s*(.*)\s*-",'$1',$kw);
     $kw= preg_replace("-\s\s+-",' ',$kw);
-    $keywords[] = "/(\W|^)($kw)(\W|$)/i";
+    $keywords[] = "/(\W|^)(" . preg_replace("#/#",'\'',$kw) . ")(\W|$)/i";
     $colours[] = '$1<xrai:kw class="' . $cssname . '">$2</xrai:kw>$3';
   }
 }
