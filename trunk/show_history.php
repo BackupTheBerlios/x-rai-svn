@@ -24,7 +24,7 @@ function showDocument(event) {
 </script>
 <?
 
-$res = $xrai_db->query("SELECT idfile, collection, filename, title, inpool, status, hasrelevant FROM history JOIN files ON idfile = id LEFT JOIN filestatus USING (idpool, idfile) WHERE idpool=? GROUP BY idfile, collection, filename, title, inpool, status, hasrelevant ORDER BY max(time) DESC LIMIT 50",array($id_pool));
+$res = $xrai_db->query("SELECT idfile, collection, filename, title, inpool, status, hasrelevant FROM history JOIN files ON idfile = id LEFT JOIN filestatus USING (idpool, idfile) WHERE idpool=? GROUP BY idfile, collection, filename, title, inpool, status, hasrelevant ORDER BY max(time) DESC LIMIT 500",array($id_pool));
 if (DB::isError($res)) print "<div style='font-weight: bold'>Database error: " . $res->getUserInfo() . "</div>";
 else if ($res->numRows() == 0) print "<div style='font-weight: bold'>No history</div>";
 else {

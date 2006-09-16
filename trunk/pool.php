@@ -51,8 +51,8 @@ $p2=getPercentage($t[1],$t[1]+$t[2]);
 ?>
 
 <div>
-<div><?=$p1?> % of documents are to assess</div>
-<div><?=$p2?> % of original pool documents are to assess</div>
+<div title="<?=$t["1"] + $t["-1"]?> out of <?=$t["1"]+$t["2"]+$t["-1"]+$t["-2"]?> "><?=$p1?> % of documents are to assess</div>
+<div title="<?=$t["1"] ?> out of <?=$t["1"]+$t["2"]?> "><?=$p2?> % of original pool documents are to assess</div>
 </div>
 <?
 

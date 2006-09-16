@@ -65,5 +65,5 @@ template > template:before { content: attr(name); display: table-cell; font-weig
 template > template { display: table-row; padding: 3px; border: 1px solid #888; }
 
 caption { display: block; }
-figure { display: run-in; background: #F9F9F9; padding: 3px; border: 1px solid #000; }
+figure { display: block; background: #F9F9F9; padding: 3px; border: 1px solid #000; }
    
