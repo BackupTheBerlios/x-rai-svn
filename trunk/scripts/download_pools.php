@@ -5,7 +5,13 @@
    (c) B. Piwowarski, 2004
 
    Changes:
+   - september 2006: handles BEP
    - october 2005: adaptation to the new highlighting method
+
+
+   Example of call:
+
+   export DIR=adhoc-2006; rm -rf ~/temp/$DIR; mkdir ~/temp/$DIR; php -d memory_limit=128M ../scripts/download_pools.php  official ~/temp/$DIR > ~/temp/$DIR.log 2>&1 && ((cd ~/temp; tar c $DIR) | gzip -c > adhoc-$(date +%Y%m%d-%S%M%H).tgz); rm -rf ~/temp/$DIR
 */
 
 
@@ -171,6 +177,7 @@ $alldone = true;
 $done = array();
 
 // First loop: get the list of files to explore
+print "Getting the list of files\n";
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
 
    // New topic?
@@ -206,6 +213,7 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
       if (!is_array($done[$row["idfile"]])) 
          $done[$row["idfile"]] = array($row["collection"],$row["filename"],array());
       // Add this pool id for this file id
+      if ($row["bep"] == "null" || $row["bep"] == "") $row["bep"] = false;
       array_push($done[$row["idfile"]][2],array($row["idpool"],$row["bep"]));
    }
 }
@@ -219,12 +227,11 @@ addPool(&$current);
 /* ----*---- Read the XML file ----*----
 
  fill a global data array ($paths) only for paths already in the set of keys $paths (and their ancestors):
-   0. path, 
-   1. start offset, 
-   2. end offset
+   0. start offset, 
+   1. end offset
  If the element is xrai:s, added to the array are:
-   3. parent path, 
-   4. offset in the parent path
+   2. parent path, 
+   3. offset in the parent path
 
   The stack $stack is composed of an array whose components are:
    0. path, 
@@ -306,7 +313,8 @@ function cdata($parser, $data) {
 }
 
 /** Return the XPointer for a given path
- @param begin is a boolean
+ @param path the XPath
+ @param begin do we want an XPointer to the beginning of the element or to the end?
 */
 function getXPointer($path, $begin) {
    global $paths;
@@ -346,6 +354,7 @@ function implode_array($sep, &$a, $k) {
    return $s;
 }
 
+print "Loop on files...\n";
 reset($done);
 // Loop on files:            
 while (list($id, $data) = each(&$done)) {
@@ -365,11 +374,13 @@ while (list($id, $data) = each(&$done)) {
    // Get the list of assessments for the pools
    $list = $xrai_db->query($query . implode_array(",", $data[2], 0) . ")", $id);
    if (DB::isError($list)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
-
+//    print "Query was: " . $xrai_db->last_query . ": " . $list->numRows() . "\n";
    // Add BEP paths
    for($k = 0; $k < sizeof($data[2]); $k++) 
-      if ($data[2][$k][1] != "") $paths[$data[2][$k][1]] = true;
-      
+      if ($data[2][$k][1]) {
+         $paths[$data[2][$k][1]] = true;
+//          print "Added BEP (" . $data[2][$k][0] . ") => " . $data[2][$k][1] . "\n";
+      }  
    while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
       $idpool = $row["idpool"];
 
@@ -441,7 +452,7 @@ while (list($id, $data) = each(&$done)) {
       print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
       
-      if ($data_item[1] != "") fwrite($files[$pool],"   <best-entry-point path=\"" . getXPointer($data_item[1], true) . "\"/>\n");
+      if ($data_item[1]) fwrite($files[$pool],"   <best-entry-point path=\"" . getXPointer($data_item[1], true) . "\"/>\n");
       $error = false;
       $cp = &$p[$pool];
 
