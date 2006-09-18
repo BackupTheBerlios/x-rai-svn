@@ -32,7 +32,10 @@ function collectionStartElement($name, &$attrs) {
 function collectionPreStartElement($name, &$attrs) {
   if ($name == "collectionlink") {
    	$attrs["xlink:href"] =  preg_replace("#&file=\d+#","&file=".preg_replace("#.xml$#","",$attrs["xlink:href"]),$_SERVER["REQUEST_URI"]);
-   }
+   } else if ($name == "cell") {
+      if ($attrs["rowspan"]) $attrs["html:rowspan"] = $attrs["rowspan"];
+      if ($attrs["colspan"]) $attrs["html:colspan"] = $attrs["colspan"];
+   } 
 }   
    
 function collectionEndElement($name) {

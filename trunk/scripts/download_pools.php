@@ -1,4 +1,5 @@
 <?
+// kate: indent-mode cstyle
 /*
    This script generates one assessment file by pool
    (c) B. Piwowarski, 2004
@@ -169,7 +170,10 @@ $current = array(null);
 $alldone = true;
 $done = array();
 
+// First loop: get the list of files to explore
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
+
+   // New topic?
    if ($current[0] != $row["idpool"]) {
       if ($current[0] != null) addPool(&$current);
       $current = array($row["idpool"],$row["idtopic"],true,null,$row["type"],$row["main"]  == $db_true);
@@ -192,11 +196,17 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
                      xml_get_current_line_number($xml_parser_cp)));
       }
       xml_parser_free($xml_parser_cp);
-   }
+   } 
+            
+   // Get the filename and the status
+   // "done" is an array topic id =>
+   // [ collection, filename, list of arrays [pool id, bep] ]
    if ($row["status"] != 2) $current[2] = false;
    else {
-      if (!is_array($done[$row["idfile"]])) $done[$row["idfile"]] = array($row["collection"],$row["filename"],array(),$row["bep"]);
-      array_push($done[$row["idfile"]][2],$row["idpool"]);
+      if (!is_array($done[$row["idfile"]])) 
+         $done[$row["idfile"]] = array($row["collection"],$row["filename"],array());
+      // Add this pool id for this file id
+      array_push($done[$row["idfile"]][2],array($row["idpool"],$row["bep"]));
    }
 }
 
@@ -206,14 +216,24 @@ addPool(&$current);
 // Loop on files
 
 
-// -*- Read the XML file
+/* ----*---- Read the XML file ----*----
 
-// fill a global data array ($paths) only for paths already in the set of keys $paths (and their ancestors):
-// [0. path, 1. start offset, 2. end offset]
-// If the element is xrai:s, added to the array are [ parent path, offset in the parent path ]
+ fill a global data array ($paths) only for paths already in the set of keys $paths (and their ancestors):
+   0. path, 
+   1. start offset, 
+   2. end offset
+ If the element is xrai:s, added to the array are:
+   3. parent path, 
+   4. offset in the parent path
 
-// The stack is composed of
-// [ 0. path, 1. [ ranks (ie mapping tag name => integer) ], 2. start offset, 3. boolean (ancestor of an included node), 4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 5. # of non-contiguous xrai:s tags, 6. BEP]
+  The stack $stack is composed of an array whose components are:
+   0. path, 
+   1. [ ranks (ie mapping tag name => integer) ], 
+   2. start offset, 
+   3. boolean (ancestor of an included node), 
+   4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 
+   5. # of non-contiguous xrai:s tags, 6. BEP]
+*/
 
 function startElement($parser, $name, $attrs) {
    global $stack, $pos, $paths, $nb_passages, $topicPassages, $highlight_only;
@@ -261,8 +281,9 @@ function endElement($parser, $name) {
       }
       $paths[$path] = array($data[2], $pos);
       $last = &$stack[sizeof($stack)-1];
-      if ($last[4] >= 0) { // it is an xrai:s tag, we add an xpointer
-//          print "ADDED a xrai:s: $path, $data[2]\n";
+      if ($last[4] >= 0) { 
+         // it is an xrai:s tag, we add an xpointer
+         // print "ADDED a xrai:s: $path, $data[2]\n";
         array_push($paths[$path], "$last[0]/text()[$last[5]]", $last[4]);
       }
    }
@@ -284,6 +305,9 @@ function cdata($parser, $data) {
    $pos += strlen($data);
 }
 
+/** Return the XPointer for a given path
+ @param begin is a boolean
+*/
 function getXPointer($path, $begin) {
    global $paths;
    $p = &$paths[$path];
@@ -292,8 +316,17 @@ function getXPointer($path, $begin) {
 }
 
 
-// -*- Loop on files
+/* -----*----- Loop on files -----*-----
+      
+   The files id are the keys of the array $done. Within the loop:
+      - $id is the topic id 
+      - $data is an array:
+           0. collection, 
+           1. filename, 
+           2. list of arrays [0. pool id, 1. bep]
 
+*/
+      
 // current contains the current file / collection, the different paths, the passages and assessments
 function psort_order($a,$b) {
    return $a[0][0] - $b[0][0];
@@ -305,18 +338,38 @@ $query = "SELECT assessments.exhaustivity, assessments.idpool, exhaustivity, pat
    JOIN paths pathsend ON assessments.endpath = pathsend.id
    WHERE assessments.idfile = ? AND idpool in (";
 
+// Implode an array of arrays using the $k component each time
+function implode_array($sep, &$a, $k) {
+   $s = "";
+   for($i = 0; $i < sizeof($a); $i++)
+      $s .= ($i > 0 ? $sep : "") . $a[$i][$k];
+   return $s;
+}
+
 reset($done);
+// Loop on files:            
 while (list($id, $data) = each(&$done)) {
+   // Will contain the list of paths to analyse
    $paths = array();
-   $topicPassages = array(); // start-end of passages for the MM track (highlight only)
-   $p = array(); // passages
-   $j = array(); // judgments
+   // start-end of passages for the highlight only assessments
+   $topicPassages = array(); 
+   // passages
+   $p = array();
+   // judgments 
+   $j = array();
+   
    print "[In $data[0]/$data[1] ($id)]\n";
+   // Should not happen !
    if (sizeof($data[2]) == 0) die();
 
-   $list = $xrai_db->query($query . implode(",", $data[2]) . ")", $id);
+   // Get the list of assessments for the pools
+   $list = $xrai_db->query($query . implode_array(",", $data[2], 0) . ")", $id);
    if (DB::isError($list)) { print "Error.\n" . $list->getUserInfo() . "\n\nExiting\n"; exit(1); }
 
+   // Add BEP paths
+   for($k = 0; $k < sizeof($data[2]); $k++) 
+      if ($data[2][$k][1] != "") $paths[$data[2][$k][1]] = true;
+      
    while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
       $idpool = $row["idpool"];
 
@@ -338,7 +391,7 @@ while (list($id, $data) = each(&$done)) {
 
       } else {
          $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
-         // do some inference
+         // do some inference (exhaustivity for ancestors)
          $path = $row["pstart"];
          while ($path != "") {
             $path = preg_replace('#/[^/]+$#','',$path);
@@ -383,10 +436,12 @@ while (list($id, $data) = each(&$done)) {
    }
 
    // Loop on pools
-   foreach($data[2] as $pool) {
+   foreach($data[2] as &$data_item) {
+      $pool = &$data_item[0];
       print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
-      if ($data[3] != "") fwrite($files[$pool],"   <best-entry-point path=\"$data[3]\"/>\n");
+      
+      if ($data_item[1] != "") fwrite($files[$pool],"   <best-entry-point path=\"" . getXPointer($data_item[1], true) . "\"/>\n");
       $error = false;
       $cp = &$p[$pool];
 
