@@ -11,7 +11,7 @@
 
    Example of call:
 
-   export DIR=adhoc-2006; rm -rf ~/temp/$DIR; mkdir ~/temp/$DIR; php -d memory_limit=128M ../scripts/download_pools.php  official ~/temp/$DIR > ~/temp/$DIR.log 2>&1 && ((cd ~/temp; tar c $DIR) | gzip -c > adhoc-$(date +%Y%m%d-%S%M%H).tgz); rm -rf ~/temp/$DIR
+   export DIR=adhoc-2006; rm -rf ~/temp/$DIR; mkdir ~/temp/$DIR; php -d memory_limit=128M ~/2006/adhoc/xrai/scripts/download_pools.php  official ~/temp/$DIR > ~/temp/$DIR.log 2>&1 && ((cd ~/temp; tar c $DIR) | gzip -c > adhoc-$(date +%Y%m%d-%S%M%H).tgz); rm -rf ~/temp/$DIR
 */
 
 
@@ -25,6 +25,8 @@ require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 require_once("include/xslt.inc");
 chdir($old);
+
+$debug = 0;
 
 define('ASSESSED',1);
 define('P_START',2);
@@ -165,7 +167,7 @@ function addPool(&$data) {
    $dir = "$dir" . "/topic-$data[1]";
    if (!is_dir($dir)) mkdir($dir);
    $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
-   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
+   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
 // Select the pools for a given file
@@ -243,7 +245,7 @@ addPool(&$current);
 */
 
 function startElement($parser, $name, $attrs) {
-   global $stack, $pos, $paths, $nb_passages, $topicPassages, $highlight_only;
+   global $stack, $pos, $paths, $nb_passages, $topicPassages, $highlight_only, $debug;
    $last = &$stack[sizeof($stack)-1];
 
    $rank = &$last[1][$name];
@@ -262,23 +264,27 @@ function startElement($parser, $name, $attrs) {
 
       }
    }
-//    print "PATH $path / $nb_passages passages\n";
+
    array_push($stack,array($path, array(), $pos, false, -1, 0));
 }
 
 function endElement($parser, $name) {
-   global $stack, $paths, $pos, $nb_passages, $topicPassages, $highlight_only, $j;
-   $data = array_pop($stack);
-//    print "$data[0] has ($data[2],$pos)\n";
+   global $stack, $paths, $pos, $nb_passages, $topicPassages, $highlight_only, $j, $debug;
 
+   $data = &$stack[sizeof($stack)-1];
    $path = $data[0];
+   
    if ($data[3] || $paths[$path] || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
+      if ($debug) print "\t* Interesting path: $path\n";
       $i = sizeof($stack)-1;
-      while (($i>0) && (!$stack[$i][3])) {
-         if ($highlight_only) { // we add an assessed elements for all the pools within a passage
+      while (($i>0) /*&& (!$stack[$i][3])*/) {
+         if ($debug) print "\tLooking at " . $stack[$i][0] . "\n";
+         if ($highlight_only) {
+            // we add an assessed elements for all the pools within a passage
             foreach($nb_passages as $idpool => $count) {
+//                print "\tEND PATH " . $stack[$i][0] . " for $idpool ($count)\n";
                if ($count > 0) {
-//                   print "ADDING [$count passage(s)] for $idpool THE PATH " . $stack[$i][0] . "\n";
+                  if ($debug) print "\tADDING [$count passage(s)] for $idpool THE PATH " . $stack[$i][0] . "\n";
                   $j[$idpool][$stack[$i][0]] = 2;
                }
             }
@@ -286,21 +292,29 @@ function endElement($parser, $name) {
          $stack[$i][3] = true;
          $i--;
       }
+      
       $paths[$path] = array($data[2], $pos);
-      $last = &$stack[sizeof($stack)-1];
+      // Add the information about xrai:s if needed
+      $last = &$stack[sizeof($stack)-2];
       if ($last[4] >= 0) { 
-         // it is an xrai:s tag, we add an xpointer
-         // print "ADDED a xrai:s: $path, $data[2]\n";
-        array_push($paths[$path], "$last[0]/text()[$last[5]]", $last[4]);
+            // it is an xrai:s tag, we add an xpointer
+            // print "ADDED a xrai:s: $path, $data[2]\n";
+         array_push($paths[$path], "$last[0]/text()[$last[5]]", $last[4]);
       }
    }
 
+
+   array_pop($stack);
+   
+   
+   
    // Remove passages
    if ($highlight_only && is_array($topicPassages[$path])) {
       $x = &$topicPassages[$path][1]; // a passage (the fifth element (idx = 4) is the pool id
       for($k = 0; $k < sizeof($x); $k++) {
          $nb_passages[$x[$k][4]]--;
-         if ($nb_passages[$x[$k][4]] < 0) print "WARNING: Number of passages is below 0 for topic " . $x[$k][4] . ": " . $nb_passages[$x[$k][4]] . "\n";
+         if ($nb_passages[$x[$k][4]] < 0) 
+            print "WARNING: Number of passages is below 0 for topic " . $x[$k][4] . ": " . $nb_passages[$x[$k][4]] . "\n";
          if ($nb_passages[$x[$k][4]] == 0) unset($nb_passages[$x[$k][4]]);
       }
    }
@@ -367,7 +381,7 @@ while (list($id, $data) = each(&$done)) {
    // judgments 
    $j = array();
    
-   print "[In $data[0]/$data[1] ($id)]\n";
+   print "\n[In $data[0]/$data[1] ($id)]\n";
    // Should not happen !
    if (sizeof($data[2]) == 0) die();
 
@@ -379,28 +393,33 @@ while (list($id, $data) = each(&$done)) {
    for($k = 0; $k < sizeof($data[2]); $k++) 
       if ($data[2][$k][1]) {
          $paths[$data[2][$k][1]] = true;
-//          print "Added BEP (" . $data[2][$k][0] . ") => " . $data[2][$k][1] . "\n";
+         if ($debug) print " Added BEP (pool " . $data[2][$k][0] . ") => " . $data[2][$k][1] . "\n";
       }  
    while ($row = &$list->fetchRow(DB_FETCHMODE_ASSOC)) {
       $idpool = $row["idpool"];
 
-
       $paths[$row["pstart"]] = true;
 
       if ($row["pend"]) {
+         // Passage
+         if ($debug) print " Adding passage (pool $idpool) $row[pstart] - $row[pend]\n";
          if (!is_array($p[$idpool])) $p[$idpool] = array();
          $paths[$row["pend"]] = true;
          $p[$idpool][] = array(&$paths[$row["pstart"]], &$paths[$row["pend"]], $row["pstart"], $row["pend"], $idpool);
 
          if ($highlight_only) {
+            // Adding this passage
             $psg = &$p[$idpool][sizeof($p[$idpool])-1];
             if (!isset($topicPassages[$row["pstart"]])) $topicPassages[$row["pstart"]] = array(array(), array());
             if (!isset($topicPassages[$row["pend"]])) $topicPassages[$row["pend"]] = array(array(),array());
             array_push($topicPassages[$row["pstart"]][0], &$psg);
             array_push($topicPassages[$row["pend"]][1], &$psg);
-         }
+            unset($psg);
+         }  
 
       } else {
+         // Assessed element
+         if ($debug) print " Adding assessed element (pool $idpool) $row[pstart]\n";
          $j[$idpool][$row["pstart"]] = ($e = $row["exhaustivity"]);
          // do some inference (exhaustivity for ancestors)
          $path = $row["pstart"];
@@ -447,29 +466,37 @@ while (list($id, $data) = each(&$done)) {
    }
 
    // Loop on pools
+   if ($debug > 1) print "Info array is: " . print_r($p,true) . "\n";
+   
    foreach($data[2] as &$data_item) {
       $pool = &$data_item[0];
       print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
+      if ($debug > 1)  print "Current array: " .  print_r($p,true) . "\n";
       fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
       
       if ($data_item[1]) fwrite($files[$pool],"   <best-entry-point path=\"" . getXPointer($data_item[1], true) . "\"/>\n");
       $error = false;
       $cp = &$p[$pool];
+      $passages = array();
 
       if (is_array($cp)) {
 
          // sort passages and remove overlapping passages (due to a bug in X-Rai)
          usort($cp,"psort_order");
-         $passages = array();
+         if ($debug > 1) print "Sorted array: " .  print_r($p,true) . "\n";
          $last = -1;
          for($i = 0; $i < sizeof($cp); $i++) {
             $s = $cp[$i][0][0]; $e =  $cp[$i][1][1];
-            if (!isset($s) || !isset($e)) { print "WARNING: skipping passage " . $cp[$i][2] . " - " . $cp[$i][3] . " (start ($s)/end ($e) empty)\n"; continue; }
+            if (!isset($s) || !isset($e)) { 
+               print "WARNING: skipping passage " . $cp[$i][2] . " - " . $cp[$i][3] . " (start ($s)/end ($e) empty)\n"; 
+               fwrite($files[$pool],"  <!-- WARNING: Skipping passage " . $cp[$i][2] . " - " . $cp[$i][3] . " (start ($s)/end ($e) empty)-->\n");
+               continue; 
+            }
             if ($s <= $last) {
                $lp = &$passages[sizeof($passages)-1];
                if ($s != $last) {
                   print "[[WARNING]] passage overlap ($s<=$last) - merging!\n";
-                  fwrite($files[$pool],"  <!-- Warning: passage overlap ($s<=$last) - merging -->\n");
+                  fwrite($files[$pool],"  <!-- WARNING: passage overlap ($s<=$last) - merging -->\n");
                }
                if ($lp[1] >= $e) continue; // completly included in previous
                $error = true;
@@ -483,14 +510,16 @@ while (list($id, $data) = each(&$done)) {
             print "  P[$s:$e]\n"; // . " / $lp[2], $lp[3]]\n";
             $last = $e;
          }
-
+         
+         if ($debug > 1) print "Current array (2): " .  print_r($p,true) . "\n";
         // output the passages
         foreach($passages as $psg) {
-//                 print "Output $psg[2] - $psg[3]\n";
-                 fwrite($files[$pool], "   <passage start=\"" . getXPointer($psg[2],true) . "\" end=\"" . getXPointer($psg[3],false)
-                                . "\" size=\"" . ($psg[1]-$psg[0]+1). "\"/>\n");
+                if ($debug) print "Output $psg[2] - $psg[3] (pool $pool)\n";
+                 fwrite($files[$pool], "   <passage start=\"" . getXPointer($psg[2],true) . "\" end=\"" . getXPointer($psg[3],false) . "\" size=\"" . ($psg[1]-$psg[0]+1). "\"/>\n");
         }
 
+         if ($debug > 1) print "Current array (3): " .  print_r($p,true) . "\n";
+         // Output elements
          if ($j[$pool]) foreach($j[$pool] as $path => $exh) {
             $rsize = 0;
             $s = $paths[$path][0];
@@ -503,7 +532,7 @@ while (list($id, $data) = each(&$done)) {
             }
             $error = false;
             if ($rsize <= 0 && ($s != $p)) {
-               print "[[Warning]] Specificity is null !?!\nfor $s:$e ($path) -> " ;
+               print "[[WARNING]] Specificity is null !?!\nfor $s:$e ($path) -> " ;
                foreach($passages as $seg) print "[$seg[0],$seg[1]]";
                print "\n";
                fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");
@@ -519,7 +548,7 @@ while (list($id, $data) = each(&$done)) {
          }
       }
       fwrite($files[$pool]," </file>\n");
-   }
+}
 }
 
 
