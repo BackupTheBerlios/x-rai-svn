@@ -1,6 +1,8 @@
 #!/usr/bin/php
 <?php
 
+$_SERVER["REMOTE_USER"] = "root";
+
 $olddir = getcwd();
 chdir(dirname(__FILE__) . "/..");
 require_once("include/xrai.inc");
@@ -24,7 +26,10 @@ if (!$doc) exit("Error");
 
 $xpath = new DOMXPath($doc);
 
-$r_topic_id = $xpath->query("/inex_topic/@topic_id");
+if (!isset($topicid_xpath)) 
+	$topicid_xpath = "/inex_topic/@topic_id";
+	
+$r_topic_id = $xpath->query($topicid_xpath);
 $topic_id = $r_topic_id->item(0)->nodeValue;
 
 print "Topic id is $topic_id\n";

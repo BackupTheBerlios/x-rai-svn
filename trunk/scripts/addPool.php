@@ -2,10 +2,13 @@
 <?php
 
 $_SERVER["REMOTE_USER"] = "root";
-chdir(dirname(__FILE__) . "/..");
 
+$olddir = getcwd();
+chdir(dirname(__FILE__) . "/..");
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
+chdir($olddir);
+
 
 $argv = &$_SERVER["argv"];
 $poolid = 0;
