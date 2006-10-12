@@ -10,35 +10,55 @@ make_header("Statistics");
 ?>
 <iframe style="display: none" src="about:blank" id="changeStateFrame"></iframe>
 <script language="javascript">
-function changeState(id) {
-   var x = document.getElementById("changeStateFrame");
-   x.src="<?=$base_url?>/iframe/change_state.php?idpool=" + id;
+
+function change(images, src, title, alt) {
+   for(i = 0; i &lt; images.length; i++) {
+      images[i].src = src;
+      images[i].setAttribute("title",title);
+      images[i].setAttribute("alt",alt);
+   }
 }
 
-function changeMainAnswer() {
- // if xmlhttp shows "loaded"
-   x.alt = "<?=$old ? "false":"true"?>";
-}
-
-function changeMain(id) {
-  var xmlhttp=new XMLHttpRequest();
-  xmlhttp.onreadystatechange = function() {
+changeHandler = function(xmlhttp, prefix, info) {
      if (xmlhttp.readyState==4) {
       // if "OK"
       if (xmlhttp.status==200) {
          var root = xmlhttp.responseXML.firstChild;
-         if (root.localName == "done") {
-         var name = "m-" + root.getAttribute("pool");
-         var l = document.getElementsByName("m-" + id);
-//          alert("'" + name + "' -- " + l + " " + l.length + " - " + root);
-         for(i = 0; i &lt; l.length; i++) {
-               l[i].src = "<?=$base_url?>/img/" + (root.getAttribute("value") == "false" ? "redled":"greenled");
-             }
-         } else alert("Error: " + root.firstChild.nodeValue);
+         var name = prefix + root.getAttribute("pool");
+         var l = document.getElementsByName(name);
+
+         if (root.localName == "done" || root.localName == "not-done") {
+            var x = root.getAttribute("value") == "true" ? 1 : 0;
+            change(l, "<?=$base_url?>/img/" + info[x][0], info[x][1], info[x][2]);
+// , x ?  : "The pool is not the main one", x ? "main" : "not main");
+            if (root.localName == "not-done") alert("Change could not be done: " + root.firstChild.nodeValue);  
+         } else {
+            alert("Error: " + root.firstChild.nodeValue);
+         }
       } else alert("Problem retrieving XML data");
    }
+}
+
+
+function changeMain(id) {
+  var xmlhttp=new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function() {
+   changeHandler(xmlhttp,"m-", new Array(new Array("redled","Not selected as main","not main"), new Array("greenled","Selected as main","main")));
   };
+  change(document.getElementsByName("m-" + id), "na", "Processing...", "?"); 
   xmlhttp.open("GET","<?=$base_url?>/iframe/change_main.php?idpool=" + id,true);
+  xmlhttp.send(null);
+
+}
+
+
+function changeState(id) {
+  var xmlhttp=new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function() {
+   changeHandler(xmlhttp,"e-", new Array(new Array("locked","Locked pool","locked"), new Array("unlocked","Unlocked pool", "unlocked")));
+  };
+   change(document.getElementsByName("e-" + id), "na", "Processing...", "?"); 
+  xmlhttp.open("GET","<?=$base_url?>/iframe/change_state.php?idpool=" + id,true);
   xmlhttp.send(null);
 
 }
@@ -76,14 +96,17 @@ while ($row=$res->fetchRow()) {
    if (!is_array($logins[$login])) $logins[]  = array(0,0);
    $logins[$login][$is_done]++;
    $topics[$row["topic"]]["main"] = $topics[$row["topic"]]["main"] || $row["main"];
-   $topics[$row["topic"]][$is_done][$login] = array(
-   " <img style=\"vertical-align: middle;\" onclick=\"changeMain($row[pool])\" name=\"m-$row[pool]\" src=\"$base_url/img/" . ($row["main"] ? "greenled" : "redled") 
-   . "\" alt=\"" . ($row[enabled]?"true" : "false") . "\"/>"
+   // array: 0-link, 1-todo, 2-done
+   $image_main = " <img style=\"vertical-align: middle;\" onclick=\"changeMain($row[pool])\" name=\"m-$row[pool]\" src=\"$base_url/img/" . ($row["main"] ? "greenled" : "redled") 
+   . "\"" . ($row["main"]? " alt='true' title='Selected as main'" : " alt='false' title='Not selected as main'") . "/>";
+   $image_state = "<img style=\"vertical-align: middle;\"  onclick=\"changeState($row[pool])\" name=\"e-$row[pool]\" src=\"$base_url/img/" . ($row["enabled"] ? "unlocked" : "locked") . "\"" .  ($row["enabled"]? " alt='true' title='Pool is not locked'" : " alt='false' title='Pool is locked'")  . "/>";
+   $topics[$row["topic"]][$is_done][$login] = array("$image_main $image_state" 
    . " <a href=\"$base_url/pool?id_pool=$row[pool]\">$row[login]</a>"
    ,$row["todo"], $row["done"]);
    ?><tr>
-<td><img onclick="changeMain(<?=$row["pool"]?>)" name="m-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["main"] ? "greenled" : "redled")?>" alt="<?=$row["main"]?"true" : "false"?>"/></td>
-<td><img onclick="changeState(<?=$row["pool"]?>)" id="e-<?=$row["pool"]?>" src="<?="$base_url/img/" . ($row["enabled"] ? "greenled" : "redled")?>" alt="<?=$row["enabled"]?"true" : "false"?>"/></td><td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row["done"]?></td><td><?=$row[todo]?></td></tr><?
+   <td><?=$image_main?></td>
+   <td><?=$image_state?></td>
+   <td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row["done"]?></td><td><?=$row[todo]?></td></tr><?
 }
 ?></tbody></table><?
 
@@ -117,10 +140,21 @@ if ($main_warn) print "</ul>";
 
 <table class="stats"><thead><tr><th>Topic ID</th><th># finished pools</th><th># not finished</th></tr></thead><tbody><?
 
+function getMinDocToAssess(&$x) {
+$m = -1;
+   foreach($x as $login => $stats) {
+      if ($m >= 0) $m = min($m, $stats[1]);
+      else $m = $stats[1];
+   }
+  return $m >= 0 ? $m : 0;
+}
+
 function myorder($x,$y) {
-   $z = sizeof($y[0]) - sizeof($x[0]);
+   $z = sizeof($y[1]) - sizeof($x[1]);
    if ($z != 0) return $z;
-   return  sizeof($x[1]) - sizeof($y[1]);
+   $z = getMinDocToAssess($x[0]) - getMinDocToAssess($y[0]);
+   if ($z != 0) return $z;
+   return sizeof($x[0]) - sizeof($y[0]);
 }
 uasort($topics,"myorder");
 foreach($topics as $id => $status) {
