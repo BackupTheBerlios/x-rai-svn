@@ -55,7 +55,16 @@ $res = $xrai_db->query("SELECT pools.id AS pool, pools.login as login, pools.idt
 
 $topics = array();
 if (DB::isError($res)) fatal_error("DB error",$res);
-?> <h1>Pools</h1><table class="stats"><thead><tr><th>Official</th><th>Editable</th><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
+?> 
+<div>
+View:
+<ul>
+<li><a href="#bypool">By pool</a></li>
+<li><a href="#bytopic">By topic</a></li>
+<li><a href="#logins">Logins that have completed their assessments</a></li>
+</ul>
+</div>
+<a name="bypool"/><h1>Pools</h1><table class="stats"><thead><tr><th>Official</th><th>Editable</th><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
 while ($row=$res->fetchRow()) {
    $row["enabled"] = $db_true == $row["enabled"];
    if (!is_array($topics[$row["topic"]])) 
@@ -66,6 +75,7 @@ while ($row=$res->fetchRow()) {
    $is_done = ($row["todo"] == 0 && $row["done"] > 0) ? 1 : 0;
    if (!is_array($logins[$login])) $logins[]  = array(0,0);
    $logins[$login][$is_done]++;
+   $topics[$row["topic"]]["main"] = $topics[$row["topic"]]["main"] || $row["main"];
    $topics[$row["topic"]][$is_done][$login] = array(
    " <img style=\"vertical-align: middle;\" onclick=\"changeMain($row[pool])\" name=\"m-$row[pool]\" src=\"$base_url/img/" . ($row["main"] ? "greenled" : "redled") 
    . "\" alt=\"" . ($row[enabled]?"true" : "false") . "\"/>"
@@ -88,7 +98,24 @@ function getBar($title, $n, $d) {
    . "px; background: transparent; border: 1px solid #000; border-left: 0;'></span></span>";
 }
 
-?> <a name="topics"/><h1>Topics</h1><table class="stats"><thead><tr><th>Topic ID</th><th># finished pools</th><th># not finished</th></tr></thead><tbody><?
+?> <a name="bytopic"/><h1>Topics</h1><?
+
+$main_warn = false;
+foreach($topics as $id => $status) {
+   if ((!$status["main"]) && (sizeof($status[1]) > 0)) {
+      if (!$main_warn) {
+         $main_warn = true;
+         print "<h2>Warning: finished pool without main</h2><ul>";
+      }
+      print "<li><a href='#topic_$id'>Topic $id (" . sizeof($status[1]) . " finished)</a></li>";
+   }
+}
+
+if ($main_warn) print "</ul>";
+?>
+
+
+<table class="stats"><thead><tr><th>Topic ID</th><th># finished pools</th><th># not finished</th></tr></thead><tbody><?
 
 function myorder($x,$y) {
    $z = sizeof($y[0]) - sizeof($x[0]);
@@ -97,7 +124,7 @@ function myorder($x,$y) {
 }
 uasort($topics,"myorder");
 foreach($topics as $id => $status) {
- ?><tr><td><?=$id?></td>
+ ?><tr><td><a name="topic_<?=$id?>"/><?=$id?></td>
  <td><?=sizeof($status[1])?>
 <div style="font-size:small;">
 <? 
@@ -116,7 +143,7 @@ foreach($topics as $id => $status) {
 ?></tbody></table>
 
 
-
+<a name="logins"/>
 <h2>Logins of finished pools</h2>
 <? foreach($logins as $login => $v) if ($v[0] == 0 && $v[1] > 0) print "<div>$login</div>"; ?>
 <?

@@ -179,7 +179,8 @@ $alldone = true;
 $done = array();
 
 // First loop: get the list of files to explore
-print "Getting the list of files\n";
+print "Getting the list of files...\n";
+$numberOfFiles = 0;
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
 
    // New topic?
@@ -212,8 +213,11 @@ while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
    // [ collection, filename, list of arrays [pool id, bep] ]
    if ($row["status"] != 2) $current[2] = false;
    else {
-      if (!is_array($done[$row["idfile"]])) 
+      if (!is_array($done[$row["idfile"]])) {
+         // We have a new file
+         $numberOfFiles++;
          $done[$row["idfile"]] = array($row["collection"],$row["filename"],array());
+      }
       // Add this pool id for this file id
       if ($row["bep"] == "null" || $row["bep"] == "") $row["bep"] = false;
       array_push($done[$row["idfile"]][2],array($row["idpool"],$row["bep"]));
@@ -368,10 +372,21 @@ function implode_array($sep, &$a, $k) {
    return $s;
 }
 
-print "Loop on files...\n";
+print "Loop on files (total = $numberOfFiles)...\n";
+$fileNo = 0;
+$currentPct = 0; // current percentage
+
 reset($done);
 // Loop on files:            
 while (list($id, $data) = each(&$done)) {
+   // Progress indicator
+   $fileNo++;
+   $pct = intval($fileNo / $numberOfFiles * 20) * 5;
+   if ($pct != $currentPct) {
+      $currentPct = $pct;
+      print "---- PROGRESS ---- $pct %\n";
+   }
+
    // Will contain the list of paths to analyse
    $paths = array();
    // start-end of passages for the highlight only assessments
