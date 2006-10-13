@@ -16,7 +16,7 @@ function collectionStartDocument($collection,$file,$title) {
 function collectionStartElement($name, &$attrs) {
   global $base_url, $xrai_settings, $xrai_db;
    if ($name == "image") {
-      $pname = preg_replace(array('#^../pictures/#','#_#'),array('',' '),$attrs["xlink:href"]);
+      $pname = preg_replace(array('#^../pictures/#','# #'),array('','_'),$attrs["xlink:href"]);
       $row = $xrai_db->getRow("SELECT * FROM wikienimages WHERE name=?", array($pname), DB_FETCHMODE_ASSOC);
       if (!DB::isError($row) && $row) {
          $filename = (intval($row["id"] / 100000) % 100) . "/" . (intval($row["id"] / 1000) % 100) . "/" . $row["id"];
@@ -24,8 +24,8 @@ function collectionStartElement($name, &$attrs) {
          if (is_file($path) && $row["width"] == 0) {
             
          }
-         print "<html:img alt=\"[img]\" title=\"" . htmlspecialchars($pname) . "\" src=\"$base_url/media/wikien/$filename\">"; 
-      } else print "<html:img title=\"" . htmlspecialchars($pname) . " (not found)\" alt=\"[image]\">";
+         print "<html:img alt=\"[$filename]\" title=\"" . htmlspecialchars($pname) . "\" src=\"$base_url/media/wikien/$filename\">"; 
+      } else print "<html:img title=\"" . htmlspecialchars($pname) . " (not found)\" alt=\"[Not found: $pname]\">";
    } 
 }
 
