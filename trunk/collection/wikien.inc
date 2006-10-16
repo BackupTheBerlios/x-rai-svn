@@ -25,7 +25,7 @@ function collectionStartElement($name, &$attrs) {
             
          }
          print "<html:img alt=\"[$filename]\" title=\"" . htmlspecialchars($pname) . "\" src=\"$base_url/media/wikien/$filename\">"; 
-      } else print "<html:img title=\"" . htmlspecialchars($pname) . " (not found)\" alt=\"[Not found: $pname]\">";
+      } else print "<html:img title=\"" . htmlspecialchars($pname) . " (not found)\" alt=\"[Not found: " . htmlspecialchars($pname) . "]\">";
    } 
 }
 
