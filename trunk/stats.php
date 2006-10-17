@@ -180,6 +180,12 @@ foreach($topics as $id => $status) {
 <a name="logins"/>
 <h2>Logins of finished pools</h2>
 <? foreach($logins as $login => $v) if ($v[0] == 0 && $v[1] > 0) print "<div>$login</div>"; ?>
+
+<div style="border:1px solid red;">
+<h2>Logins of <span style="color:red">not</span> finished pools</h2>
+<? foreach($logins as $login => $v) if ($v[0] > 0) print "<div>$login $v[0] missing, $v[1] completed</div>"; ?>
+</div>
+
 <?
 
 
