@@ -31,9 +31,13 @@ if ($_REQUEST["view_jump"] == 1) {
 
   $row = $xrai_db->getRow($sql[$next], array($id_pool, $view_pos), DB_FETCHMODE_ASSOC);
   if (!$row) $row = $xrai_db->getRow($sql[1-$next], array($id_pool, $view_pos), DB_FETCHMODE_ASSOC);
-    if ($row) {
-        if (DB::isError($row)) { fatal_error("Database error",$row->getUserInfo()); }
-        header("Location: $PHP_SELF?id_pool=$id_pool&collection=$row[collection]&file=$row[filename]");
+  if ($row) {
+      if (DB::isError($row)) { 
+            fatal_error("Database error",$row->getUserInfo()); 
+      }
+      if (!$row["filename"] || !$row["collection"]) fatal_error("The next/previous file to assess is empty"
+         . ($is_root ? " for " . htmlspecialchars($xrai_db->last_query) : ""). "...");
+      header("Location: $PHP_SELF?id_pool=$id_pool&collection=$row[collection]&file=$row[filename]");
         exit();
     } else {
         header("Location: $base_url/pool?id_pool=$id_pool&message=Pool%20completed%20!!!");
