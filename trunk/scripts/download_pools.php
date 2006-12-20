@@ -11,7 +11,7 @@
 
    Example of call:
 
-   export DIR=adhoc-2006; rm -rf ~/temp/$DIR; mkdir ~/temp/$DIR; php -d memory_limit=128M ~/2006/adhoc/xrai/scripts/download_pools.php  official ~/temp/$DIR > ~/temp/$DIR.log 2>&1 && ((cd ~/temp; tar c $DIR) | gzip -c > adhoc-$(date +%Y%m%d-%S%M%H).tgz); rm -rf ~/temp/$DIR
+   export DIR=adhoc-2006; rm -rf ~/temp/$DIR; mkdir ~/temp/$DIR; php -d memory_limit=128M ~/2006/adhoc/xrai/scripts/download_pools.php  -map wikien wikipedia official ~/temp/$DIR > ~/temp/$DIR.log 2>&1 && ((cd ~/temp; tar c $DIR) | gzip -c > adhoc-$(date +%Y%m%d-%S%M%H).tgz); rm -rf ~/temp/$DIR
 */
 
 
@@ -39,6 +39,24 @@ function argerror($s="") {
 }
 
 array_shift($argv);
+
+$cmap = array();
+$flag = true;
+// print "ARG0: $argv[0]\n";
+while ($flag) {
+   switch ($argv[0]) {
+      case "-cmap":
+         array_shift($argv);
+         $x = array_shift($argv);
+         $y = array_shift($argv);
+         $cmap[$x] = $y;
+         print "Mapping $x to $y\n";
+         break;
+      default:
+         $flag = false;
+   }
+}
+
 $state = array_shift($argv); if ($state == null) argerror("No state found\n");
 $outdir = array_shift($argv); if ($outdir == null) argerror("No output directory given\n");
 if (!is_dir($outdir)) {
@@ -487,7 +505,9 @@ while (list($id, $data) = each(&$done)) {
       $pool = &$data_item[0];
       print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
       if ($debug > 1)  print "Current array: " .  print_r($p,true) . "\n";
-      fwrite($files[$pool]," <file collection=\"$data[0]\" name=\"$data[1]\">\n");
+      $coll = $data[0];
+      if ($cmap[$coll]) $coll = $cmap[$coll];
+      fwrite($files[$pool]," <file collection=\"$coll\" name=\"$data[1]\">\n");
       
       if ($data_item[1]) fwrite($files[$pool],"   <best-entry-point path=\"" . getXPointer($data_item[1], true) . "\"/>\n");
       $error = false;

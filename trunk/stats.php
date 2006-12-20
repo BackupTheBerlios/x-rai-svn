@@ -7,8 +7,23 @@ if (!$is_root) {
 }
 
 make_header("Statistics");
+
+$state = $_GET["state"];
+$states = $xrai_db->getAssoc("SELECT state, count(*) FROM pools GROUP BY state");
+if (DB::isError($res)) fatal_error("DB error",$res);
+
+print "<h1>Pool states</h1><ul>";
+foreach($states as $s => $n) {
+      print "<li><a href=\"?state=$s\">$s</a> ($n pools)</li>";
+   }
+   print "</ul>";
+   
+if (!($states[$state] > 0)) {
+   make_footer();
+   exit();
+}
+
 ?>
-<iframe style="display: none" src="about:blank" id="changeStateFrame"></iframe>
 <script language="javascript">
 
 function change(images, src, title, alt) {
@@ -71,7 +86,7 @@ $res = $xrai_db->query("SELECT pools.id AS pool, pools.login as login, pools.idt
            FROM filestatus
           WHERE filestatus.idpool = pools.id AND filestatus.status < 2) AS todo, enabled, main
    FROM pools
-  WHERE pools.state::text = 'official' ORDER BY todo desc, idtopic, done");
+  WHERE pools.state::text = '$state' ORDER BY todo desc, idtopic, done");
 
 $topics = array();
 if (DB::isError($res)) fatal_error("DB error",$res);
