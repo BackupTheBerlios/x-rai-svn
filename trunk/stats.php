@@ -97,6 +97,7 @@ View:
 <li><a href="#bypool">By pool</a></li>
 <li><a href="#bytopic">By topic</a></li>
 <li><a href="#logins">Logins that have completed their assessments</a></li>
+<li><a href="#unassessed">Unassessed topics</a></li>
 </ul>
 </div>
 <a name="bypool"/><h1>Pools</h1><table class="stats"><thead><tr><th>Official</th><th>Editable</th><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
@@ -177,6 +178,7 @@ foreach($topics as $id => $status) {
  <td><?=sizeof($status[1])?>
 <div style="font-size:small;">
 <? 
+   if (sizeof($status[1]) == 0) $unassessed[] = $id;
    foreach($status[1] as $key => $value) 
       print "<div>$value[0]</div>";
 ?></div>
@@ -191,6 +193,13 @@ foreach($topics as $id => $status) {
 }
 ?></tbody></table>
 
+<a name="unassessed"/>
+<h2>Unassessed topics</h2>
+<? 
+sort($unassessed);
+foreach($unassessed as $topic) {
+ print "<div>$topic</div>";
+}?>
 
 <a name="logins"/>
 <h2>Logins of finished pools</h2>
