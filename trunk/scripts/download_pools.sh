@@ -1,5 +1,5 @@
-if [ $# -lt 2 ]; then
-   echo "download_pools.sh <name> <archive directory> [options]"
+if [ $# -lt 3 ]; then
+   echo "download_pools.sh <name> <archive directory> <state> [options]"
    exit 1
 fi
    
@@ -10,11 +10,14 @@ fi
 
 NAME="$1"
 OUTDIR="$(readlink -f "$2")"
-shift 2
+STATE="$3"
+shift 3
+
 OUTTGZ="$OUTDIR/$NAME-$(date +%Y%m%d-%H%M%S).tgz"
 TMPDIR=/tmp/$NAME
 SDIR="$(dirname "$(readlink -f "$0")")"
 
+echo "State: $STATE"
 echo "Script directory: $SDIR"
 echo "Temp directory: $TMPDIR"
 echo "Output archive: $OUTTGZ"
@@ -35,7 +38,7 @@ echo "Let's go!"
 rm -rf $TMPDIR
 mkdir $TMPDIR
 echo "Command line: php -d memory_limit=128M $SDIR/download_pools.php $@ official $TMPDIR"
-if php -d memory_limit=128M $SDIR/download_pools.php "$@" official $TMPDIR > $TMPDIR.log 2>&1; then
+if php -d memory_limit=128M $SDIR/download_pools.php "$@" "$STATE" $TMPDIR > $TMPDIR.log 2>&1; then
    (cd /tmp; tar c "$NAME") | gzip -c > "$OUTTGZ"
 else
    echo "Error while downloading the pools" 1>&2
