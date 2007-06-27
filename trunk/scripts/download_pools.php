@@ -1,8 +1,25 @@
 <?
-// kate: indent-mode cstyle
 /*
-   This script generates one assessment file by pool
-   (c) B. Piwowarski, 2004
+    download_pools.php
+    Generates the assessment files
+    
+    Copyright (C) 2003-2007  Benjamin Piwowarski benjamin@bpiwowar.net
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+   
+
 
    Changes:
    - september 2006: handles BEP
@@ -13,6 +30,8 @@
 
    export DIR=adhoc-2006; rm -rf ~/temp/$DIR; mkdir ~/temp/$DIR; php -d memory_limit=128M ~/2006/adhoc/xrai/scripts/download_pools.php  -map wikien wikipedia official ~/temp/$DIR > ~/temp/$DIR.log 2>&1 && ((cd ~/temp; tar c $DIR) | gzip -c > adhoc-$(date +%Y%m%d-%S%M%H).tgz); rm -rf ~/temp/$DIR
 */
+
+// kate: indent-mode cstyle
 
 
 $remote=true;
