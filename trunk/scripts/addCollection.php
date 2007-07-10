@@ -30,7 +30,7 @@
 
 
 $nopaths = false;
-$_SERVER["REMOTE_USER"] = "root";
+require_once("xrai-inc.php");
 
 $i = 1;
 while ($i < sizeof($_SERVER["argv"])) {
@@ -40,10 +40,6 @@ while ($i < sizeof($_SERVER["argv"])) {
    }
 }
 
-chdir(dirname(__FILE__) . "/..");
-
-require_once("include/xrai.inc");
-require_once("include/assessments.inc");
 
 if (sizeof($_SERVER["argv"])-$i != 3)
    die("addCollection [-nopaths] <collection id> <collection title> <collection base dir>\n");

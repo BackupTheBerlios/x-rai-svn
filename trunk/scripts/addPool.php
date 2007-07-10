@@ -21,13 +21,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-$_SERVER["REMOTE_USER"] = "root";
-
-$olddir = getcwd();
-chdir(dirname(__FILE__) . "/..");
-require_once("include/xrai.inc");
-require_once("include/assessments.inc");
-chdir($olddir);
+require_once("xrai-inc.php");
 
 
 $argv = &$_SERVER["argv"];
@@ -82,6 +76,7 @@ function startElement($parser, $name, $attrs) {
          if (DB::isError($poolid)) die($poolid->getUserInfo() . "\n");
          $res = $xrai_db->autoExecute("$db_pools",array("id" => $poolid, "idtopic" => $id, "login" => $userid, "name" => $poolname, "state" => $poolstate, "enabled" => "t"));
          if (DB::isError($res)) die($res->getUserInfo() . "\n");
+	 print "Info: pool id is $poolid\n";
       }
       return;
    }

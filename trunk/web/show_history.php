@@ -40,7 +40,9 @@ function showDocument(event) {
       if (!event.target.id) return;
       w.location = "<?="$base_url/article?id_pool=$id_pool&amp;"?>" + event.target.id;
    } else alert("Cannot find the main window!");
+
 }
+
 </script>
 <?
 

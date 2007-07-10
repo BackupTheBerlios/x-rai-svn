@@ -46,7 +46,7 @@ if ($write_access && ($_REQUEST["action"] == "update" && ($id_pool>0))) {
   } else {
    $res = $xrai_db->autoCommit(false);
    if (!DB::isError($res)) $res = $xrai_db->query("delete from $db_keywords where idpool=? and colour=? and mode=?",array($id_pool,$colour,$mode));
-        if (!DB::isError($res)) $res = $xrai_db->query("insert into $db_keywords (idpool,colour, keywords, mode) values (?,?,?,?)",array($id_pool, $colour,$kw,$mode));
+        if (!DB::isError($res)) $res = $xrai_db->query("insert into $db_keywords (idpool,colour, keywords, mode) values (?,?,?,?)",array($id_pool, $colour, stripcslashes($kw),$mode));
    if (!DB::isError($res)) $res = $xrai_db->commit();
    $res = $xrai_db->autoCommit(true);
   }
@@ -140,7 +140,7 @@ else {
 
         <form name="main" onsubmit="save_mode_keywords(current_mode)">
 
-         <?if ($write_access) { ?> put your keywords below (one per line) and <input type="submit" name="action" value="update"/> your current keywords.   <div style="colour: #444444; font-size: smaller; margin: 2px 0 2px 0">Your keywords <em>may</em> be perl regular expressions (but be careful with them). <br/>Ex. <code>optimi[sz](?:ation|ed)</code> will match optimisation, optimised, optimization and optimized. <b>Warning:</b> use <code>(?:AB|C)</code> and <em>not</em> <code>(AB|C)</code> to group subexpressions. <? } else { ?> Keywords are listed below (read-only) <?}?>
+         <?if ($write_access) { ?> put your keywords below (one per line) and <input type="submit" name="action" value="update"/> your current keywords.   <div style="colour: #444444; font-size: smaller; margin: 2px 0 2px 0">Your keywords <em>may</em> be perl regular expressions (but be careful with them). <br/>Ex. <code>optimi[sz](ation|ed)</code> will match optimisation, optimised, optimization and optimized. <? } else { ?> Keywords are listed below (read-only) <?}?>
 
         </div>
       <div style="margin-top: 0.2cm">

@@ -240,11 +240,13 @@ if ($id_pool > 0) {
     if (!preg_match("-\w-",$kw)) continue;
     $kw= preg_replace("-\s*(.*)\s*-",'$1',$kw);
     $kw= preg_replace("-\s\s+-",' ',$kw);
+    $kw = preg_replace('#(?!\\\\)\\((?!\?:)#',"(?:",$kw);
     $keywords[] = "/(\W|^)(" . preg_replace("#/#",'\'',$kw) . ")(\W|$)/i";
     $colours[] = '$1<xrai:kw class="' . $cssname . '">$2</xrai:kw>$3';
   }
 }
 }
+// print nl2br(print_r($keywords,true));
 if ($num_keywords > 0) print "<style type='text/css'>\n@namespace url($xrains);\n$style\n</style>\n";
 
 
@@ -317,6 +319,7 @@ if ($id_pool > 0) {
 // Functions called by the PHP (XML+XSL) file
 // ==========================================
 
+// Include (if it exists) a collection PHP file
 @include("collection/$collection.inc");
 
 if (function_exists("collectionStartDocument")) {

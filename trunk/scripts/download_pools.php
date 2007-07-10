@@ -37,13 +37,8 @@
 $remote=true;
 ignore_user_abort(false);
 set_time_limit(0);
-$old = getcwd();
-chdir(dirname(__FILE__) . "/..");
-$_SERVER["REMOTE_USER"] = "root";
-require_once("include/xrai.inc");
-require_once("include/assessments.inc");
-require_once("include/xslt.inc");
-chdir($old);
+
+require_once("xrai-inc.php");
 
 $debug = 0;
 

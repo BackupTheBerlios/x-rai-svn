@@ -21,11 +21,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
     
-$_SERVER["REMOTE_USER"] = "root";
-chdir(dirname(__FILE__) . "/..");
-
-require_once("include/xrai.inc");
-require_once("include/assessments.inc");
+require_once("xrai-inc.php");
 
 if (sizeof($_SERVER["argv"]) != 3)
    die("addPool <default collection> <pool file>\n");

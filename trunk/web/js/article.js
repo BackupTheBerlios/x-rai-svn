@@ -1782,6 +1782,11 @@ XRai.save = function() {
    // Add BEP
    XRai.saveForm.appendChild(createHiddenInput("BEP",XRai.getPath(XRai.BEPElement.parentNode),saving_doc));
 
+   // Is the document relevant?
+   XRai.saveForm.appendChild(createHiddenInput("hasrelevant", XRai.firstPassage ? 1 : 0, saving_doc));
+
+   
+   // Add passages
    for(var p = XRai.firstOldPassage; p; p = p.next) {
       if (p.saved != Passage.OLDVALIDATED) {
          var s = (typeof p.saved != "undefined" ? 1 : 0) + "," + Passage.OLDVALIDATED + ",";
