@@ -234,10 +234,12 @@ if (!isset($xrai_documents)) $xraidocuments = $xmldocuments;
 // Connection to database
 $xrai_db = &DB::connect($xrai_dsn);
 if (!DB::isError($xrai_db)) $xrai_db->setFetchMode(DB_FETCHMODE_ASSOC);
-if (DB::isError($xrai_db)) exit("Database connection failed");
+if (DB::isError($xrai_db)) {
+exit("Database connection failed (1)" . ($is_root ? ": " .$xrai_db->getMessage() : "") );
+}
 if ($db_schema) {
    $res = $xrai_db->query("set search_path=$db_schema, pg_catalog");
-   if (DB::isError($res)) exit("Database connection failed");
+   if (DB::isError($res)) exit("Database connection failed (2)");
 }
 
 $write_access = $can_modify = false;
@@ -245,7 +247,7 @@ $write_access = $can_modify = false;
 if ($id_pool > 0) {
    url_propagate("id_pool");
    $pool = $xrai_db->getRow("SELECT * FROM $db_pools WHERE id=?",array($id_pool),DB_FETCHMODE_ASSOC);
-   if (!$pool || DB::isError($pool)) exit("Cannot retrieve pool data" . ($do_debug ? ": " . $pool->getUserInfo() : ""));
+   if (!$pool || DB::isError($pool)) exit("Cannot retrieve pool data" . ($do_debug ? ": " . $pool->getMessage() : ""));
    $id_topic = $pool["idtopic"];
    if (!$is_root && ($pool["login"] != $inex_user)) fatal_error("Access to this pool is not permitted");
    if (!$pool["name"]) $pool["name"] = "Topic $id_topic";
