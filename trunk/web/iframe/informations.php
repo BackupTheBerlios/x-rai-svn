@@ -35,12 +35,12 @@ iframe {
 </style>
 <body>
 <h1>Informations</h1>
-<div>X-Rai version 2004-07-10 by <a href="mailto:Benjamin.Piwowarski@lip6.fr">B. Piwowarski</a>.
-LaTeX to MathML transformations are made with <a href="http://hutchinson.belmont.ma.us/tth/mml/"><img src='../img/ttm_icon.gif' alt='ttm'/></a>, a tool written by <a href="http://www.psfc.mit.edu/people/hutch/">Ian Hutchinson</a></div>
+<div>X-Rai by <a href="mailto:Benjamin.Piwowarski@lip6.fr">B. Piwowarski</a>.
+<!--LaTeX to MathML transformations are made with <a href="http://hutchinson.belmont.ma.us/tth/mml/"><img src='../img/ttm_icon.gif' alt='ttm'/></a>, a tool written by <a href="http://www.psfc.mit.edu/people/hutch/">Ian Hutchinson</a>--></div>
 
 <h1>Bugs</h1>
 
-<p>If you have found a bug with the assessment tool, please send me an email (<a href="mailto:Benjamin.Piwowarski@lip6.fr?subject=[INEX-Asssessments bug]">Benjamin.Piwowarski@lip6.fr</a>). Please do include in your mail: your login, the URL of the bug and (if relevant) the element you are trying to assess together with the assessment. Don't forget to mention your OS name and you navigator name and version</p>
+<p>If you have found a bug with the assessment tool, please report it using the <a href="https://developer.berlios.de/projects/x-rai/">Berlios project management interface</a>. Please do include in your message: the URL of the bug (only the part after the host name please) and (if relevant) the element you are trying to assess together with the assessment. Don't forget to mention your OS name and you navigator name and version.</p>
 
 <h1>Wishlist, in progress</h1>
 
