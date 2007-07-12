@@ -15,19 +15,33 @@ $db_true = "t";
 $db_schema="";
 
 
+// ========================== ASSESSMENTS
+
+// Highlight only mode (no exhaustivity to be set)
+$highlight_only = true;
+// Create paths in the database if needed (less secure
+// but do not need any indexation)
+$create_paths = true;
+
 // ========================== WEBSITE SETTINGS
 
 // Main title of the website
 $main_title = "INEX 2007 Assessments";
 
 // Base URL of the server
-$base_url="";
+$base_url="https://....";
 
 // E-mail of the admin
 $xrai_admin_email = "root@localhost";
 
 // Display debug messages?
 $do_debug=false;
+
+// Associative list of X-Rai admin logins
+$root_users = array("root" => true);
+
+// First location steps
+$localisation[] = array("X-Rai","$base_url","XML Retrieval Assessment Interface");
 
 // Add menus
 add_menu("Links","https://developer.berlios.de/projects/x-rai/","X-Rai: bugs, forums, ...","Project home page");
