@@ -4,7 +4,11 @@ header("Pragma: no-cache");
 // Report all PHP errors (bitwise 63 may be used in PHP 3)
 // error_reporting (E_ALL);
 
+// Pear DB
 require_once 'DB.php';
+
+// Completion bar drawing
+// TODO: check if needed here!
 require_once 'astatus.inc';
    
 // Report all errors except E_NOTICE
@@ -47,10 +51,6 @@ $relevances = array(
 function hasCache($src1,$src2,$dest) {
   return file_exists($dest) && (filemtime($src1) < filemtime($dest)) && (filemtime($src2) < filemtime($dest));
 }
-
-
-
-
 
 
 
@@ -227,7 +227,9 @@ function check_valid_pool() {
 // OUTPUT BEGINS HERE !
 // -----------------------------
 
+require_once("./include/settings-default.inc");
 require_once("./include/settings.inc");
+
 $is_root = $root_users[$inex_user];
 if (!isset($xrai_documents)) $xraidocuments = $xmldocuments;
 

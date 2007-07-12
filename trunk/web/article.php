@@ -70,7 +70,6 @@ $row = $xrai_db->getRow("select id,title,parent,pre from $db_files where collect
 $title = $row["title"];
 $fileid = $row["id"];
 $viewpos = $row["pre"];
-$xmlfilename = "$xml_documents/$collection/$file.xml";
 
 // Begins output
 
@@ -410,10 +409,7 @@ xml_set_character_data_handler($xml_parser, "cdata");
 xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
 
 
-if (function_exists("getArticle")) 
-  $fp = getArticle("$collection","$file");
-else
-  $fp = fopen("$xml_documents/$collection/$file.xml", "r");
+$fp = getArticle("$collection","$file");
     
 if (!$fp) 
    fatal_error("<script language='javascript'>  document.getElementById('saving_div').style.visibility = 'hidden'</script><div class='error'>Could not open XML file</div></div>");
