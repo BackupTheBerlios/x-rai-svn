@@ -57,6 +57,11 @@ function getPathId($path) {
    }
 //    if ($id < 0) { die("File id is < 0\n"); }
    return $knownpaths[$path];
+   }
+   
+$idEmptyPath = getPathId("");
+if (!$idEmptyPath) {
+   die("Cannot get the empty path id");
 }
 
 $file = -1;
@@ -77,13 +82,21 @@ function startElement($parser, $name, $attrs) {
          $filepath = $attrs["file"];
          $file = getFileId($attrs["file"]);
          break;
-      case "path":
-         $pathid = getPathId($attrs["path"]);
-         if ($file > 0 && $pathid > 0) {
-            print "Adding $file, $pathid ($filepath, $attrs[path])\n";
-            $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idpath" => $pathid));
-            if (DB::isError($res)) print "[ERROR: " . $res->getUserInfo() . "] Skipping $file, $pathid\n";
-            // die($res->getUserInfo() . "\n");
+     case "path":
+         if ($attrs["start"] && $attrs["end"]) {
+            $startid = getPathId($attrs["start"]);
+            $endid = getPathId($attrs["end"]);
+            if ($file > 0 && $startid > 0 && $endid > 0) {
+               else print "[ERROR] Skipping $file, $pathid (file and/or path are not valid)\n";
+            } else print "[ERROR] Skipping $file, $pathid (file and/or start/end path are not valid)\n";           
+         } else if ($attrs["path"]) {
+            $pathid = getPathId($attrs["path"]);
+            if ($file > 0 && $pathid > 0) {
+               print "Adding $file, $pathid ($filepath, $attrs[path])\n";
+               $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idpath" => $pathid));
+               if (DB::isError($res)) print "[ERROR: " . $res->getUserInfo() . "] Skipping $file, $pathid\n";
+               // die($res->getUserInfo() . "\n");
+               } else print "[ERROR] Skipping $file, $pathid (file and/or path are not valid)\n";
          } else print "[ERROR] Skipping $file, $pathid\n";
 
          break;

@@ -259,7 +259,7 @@ CREATE TABLE topicelements (
 -- keys
 
 ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT pk_topicelements PRIMARY KEY (idtopic, idfile, idpath);
+    ADD CONSTRAINT pk_topicelements PRIMARY KEY (idtopic, idfile, idstartpath);
 
 -- comments
 
@@ -268,7 +268,7 @@ COMMENT ON TABLE topicelements IS 'Keeps the elements and passages which should 
 -- views
 
 CREATE VIEW topicelementsview AS
-    SELECT topicelements.idfile, topicelements.idpath, topicelements.idtopic, files.filename, spaths."startpath", epaths."endpath" FROM ((topicelements JOIN files ON ((topicelements.idfile = files.id))) JOIN spaths ON (topicelements.idstartpath = spaths.id)) JOIN epaths ON ((topicelements.idendpath = epaths.id)));
+    SELECT topicelements.idfile, topicelements.idtopic, files.filename, spaths."path" as startpath, epaths."path" as endpath FROM topicelements JOIN files ON (topicelements.idfile = files.id) JOIN paths as spaths ON (topicelements.idstartpath = spaths.id) JOIN paths as epaths ON (topicelements.idendpath = epaths.id);
 
 -- constraints
 
