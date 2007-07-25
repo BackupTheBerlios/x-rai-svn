@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<project name="LingPipe Command Demo" 
+         default="jar" 
+         basedir=".">
+
+  <property name="org.xml.sax.driver"
+            value="org.apache.xerces.parsers.SAXParser"/>
+
+  <path id="classpath.standard">
+    <!-- this project's jar -->
+    <pathelement location="annotate.jar"/>
+
+    <pathelement location="lib/lingpipe-2.0.0.jar"/>
+    <pathelement location="lib/nekohtml-0.9.3.jar"/>
+    <pathelement location="lib/xercesImpl.jar"/>
+    <pathelement location="lib/xml-apis.jar"/>
+  </path>
+
+  <target name="clean">
+    <delete dir="build"/>
+    <delete file="annotate.jar"/>
+    <delete file="myEntities.model"/>
+  </target>
+
+  <target name="jar">
+    <mkdir dir="build/classes"/>
+    <javac optimize="on"
+           debug="yes"
+           debuglevel="source,lines,vars"
+     	   destdir="build/classes"
+           srcdir="src"
+           classpathref="classpath.standard"/>
+    <jar destfile="annotate.jar" basedir="build/classes"/>
+  </target>
+
+
+</project>
+

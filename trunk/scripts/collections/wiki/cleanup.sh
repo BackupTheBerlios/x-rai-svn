@@ -1,7 +1,8 @@
 #!/bin/sh
 
 #    cleanup.sh
-#    Cleanup for the wikipedia collection
+#    Cleanup for the wikipedia collection, put the xrai:s tags, and
+#    organize the files within subdirectories
 #
 #    Copyright (C) 2003-2007  Benjamin Piwowarski benjamin@bpiwowar.net
 #    
@@ -29,15 +30,18 @@
 origdir="$1"
 destdir="$2"
 tmpdir="/tmp/wiki2xrai.$$"
-BASEDIR=$HOME/logiciels/lingpipe
+
+# Basedir is two steps away
+BASEDIR="$(dirname "$(readlink -f "$0")")"/../../../lingpipe
 
 test -d "$origdir"/part-0 || exit
-test -d "$destdir" || exit
+test -d "$destdir" ||  exit
 
+echo "STARTING"
 
 for i in $origdir/part-*; do
-   echo "================== IN $i ($tmpdir) ====================="
-   java -Dorg.xml.sax.driver=org.apache.xerces.parsers.SAXParser -cp $BASEDIR/demos/command/command-demo.jar:$BASEDIR/lingpipe-2.0.0.jar:$BASEDIR/lib/xercesImpl.jar:$BASEDIR/lib/xml-apis.jar AnnotateCmd -model=$BASEDIR/demos/models/EN_NEWS.model -fileSuffixes="xml" -contentType="text/xml; charset=UTF-8" -elements="p,caption,item" -inputDir="$i" -outputDir="$tmpdir" 2>&1 | grep -v "^Processing file"
+echo "================== IN $i ($tmpdir) ====================="
+   java -Dorg.xml.sax.driver=org.apache.xerces.parsers.SAXParser -cp $BASEDIR/annotate.jar:$BASEDIR/lib/lingpipe-2.0.0.jar:$BASEDIR/lib/xercesImpl.jar:$BASEDIR/lib/xml-apis.jar AnnotateCmd -model=$BASEDIR/EN_NEWS.model -fileSuffixes="xml" -contentType="text/xml; charset=UTF-8" -elements="p,caption,item" -inputDir="$i" -outputDir="$tmpdir" 2>&1 | grep -v "^Processing file"
    
    find $tmpdir -type f -name "*.xml" |
       while read f; do

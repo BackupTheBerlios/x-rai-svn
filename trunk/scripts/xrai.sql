@@ -1,8 +1,24 @@
+--     xrai.sql
+--     SQL code (postgresql) for the table creation
 --
--- PostgreSQL database dump
+--     Copyright (C) 2007  Benjamin Piwowarski benjamin@bpiwowar.net
 --
+--     This library is free software; you can redistribute it and/or
+--     modify it under the terms of the GNU Library General Public
+--     License as published by the Free Software Foundation; either
+--     version 2 of the License, or (at your option) any later version.
+--
+--     This library is distributed in the hope that it will be useful,
+--     but WITHOUT ANY WARRANTY; without even the implied warranty of
+--     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+--     Library General Public License for more details.
+--
+--     You should have received a copy of the GNU Library General Public
+--     License along with this library; if not, write to the Free Software
+--     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
--- pg_dump --no-owner --schema_only --schema=inex_2006
+
+
 
 
 --
@@ -117,8 +133,12 @@ ALTER TABLE ONLY history
 ALTER TABLE ONLY history
     ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
+    
+    
+    
 --
 -- Name: history; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
+-- Use to log the users actions    
 --
 
 CREATE TABLE log (
@@ -209,36 +229,7 @@ CREATE VIEW progress AS
 CREATE VIEW progressbytopic AS
     SELECT progress.idtopic, sum(CASE WHEN (progress.todo = 0) THEN 1 ELSE 0 END) AS done, sum(CASE WHEN (progress.todo > 0) THEN 1 ELSE 0 END) AS todo FROM progress GROUP BY progress.idtopic ORDER BY sum(CASE WHEN (progress.todo = 0) THEN 1 ELSE 0 END), progress.idtopic;
 
-
-
---
--- Name: topicelements; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
---
-
-CREATE TABLE topicelements (
-    idfile integer NOT NULL,
-    idtopic integer NOT NULL,
-    idpath integer NOT NULL
-);
-
-
-
---
--- Name: TABLE topicelements; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
-COMMENT ON TABLE topicelements IS 'Keeps the elements which should be highlighted for a topic';
-
-
---
--- Name: topicelementsview; Type: VIEW; Schema: inex_2006; Owner: inex
---
-
-CREATE VIEW topicelementsview AS
-    SELECT topicelements.idfile, topicelements.idpath, topicelements.idtopic, files.filename, paths."path" FROM ((topicelements JOIN files ON ((topicelements.idfile = files.id))) JOIN paths ON ((topicelements.idpath = paths.id)));
-
-
-
+    
 --
 -- Name: topics; Type: TABLE; Schema: inex_2006; Owner: inex; Tablespace: 
 --
@@ -249,13 +240,49 @@ CREATE TABLE topics (
     "type" character varying(10)
 );
 
-
-
---
--- Name: COLUMN topics."type"; Type: COMMENT; Schema: inex_2006; Owner: inex
---
-
 COMMENT ON COLUMN topics."type" IS 'Type of the query: CO, CO+S, CAS';
+ALTER TABLE ONLY topics
+    ADD CONSTRAINT "pkTopic" PRIMARY KEY (id);
+
+
+-- =====================================
+-- =========== POOL ELEMENTS ===========
+-- =====================================
+
+CREATE TABLE topicelements (
+    idfile integer NOT NULL,
+    idtopic integer NOT NULL,
+    idstartpath integer NOT NULL,
+    idendpath integer NOT NULL
+);
+    
+-- keys
+
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT pk_topicelements PRIMARY KEY (idtopic, idfile, idpath);
+
+-- comments
+
+COMMENT ON TABLE topicelements IS 'Keeps the elements and passages which should be highlighted for a topic';
+
+-- views
+
+CREATE VIEW topicelementsview AS
+    SELECT topicelements.idfile, topicelements.idpath, topicelements.idtopic, files.filename, spaths."startpath", epaths."endpath" FROM ((topicelements JOIN files ON ((topicelements.idfile = files.id))) JOIN spaths ON (topicelements.idstartpath = spaths.id)) JOIN epaths ON ((topicelements.idendpath = epaths.id)));
+
+-- constraints
+
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT "validStartPath" FOREIGN KEY (idstartpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY topicelements
+    ADD CONSTRAINT "validEndPath" FOREIGN KEY (idendpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+
 
 
 --
@@ -285,14 +312,6 @@ ALTER TABLE ONLY pools
 
 
 
---
--- Name: pkTopic; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
---
-
-ALTER TABLE ONLY topics
-    ADD CONSTRAINT "pkTopic" PRIMARY KEY (id);
-
-
 
 --
 -- Name: pk_assessments; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
@@ -300,15 +319,6 @@ ALTER TABLE ONLY topics
 
 ALTER TABLE ONLY assessments
     ADD CONSTRAINT pk_assessments PRIMARY KEY (idpool, idfile, startpath, endpath);
-
-
-
---
--- Name: pk_topicelements; Type: CONSTRAINT; Schema: inex_2006; Owner: inex; Tablespace: 
---
-
-ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT pk_topicelements PRIMARY KEY (idtopic, idfile, idpath);
 
 
 
@@ -392,13 +402,6 @@ ALTER TABLE ONLY filestatus
 
 
 
---
--- Name: validFile; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT "validFile" FOREIGN KEY (idfile) REFERENCES files(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
 
 --
 -- Name: validParent; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
@@ -407,13 +410,6 @@ ALTER TABLE ONLY topicelements
 ALTER TABLE ONLY files
     ADD CONSTRAINT "validParent" FOREIGN KEY (parent) REFERENCES files(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
---
--- Name: validPath; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT "validPath" FOREIGN KEY (idpath) REFERENCES paths(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -454,13 +450,6 @@ ALTER TABLE ONLY assessments
 ALTER TABLE ONLY pools
     ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
---
--- Name: validTopic; Type: FK CONSTRAINT; Schema: inex_2006; Owner: inex
---
-
-ALTER TABLE ONLY topicelements
-    ADD CONSTRAINT "validTopic" FOREIGN KEY (idtopic) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

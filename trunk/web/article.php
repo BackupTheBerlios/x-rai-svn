@@ -124,6 +124,7 @@ if ($id_pool > 0) {
 <link rel="stylesheet" href="<?=$base_url?>/collection/<?=$collection?>.css" />
 <link rel="stylesheet" href="<?=$base_url?>/css/article.css" />
 <link rel="stylesheet" id="tags_css" href="<?=$base_url?>/css/tags.css" />
+<link rel="stylesheet" id="support_css" href="<?=$base_url?>/collection/<?=$collection?>.css" />
 
 <script language="javascript">
   var max_exhaustivity = 2;

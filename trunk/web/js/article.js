@@ -316,17 +316,28 @@ XRai.switchMode = function() {
    XRai.updateSaveIcon();
 }
 
+
+/*
+ * Switch support element display
+ */
 XRai.switchSupport = function() {
-   var inex = document.getElementById("inex");
    var img = document.getElementById("supportImg");
-   if (inex.hasAttribute("support")) {
-      inex.removeAttribute("support");
-      img.setAttribute("src",base_url + "/img/noeyes.png");
-   } else {
-      inex.setAttribute("support",1);
-      img.setAttribute("src",base_url + "/img/eyes.png");
+   if (XRai.support_css) {
+      // Change the support CSS display
+      XRai.support_css.disabled = !XRai.support_css.disabled;
+      img.setAttribute("src",base_url + "/img/" + (XRai.support_css.disabled ? "no" : "") + "eyes.png");
+   } else alert("Problem with support element display");
+}
+   
+// Search for the "support" stylesheet
+XRai.support_css = null;
+if (document.styleSheets) for(var i = 0; i < document.styleSheets.length; i++) {
+   if (document.styleSheets[i].id == "support_css") {
+      XRai.support_css = document.styleSheets[i];
+      break;
    }
 }
+   
 
 // ========== @p3
 // ========== Navigation
@@ -920,6 +931,12 @@ XRai.getSelection = function() {
 }
 
 
+/* 
+   Normalise a passage
+
+   Returns a passage (x,y) such that the start element and end element do not intersect each other, 
+   except if they are equal (in this case, the passage is reduced to an element) 
+*/
 XRai.normalisePassage = function(x,y) {
    var z;
    // if y is the last child (or the last child last child etc.), then set y to x
@@ -1916,7 +1933,9 @@ XRaiLoad = function() {
       }
    }
 
-   this.addSupport = function(path) {
+   // Adds a support element
+   // Can be a passage
+   this.addSupport = function(path, endpath) {
       var ePath = this.resolvePath(path);
       if (!ePath) {
          if (debug) XRai.debug("Error: " + ePath + "\n");
