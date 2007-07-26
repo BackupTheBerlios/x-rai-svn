@@ -1,5 +1,7 @@
 #!/usr/bin/php
 <?php
+// kate: space-indent on; encoding iso-8859-1; font-size 12; indent-mode cstyle
+
 /*
     addTopicelements.php
     Add the support elements (elements retrieved by search engines)
@@ -21,6 +23,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
     
+
 require_once("xrai-inc.php");
 
 if (sizeof($_SERVER["argv"]) != 3)
@@ -66,6 +69,12 @@ if (!$idEmptyPath) {
 
 $file = -1;
 
+// Normalise a path
+// - removes any point information (text()[1].13 => text()[1])
+function normalisePath($path) {
+   return preg_replace("/\.\d+$/","","$path");
+}
+
 function startElement($parser, $name, $attrs) {
    global $filepath, $id, $file, $xrai_db, $db_topicelements;
    if ($name == "pool") {
@@ -82,18 +91,27 @@ function startElement($parser, $name, $attrs) {
          $filepath = $attrs["file"];
          $file = getFileId($attrs["file"]);
          break;
+     
+    case "passage":
+      if ($attrs["start"] && $attrs["end"]) {
+         
+         $startid = getPathId(normalisePath($attrs["start"]));
+         $endid = getPathId(normalisePath($attrs["end"]));
+         if ($file > 0 && $startid > 0 && $endid > 0) {
+            print "Adding passage $file, $startid, $endid ($filepath, $attrs[start], $attrs[end])\n";
+            $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idstartpath" => $startid, "idendpath" => $endid));
+         if (DB::isError($res)) print "[ERROR: " . $res->getUserInfo() . "] Skipping $file, $pathid\n";
+         } else print "[ERROR] Skipping $file, $pathid (file and/or start/end path are not valid)\n";           
+      } else print "[ERROR] Skipping $file, $pathid (no start/end attributes for a passage)\n";
+      
+      break;
+      
      case "path":
-         if ($attrs["start"] && $attrs["end"]) {
-            $startid = getPathId($attrs["start"]);
-            $endid = getPathId($attrs["end"]);
-            if ($file > 0 && $startid > 0 && $endid > 0) {
-               else print "[ERROR] Skipping $file, $pathid (file and/or path are not valid)\n";
-            } else print "[ERROR] Skipping $file, $pathid (file and/or start/end path are not valid)\n";           
-         } else if ($attrs["path"]) {
+         if ($attrs["path"]) {
             $pathid = getPathId($attrs["path"]);
             if ($file > 0 && $pathid > 0) {
-               print "Adding $file, $pathid ($filepath, $attrs[path])\n";
-               $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idpath" => $pathid));
+               print "Adding element $file, $pathid ($filepath, $attrs[path])\n";
+               $res = $xrai_db->autoExecute($db_topicelements, array("idfile" => $file, "idtopic" => $id, "idstartpath" => $pathid, "idendpath" => $pathid));
                if (DB::isError($res)) print "[ERROR: " . $res->getUserInfo() . "] Skipping $file, $pathid\n";
                // die($res->getUserInfo() . "\n");
                } else print "[ERROR] Skipping $file, $pathid (file and/or path are not valid)\n";

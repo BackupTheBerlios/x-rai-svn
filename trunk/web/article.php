@@ -108,7 +108,7 @@ if ($id_pool > 0) {
    $bep = $assessments->getBEP();
          
    $has_poolelements = false;
-   $te_result = $xrai_db->query("SELECT path FROM $db_topicelementsview WHERE idfile=? and idtopic=?",array($fileid,$id_topic));
+   $te_result = $xrai_db->query("SELECT startpath,endpath FROM $db_topicelementsview WHERE idfile=? and idtopic=?",array($fileid,$id_topic));
    if (DB::isError($res)) 
       print "Message.show(\"warning\",\"Could not retrieve support elements\");\n";
    else 
@@ -124,7 +124,8 @@ if ($id_pool > 0) {
 <link rel="stylesheet" href="<?=$base_url?>/collection/<?=$collection?>.css" />
 <link rel="stylesheet" href="<?=$base_url?>/css/article.css" />
 <link rel="stylesheet" id="tags_css" href="<?=$base_url?>/css/tags.css" />
-<link rel="stylesheet" id="support_css" href="<?=$base_url?>/collection/<?=$collection?>.css" />
+<link rel="stylesheet" title="support_css" href="<?=$base_url?>/css/support.php?mode=<?=$pool["supportmode"]?>&amp;colour=<?=$pool["supportcolour"]?>" />
+<link rel="stylesheet" href="<?=$base_url?>/collection/<?=$collection?>.css" />
 
 <script language="javascript">
   var max_exhaustivity = 2;
@@ -173,7 +174,6 @@ div#inex *[selected] *[marked] { background: #ff8; }
 *[marked]:after { background: yellow !important; }
 *[marked] *[marked] { background: red !important; }
 *|*[error='1'] { background: red; }
-div#inex[support] *[support='1'] { border: 1px dashed blue; }
 
 @namespace url(<?=$xrains?>);
 
@@ -326,7 +326,7 @@ if (function_exists("collectionStartDocument")) {
 	collectionStartDocument($collection,$file,$title);
 } 
 
-print "<div id='inex' support='1' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
+print "<div id='inex' src=\"$base_url/iframe/document.php?collection=$collection&amp;file=$file&amp;directory=$directory\" oncontextmenu=\"return show_nav(event);\" ondblclick='' onclick='XRai.onclick(event)' onmouseout='XRai.onmouseout(event)' onmouseover='XRai.onmouseover(event)' onmousemove='XRai.mousemoved(event)'>\n";
 // // print "<h1>$title</h1>\n";
 
 $stack = Array();
@@ -566,7 +566,7 @@ if ($id_pool > 0) {
    // Add topic elements
    if (!DB::isError($te_result)) {
       while ($row=&$te_result->fetchRow(DB_FETCHMODE_ROW)) {
-         ?>load.addSupport("<?=$row[0]?>");<?
+         ?>load.addSupport("<?=$row[0]?>","<?=$row[1]?>");<?
       }
    }
 

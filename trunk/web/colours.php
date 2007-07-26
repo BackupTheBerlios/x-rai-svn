@@ -26,10 +26,10 @@ $modes = array(array("colour","Colour"), array("border","Border colour"), array(
 ?>
 <html><head><title>INEX - <? print $pool["name"]; ?> keyword colours</title>
 <style type="text/css">
-a { colour: white; text-decoration: none; }
+a { color: white; text-decoration: none; }
 table { border-spacing: 1; }
 td { margin: 2pt; width: 10pt; height: 10pt }
-.tooltip { width: 50%; visibility: hidden; position: absolute; background: #eeeeee; colour: #000000; border: 1px solid red; }
+.tooltip { width: 50%; visibility: hidden; position: absolute; background: #eeeeee; color: #000000; border: 1px solid red; }
 textarea, input { padding: 1pt; border: 1pt solid black; background: #eeeeee; }
 .has_kw { border: 2px inset black; }
 </style>
@@ -54,7 +54,7 @@ if ($write_access && ($_REQUEST["action"] == "update" && ($id_pool>0))) {
 
   }
 
-  print "<div style='text-align: center; colour: blue; background: #cccccc;'>Keywords saved</div>\n";
+  print "<div style='text-align: center; color: blue; background: #cccccc;'>Keywords saved</div>\n";
   unset($colour);
   unset($keywords);
 //   flush();
@@ -140,18 +140,18 @@ else {
 
         <form name="main" onsubmit="save_mode_keywords(current_mode)">
 
-         <?if ($write_access) { ?> put your keywords below (one per line) and <input type="submit" name="action" value="update"/> your current keywords.   <div style="colour: #444444; font-size: smaller; margin: 2px 0 2px 0">Your keywords <em>may</em> be perl regular expressions (but be careful with them). <br/>Ex. <code>optimi[sz](ation|ed)</code> will match optimisation, optimised, optimization and optimized. <? } else { ?> Keywords are listed below (read-only) <?}?>
+         <?if ($write_access) { ?> put your keywords below (one per line) and <input type="submit" name="action" value="update"/> your current keywords.   <div style="color: #444444; font-size: smaller; margin: 2px 0 2px 0">Your keywords <em>may</em> be perl regular expressions (but be careful with them). <br/>Ex. <code>optimi[sz](ation|ed)</code> will match optimisation, optimised, optimization and optimized. <? } else { ?> Keywords are listed below (read-only) <?}?>
 
         </div>
       <div style="margin-top: 0.2cm">
-      <span style="colour:#444444">Keyword highlighting mode</span>
+      <span style="color: #444444">Keyword highlighting mode</span>
       <select name="mode" id="mode" onchange="change_mode(this)"><? foreach($modes as $mode) { ?><option value="<?=$mode[0]?>"><?=$mode[1]?></option><? }?></select>
       <?
         foreach($modes as $mode)
           print "<input type=\"hidden\" name=\"keywords[$mode[0]]\" value=\"" . htmlspecialchars($keywords[$mode[0]]) . "\"/>\n";
       ?>
 
-        <span style="colour: <?=$colour?>" id="example">
+        <span style="color: <?=$colour?>" id="example">
           example
         </span>
       </div>

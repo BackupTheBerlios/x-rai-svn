@@ -1,3 +1,4 @@
+<?   
 /*
     support.css
     CSS for the pool elements and passages
@@ -19,6 +20,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
+header("Content-type: text/css");
 
-
-*[support='1'] { border: 1px dashed blue; }
+print "*[support='1'] {";
+   switch($_GET["mode"]) {
+     case "border": print "border: 1pt solid #$_GET[colour] !important;"; break;
+     case "colour": print "color: #$_GET[colour] !important;"; break;
+     case "background": print "background: #$_GET[colour] !important;"; break;
+     }
+?>
+}

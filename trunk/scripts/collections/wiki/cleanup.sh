@@ -36,8 +36,11 @@ BASEDIR="$(dirname "$(readlink -f "$0")")"/../../../lingpipe
 
 test -d "$origdir"/part-0 || exit
 test -d "$destdir" ||  exit
+if ! test -f $BASEDIR/annotate.jar; then
+	ant -buildfile $BASEDIR/build.xml || exit
+fi
 
-echo "STARTING"
+echo "STARTING (LINGPIPE=$BASEDIR, $origdir TO $destdir)"
 
 for i in $origdir/part-*; do
 echo "================== IN $i ($tmpdir) ====================="
@@ -52,7 +55,7 @@ echo "================== IN $i ($tmpdir) ====================="
       #      echo "$file: $d"
       
          mkdir -p "$destdir/$d"
-         cp "$f"  "$destdir/$d/$file.xml"
+         mv "$f"  "$destdir/$d/$file.xml"
       done
       
    rm -fr $tmpdir

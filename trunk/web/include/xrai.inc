@@ -141,6 +141,10 @@ function show_colors() {
 window.open("<?=$base_url?>/colours.php?id_pool=<?=$id_pool?>","inex_colors","toolbar=no,location=no,directories=no,status=yes,menubar=no,copyhistory=no,width=650,height=400");
 }
 
+function show_support_colours() {
+window.open("<?=$base_url?>/support_element.php?id_pool=<?=$id_pool?>","inex_support","toolbar=no,location=no,directories=no,status=yes,menubar=no,copyhistory=no,width=650,height=400");
+}
+
 function show_topic() {
 window.open("<?=$base_url?>/show_topic.php?id_topic=<?=$id_topic?>","inex_topic","width=450,height=400,toolbar=no,location=no,directories=no,status=yes,menubar=no,copyhistory=no");
 }
@@ -152,7 +156,7 @@ window.open("<?=$base_url?>/show_history.php?id_pool=<?=$id_pool?>","xrai_histor
 </script>
 
 <table style="width: 100%; border-bottom: 2pt dashed #dddddd;"><tr>
-<td style="vertical-align: middle; width: 100%; text-align: center;">
+<td style="width: 100%; text-align: center;">
 
 <div style="font-size: xx-large"><?=$GLOBALS["main_title"]?></div>
 <div style="margin: 0 10%; font-size: large"><?=htmlspecialchars($title)?></div>
@@ -256,6 +260,7 @@ if ($id_pool > 0) {
    $write_access = $can_modify = ($pool["enabled"] == 't');
    add_menu("Pool","javascript:show_topic()","Topic","View topic definition");
    add_menu("Pool","javascript:show_colors()","Keywords","Edit keyword highlighting");
+   add_menu("Pool","javascript:show_support_colours()","Support","Support elements colours");
    add_menu("Pool","javascript:show_history()","History","List of recently viewed files");
 }
 

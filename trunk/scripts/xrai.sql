@@ -189,6 +189,9 @@ CREATE TABLE pools (
     enabled boolean NOT NULL,
     login character varying(16) NOT NULL,
     main boolean,
+    supportColour character(6) NOT NULL DEFAULT 'f0f0c0',
+    supportMode character varying(10) NOT NULL DEFAULT 'background'
+
     CONSTRAINT true_main CHECK (main)
 );
 

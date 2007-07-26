@@ -95,6 +95,7 @@ function startElement($parser, $name, $attrs) {
          }
          break;
       case "path":
+      case "passage":   
          break;
       default: die("Unexpected tag: $name");
    }

@@ -1,3 +1,4 @@
+// kate: encoding iso-8859-1; indent-mode cstyle
 /*
     article.js
     Javascript code for assessments
@@ -331,9 +332,12 @@ XRai.switchSupport = function() {
    
 // Search for the "support" stylesheet
 XRai.support_css = null;
+XRai.debug("Searching for support_css stylesheet\n");
 if (document.styleSheets) for(var i = 0; i < document.styleSheets.length; i++) {
-   if (document.styleSheets[i].id == "support_css") {
+   if (document.styleSheets[i].title == "support_css") {
+      XRai.debug("Found it. Stylesheet: " + document.styleSheets[i].title + "\n");
       XRai.support_css = document.styleSheets[i];
+      XRai.support_css.disabled = false;
       break;
    }
 }
@@ -1863,10 +1867,27 @@ XRaiLoad = function() {
    this.stepre = /^([^\/\[\]]+)\[(\d+)\]$/;
    this.resolvePathStep = function(child, stack, i) {
       var s = this.stepre.exec(stack[i]);
-//       if (debug) XRai.debug("Resolving " + s[1] + ", " + s[2] + ", fs=" + XRai.getPath(child) + "\n");
+      if (debug) XRai.debug("Resolving " + s[1] + ", " + s[2] +  ", fs=" + (child.nodeType != Node.TEXT_NODE ? XRai.getPath(child) : XRai.getPath(child.parentNode) + "/text()[1]" ) + "\n");
       var rank = s[2];
+      var isText = s[1] == "text()";
+      var isFirstXRaiS = true;
       for(; child && rank; child = XRai.nextSibling(child)) {
-         if (XRai.getTagName(child) == s[1]) rank--;
+         var name = XRai.getTagName(child);
+         if (isText) {
+            if (name == "xrai:s" && isFirstXRaiS) {
+               isFirstXRaiS = false;
+                rank--;
+            } else if (child.nodeType == Node.TEXT_NODE) {
+                if (s[2] != "1") {
+                   XRai.debug("Searching for text()[" + s[2] + "] and node is pure PCDATA");
+                   return null;
+                }
+                rank--;
+            } else {
+               isFirstXRaiS = true;
+            }
+         } else if (name == s[1]) rank--;
+         
          if (!rank) break;
       }
       if (!child) {
@@ -1878,6 +1899,7 @@ XRaiLoad = function() {
       return child;
    }
 
+   /** Resolve an XPath */
    this.resolvePath = function(path) {
       if (path == "" || path == null || path == "null") return null;
       var x;
@@ -1885,19 +1907,32 @@ XRaiLoad = function() {
        var matches = path.split("/");
        var s = "";
        var m;
+       var searchText = null;
        for(var i = 1; i < matches.length; i++)
          if (m = matches[i].match(/^(?!xrai:)(.*:.*)(\[.+)$/)) 
                   s += "/xraic:xrai_itag[@xrai_tagname=\"" + m[1] + "\"]" + m[2];
          else if (matches[i].indexOf("xrai:") == 0) s += "/" + matches[i];
+         else if (m = matches[i].match(/^text\(\)\[(\d+)\]$/)) searchText = m[1];         
          else s += "/xraic:" + matches[i];
               
        path = "." + s; // path.replace(/\/(?!xrai:)/g,"/xraic:");
-       if (debug) XRai.debug("Evaluating " + path);
-         x = this.xpe.evaluate(path, XRai.getRoot().parentNode, this.nsResolver, 0, null).iterateNext();
-         return x;
+         if (debug) XRai.debug("Evaluating " + path + (searchText ? " with text()[" + searchText + "]" : "")  + "\n");
+         try {
+            x = this.xpe.evaluate(path, XRai.getRoot().parentNode, this.nsResolver, 0, null);
+            x = x.iterateNext();
+            if (x && searchText) x = this.resolvePathStep(x.firstChild, new Array("text()[" + searchText + "]"), 0);
+         } catch(e) {
+            XRai.debug("Caught exception " + e + "\n");
+            return null;
+         }
+      } else  {
+         // No XPath resolution in browser: do it ourselves
+         stack = path.split("/");
+         x = this.resolvePathStep(XRai.getRoot(), stack, 1);
       }
-      stack = path.split("/");
-      return this.resolvePathStep(XRai.getRoot(), stack, 1);
+      
+      return x;    
+      
    }
 
    this.add = function(start,end,a) {
@@ -1905,6 +1940,7 @@ XRaiLoad = function() {
          if (debug) XRai.debug("[LOADING" + (end != "" ? "*" : "") + "] " + a + " : "  + start + " - " + end + "\n");
          var eStart = this.resolvePath(start);
          var eEnd = this.resolvePath(end);
+         
          if (!eStart || (end != "" && !eEnd)) {
             if (debug) XRai.debug("[LDERROR] " + eStart + "/" + eEnd + "\n");
             this.loadErrors++;
@@ -1935,14 +1971,27 @@ XRaiLoad = function() {
 
    // Adds a support element
    // Can be a passage
-   this.addSupport = function(path, endpath) {
-      var ePath = this.resolvePath(path);
-      if (!ePath) {
-         if (debug) XRai.debug("Error: " + ePath + "\n");
+   this.addSupport = function(startpath, endpath) {
+      if (debug) XRai.debug("[LOAD] Loading support element: " + startpath + " => " + endpath + "\n");
+      var startPath = this.resolvePath(startpath);
+      var endPath =  this.resolvePath(endpath);
+      
+      if (!startPath || !endPath) {
+         if (debug) XRai.debug("Error: " + endPath + "\n");
          this.loadWarnings++;
          this.errorCode |= this.SUPPORT_ELEMENT_ERROR;
       } else {
-         ePath.setAttribute("support",1);
+         if (startPath.nodeType == Node.TEXT_NODE) startPath = startPath.parentNode;
+         if (endPath.nodeType == Node.TEXT_NODE) endPath = startPath.parentNode;         
+         var p = XRai.normalisePassage(startPath, endPath);
+         for(var e = p.x; e != null; e = XRai.nextElementTo(e,p.y)) {        
+            try { e.setAttribute("support",1); }
+            catch(error) {
+               this.loadWarnings++;
+               this.errorCode |= this.SUPPORT_ELEMENT_ERROR;
+               if (debug) XRai.debug("[ERROR] (support element set attribute) " + e + "\n");
+            }
+         }
       }
    }
 		 
