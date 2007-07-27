@@ -82,7 +82,7 @@ print_xhtml_header();
       <title><?=$GLOBALS["main_title"]?> - <?=htmlspecialchars($title)?></title>
       <link rel="stylesheet" href="<?=$base_url?>/css/help.css" title="help"/>
       <link rel="stylesheet" href="<?=$base_url?>/css/style.css" />
-      <script src="<?=$base_url?>/js/inex.js" language="javascript"></script>
+      <script src="<?=$base_url?>/js/xrai.js" language="javascript"></script>
    </head>
       <body id="body" onclick="return XRai.click(event)" onload="document_loaded()">
    <table id="menubar" class="localisation">

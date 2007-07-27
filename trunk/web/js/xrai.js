@@ -1,5 +1,5 @@
 /*
-    inex.js
+    xrai.js
     General purpose js code
     
     Copyright (C) 2003-2007  Benjamin Piwowarski benjamin@bpiwowar.net
