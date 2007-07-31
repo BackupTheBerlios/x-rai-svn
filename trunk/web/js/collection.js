@@ -19,6 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
+
 function todo_previous() {
      if (!todo || todo.length == 0) {
           if (confirm("No more elements to assess in this view. Do you like to jump to the previous view where there is an element to assess ?")) {
@@ -28,7 +29,7 @@ function todo_previous() {
      }
      if (todo_index > 0) todo_index = (todo_index - 1) % todo.length;
      else todo_index = todo.length - 1;
-     var e = document.getElementById(todo[todo_index]);
+     var e = todo[todo_index];
      show_focus(e);
 }
 
@@ -40,6 +41,6 @@ function todo_next() {
           return;
      }
      todo_index = (todo_index + 1) % todo.length;
-     var e = document.getElementById(todo[todo_index]);
+     var e = todo[todo_index];
      show_focus(e);
 }

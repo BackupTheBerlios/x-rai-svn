@@ -149,6 +149,7 @@ function get_inner_top() {
    var menu = document.getElementById("menubar");
    if (window.opera) return window.pageYOffset + menu.offsetTop + menu.offsetHeight;
    if (window.scrollY) return window.scrollY + menu.offsetTop + menu.offsetHeight;
+   return  menu.offsetTop + menu.offsetHeight;
 }
 
 function get_inner_bottom() {
@@ -225,24 +226,28 @@ function get_position (e) {
 
 
 
-
 function scroll_to_element(e,top) {
   var coords = get_position(e);
 
   var y_min = get_inner_top(), y_max = get_inner_bottom();
+  if (!y_min) y_min = 0;
   var y_top = coords.y;
   var y_bottom = coords.y + coords.height;
 
 //   Message.show("notice","Pos: " + coords.y + " / "+ coords.height + " / " + y_min + "," + y_max, 4800);
 
-  //   alert("object=" + coords.y  + ", " + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max);
-  if (y_top < y_min || y_bottom > y_max) {
+    if (y_top < y_min) {
+//     Message.show("notice","[1] object=" + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max, 9600);    
      scrollTo(0,y_top - (y_min - window.pageYOffset));
-  }
-//   else if (y_bottom > y_max) {
-//        var y = y_bottom + window.scrollY - y_max ;
-//      scrollTo(0,y);
-//   }
+  } else if (y_bottom > y_max) {
+//        Message.show("notice","[2] object=" + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max, 9600);    
+       var y = y_min + (y_bottom - y_max);
+     scrollTo(0,y);
+     }
+/*     else {
+         Message.show("notice","[0] object=" + y_top + ", " + y_bottom + " and view=" + y_min + "," + y_max, 9600);    
+     }*/
+              
 
   return true;
 }

@@ -97,7 +97,7 @@ if ($id_pool) {
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
          $all_assessments[$s] += $row["count"];
-         if ((abs($row["status"]) != 2) && ($row["count"] > 0) ) $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[filename]'";
+         
       }
       $res->free();
    }
@@ -118,18 +118,18 @@ function get_full_path($base,$path) {
 function printStatistics(&$assessments) {
    global $base_url;
    $x = $assessments[-1] + $assessments[1];
-   if ($x > 0) print "<img title=\"$x not validated document(s)\" style=\"vertical-align: center;\" src=\"$base_url/img/nok\" alt=\"[assessing]\"/>"; 
+   if ($x > 0) print "<img title=\"$x not validated document(s)\" style=\"vertical-align: middle;\" src=\"$base_url/img/nok\" alt=\"[assessing]\"/>"; 
    
    $x = $assessments[-2] + $assessments[2];
-   if ($x > 0) print "<img title='$x validated document(s)' style=\"vertical-align: center;\"  src=\"$base_url/img/ok\"  alt=\"[validated]\"/>"; 
+   if ($x > 0) print "<img title='$x validated document(s)' style=\"vertical-align: middle;\"  src=\"$base_url/img/ok\"  alt=\"[validated]\"/>"; 
 }
 
-function print_assessments($id) {
-global $assessments, $id_pool, $all_assessments;
+function print_assessments(&$a) {
+global $id_pool, $all_assessments;
   if ($id_pool >0) {
 //       print "Assessments: " . print_r($assessments[$id], true ) . " for '$id'. ";
-      printStatus($assessments[$id], $all_assessments);
-      printStatistics($assessments[$id]);
+      printStatus($a, $all_assessments);
+      printStatistics($a);
       print " ";
 
    }
@@ -140,10 +140,12 @@ function xmlspecialchars($s) {
 }
 
 function begin_subcollection($path) {
+  global $assessments;
   global $PHP_SELF, $id_pool, $thebasepath;
   $id = get_full_path($basepath, $path);
-  print_assessments($id);
-   print "<a id=\"" . xmlspecialchars($id) . "\" href=\"$thebasepath/$path?id_pool=$id_pool\"> ";
+  $a = &$assessments[$id];
+  print_assessments($a);
+   print "<a " . ($a && ($a[-1] + $a[1] > 0) ? " name='toAssess'" : ""). " id=\"" . xmlspecialchars($id) . "\" href=\"$thebasepath/$path?id_pool=$id_pool\"> ";
 }
 
 function end_subcollection() { print "</a>"; }
@@ -155,6 +157,7 @@ function begin_document($path) {
   if ($document[$id]) {
      $a = &$document[$id];
      if ($a[1]) print "<span style=\"padding: 2px; border: 1px dashed blue\" title=\"in pool\">";
+     
      else print "<span>";
 
       switch($a[0]) {
@@ -164,7 +167,8 @@ function begin_document($path) {
       }
       print "</span> ";
   }
-  print "<a id='" . xmlspecialchars($id) . "' href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
+  print "<a id='" . xmlspecialchars($id) . "'" . ($a[1] ? " name='toAssess'" : "")
+   . " href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
 }
 
 function end_document() { print "</a>"; }
@@ -179,7 +183,6 @@ print "<h1>" . htmlspecialchars($title) . "</h1>\n";
  <script type='text/javascript'>
  id_pool="<?=$id_pool?>";
  viewxid="<?=$viewxid?>";
- <? if ($todojs) print "$todojs);"; else print "todo = new Array();"; ?>
  </script>
 <?
 
@@ -244,6 +247,7 @@ if ($write_access) {
 <script language="javascript">
   up_url = "<?=$up_url?>";
   document.onkeypress = collection_keypress;
+  var todo = document.getElementsByName("toAssess");
 </script>
 
 <? } make_footer(); ?>
