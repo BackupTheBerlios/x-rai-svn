@@ -25,6 +25,6 @@ make_header("Mission accomplished");
 ?>
 <div>Pool done</div>
 <?
-
+if (function_exists("pool_done")) pool_done();
 make_footer();
 ?>
