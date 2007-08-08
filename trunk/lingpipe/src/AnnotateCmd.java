@@ -146,6 +146,11 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 			super.startElement(null, XRAI_S, XRAI_S, new INEXAttributes());
 		
 		for (Container c : cdata) {
+			for(int i = c.start; i < c.start + c.length; i++)
+				if ((Character.isHighSurrogate(c.chars[i]) ||  Character.isLowSurrogate(c.chars[i]))) {
+					c.chars[i] = '?';
+				}
+					
 			super.characters(c.chars, c.start, c.length);
 		}
 		if (wrap == XRaiWrap.START) {

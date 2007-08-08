@@ -44,7 +44,7 @@ echo "STARTING (LINGPIPE=$BASEDIR, $origdir TO $destdir)"
 
 for i in $origdir/part-*; do
 echo "================== IN $i ($tmpdir) ====================="
-   java -Dorg.xml.sax.driver=org.apache.xerces.parsers.SAXParser -cp $BASEDIR/annotate.jar:$BASEDIR/lib/lingpipe-2.0.0.jar:$BASEDIR/lib/xercesImpl.jar:$BASEDIR/lib/xml-apis.jar AnnotateCmd -model=$BASEDIR/EN_NEWS.model -fileSuffixes="xml" -contentType="text/xml; charset=UTF-8" -elements="p,caption,item" -inputDir="$i" -outputDir="$tmpdir" 2>&1 | grep -v "^Processing file"
+   java -Dorg.xml.sax.driver=org.apache.xerces.parsers.SAXParser -cp $BASEDIR/annotate.jar:$BASEDIR/lib/lingpipe-2.0.0.jar:$BASEDIR/lib/xercesImpl.jar:$BASEDIR/lib/xml-apis.jar AnnotateCmd -model=$BASEDIR/EN_NEWS.model -fileSuffixes="xml" -contentType="text/xml; charset=UTF-8" -elements="p,caption,item" -inputDir="$i" -outputDir="$tmpdir" -stopList=utf-16 2>&1 | grep -v "^Processing file"
    
    find $tmpdir -type f -name "*.xml" |
       while read f; do
