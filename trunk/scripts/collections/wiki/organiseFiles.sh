@@ -19,7 +19,14 @@
 #    License along with this library; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
-test $# -ge 3 || exit
+
+function usage {
+   echo "organizeFiles.sh <SUFFIX> <DEST> <SRC1> <SRC2> ..." 1>&2
+   exit
+}
+
+test $# -ge 3 || usage
+exit
 
 suffix="$1"
 dest="$2"
@@ -38,6 +45,6 @@ while test $# -ge 1; do
             r=$(($file / 1000))
             d=$(($r / 100 % 100))/$(($r % 100))
             mkdir -p "$dest/$d"
-            cp "$f"  "$dest/$d/$file$suffix"
+            mv "$f"  "$dest/$d/$file$suffix"
          done
 done

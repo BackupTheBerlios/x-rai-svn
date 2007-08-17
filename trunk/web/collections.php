@@ -189,8 +189,9 @@ print "<h1>" . htmlspecialchars($title) . "</h1>\n";
 print "<div class='inex' style='margin-bottom: 3cm;'>";
 
 // Has no cache
- if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";
-if (!is_dir("$xml_cache/$path")) {
+if (!is_file($xmlfilename)) print "<div>$xmlfilename is not a valid file ?</div>\n";
+
+if (!$xml_cache || !is_dir("$xml_cache/$path")) {
   if ($xslt_mode) {
       $result = xslt_process($xslt,$xmlfilename,"$xslfilename")  ;
    } else {

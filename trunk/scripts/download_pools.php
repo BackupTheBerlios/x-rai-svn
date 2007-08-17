@@ -56,9 +56,24 @@ array_shift($argv);
 
 $cmap = array();
 $flag = true;
+
+// do we strip whitespaces?
+$strip_ws = false;
+
+// do we merge whitespaces?
+$strip_ws_pos = false;
+
 // print "ARG0: $argv[0]\n";
 while ($flag) {
    switch ($argv[0]) {
+      case "-no-whitespace-nodes":
+         array_shift($argv);
+         $strip_ws = true;
+         break;
+      case "-merge-whitespaces":
+         array_shift($argv);
+         $strip_ws_pos = true;
+         break;
       case "-cmap":
          array_shift($argv);
          $x = array_shift($argv);
@@ -133,6 +148,7 @@ fwrite($dtd_file,'
   <!ELEMENT element EMPTY>
 
   <!ATTLIST assessments
+            (whitespace-text-node="' . ($strip_ws ? "strip-ALPHA" : "keep-ALPHA") .' "
             pool CDATA #REQUIRED
             topic CDATA #REQUIRED
             version CDATA #REQUIRED>
@@ -208,6 +224,8 @@ if (DB::isError($status)) { print "Error.\n" . $status->getUserInfo() . "\n\nExi
 
 $current = array(null);
 $alldone = true;
+// True if the current text node is only made of white spaces
+$only_ws = true;
 $done = array();
 
 // First loop: get the list of files to explore
@@ -268,7 +286,7 @@ addPool(&$current);
    0. start offset, 
    1. end offset
  If the element is xrai:s, added to the array are:
-   2. parent path, 
+   2. parent path (i.e. a text node), 
    3. offset in the parent path
 
   The stack $stack is composed of an array whose components are:
@@ -277,18 +295,58 @@ addPool(&$current);
    2. start offset, 
    3. boolean (ancestor of an included node), 
    4. start offset of the last xrai:s tag (or -1 if the last parsed child is not xrai:s), 
-   5. # of non-contiguous xrai:s tags, 6. BEP]
+   5. # of non-contiguous xrai:s tags
+   6. BEP
 */
 
+// this contains the last path we parsed
+$last_path = null;
+// this contains a reference to the array where we need next path information
+$need_next = null;
+
+class Path {
+
+// Counting ALL whitespaces
+const START_OFFSET = 0;
+const END_OFFSET = 1;
+
+// Not counting adjacent whitespaces
+const MWS_START_OFFSET = 2;
+const MWS_END_OFFSET = 3;
+
+const PARENT_PATH = 4;
+// IF PARENT PATH IS NOT 0
+const PARENT_OFFSET = 5;
+// IF PARENT PATH IS 0
+const PREVIOUS_PATH = 5;
+const NEXT_PATH = 6;
+}   
+
+// Stack info
+class Stack {
+   const PATH = 0;
+   const RANKS = 1;
+   
+   const START_OFFSET = 2;
+   const ANCESTOR_RELEVANT = 3;
+   
+   // OFFSET OF THE START POINT OF THE FIRST XRAI_S ELEMENT
+   const START_XRAI_S = 4;
+   const NB_XRAIS = 5;
+   
+   // OFFSET WITH MERGED WHITESPACES
+   const MWS_START_OFFSET = 6;
+}
+   
 function startElement($parser, $name, $attrs) {
-   global $stack, $pos, $paths, $nb_passages, $topicPassages, $highlight_only, $debug;
+   global $stack, $pos, $pos_mws, $paths, $nb_passages, $topicPassages, $highlight_only, $debug, $only_ws;
+
+   // Update the current element
+   if (sizeof($stack) == 1) { $last_was_ws = false; }
    $last = &$stack[sizeof($stack)-1];
 
-   $rank = &$last[1][$name];
+   $rank = &$last[Stack::RANKS][$name];
    if (!isset($rank)) $rank = 1; else $rank++;
-   if ($name == "xrai:s") {
-      if ($last[4] == -1) { $last[4] = $pos; $last[5]++; }
-   } else $last[4] = -1;
 
    $path = $last[0] . "/{$name}[{$rank}]";
    if ($highlight_only && is_array($topicPassages[$path])) {
@@ -300,45 +358,104 @@ function startElement($parser, $name, $attrs) {
 
       }
    }
-
-   array_push($stack,array($path, array(), $pos, false, -1, 0));
+      
+   // For the moment, only made of white spaces  
+   $only_ws = true;
+   
+   // -- Push a new element in the array for the current element
+   
+   array_push($stack,array($path, array(), $pos, false, -1, 0, $pos_mws));
 }
 
 function endElement($parser, $name) {
-   global $stack, $paths, $pos, $nb_passages, $topicPassages, $highlight_only, $j, $debug;
+   global $stack, $paths, $pos, $pos_mws, $nb_passages, $topicPassages, $highlight_only, $j, $only_ws,
+          $strip_ws, $debug, $last_path, $need_next;
 
+   // Update information about the parent of the current element
+   $last = &$stack[sizeof($stack)-2];
    $data = &$stack[sizeof($stack)-1];
-   $path = $data[0];
+
+   if ($last) {
+      // if the element was an xrai:s element, only count it as a white space node
+      // if (1) we don't care about stripping ws only nodes or
+      // (2) it did not contain only whitespaces
+      if ($name == "xrai:s") {
+         $x = $last[Stack::START_XRAI_S];
+         if (!$strip_ws || !$only_ws) {
+            // This is the first xrai_s of this part
+             if ($x < 0) { 
+                  // Offset is parent offset
+                  // remove 1 to the offset if the previous node was an empty ws and strip_ws is on
+                  // in order to count this for the offset
+                  $last[Stack::START_XRAI_S] = $x == -1 ? $data[Stack::START_OFFSET] :  -2 -$x; 
+                  $last[Stack::NB_XRAIS]++; 
+               }
+          } else if ($only_ws && $x == -1) {
+             // Only ws but strip ws, then skip
+             $last[Stack::START_XRAI_S] = -$data[Stack::START_OFFSET]-2; 
+          } 
+        
+       } else {
+          // Reset to -1 since we are not an xrai:s element
+          $last[Stack::START_XRAI_S] = -1;
+       }
+    }
+      
+   // Process information   
+   $path = $data[Stack::PATH];
    
-   if ($data[3] || $paths[$path] || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
+   // Check if we needed our information for handling special case of xrai:s tags
+   
+
+   if ($need_next) {
+      if ($name != "xrai:s") {
+         array_push($need_next, $path);
+         unset($GLOBALS["need_next"]);
+      } else  if ($last[Stack::START_XRAI_S] >= 0) {
+           array_push($need_next, $last[Stack::PATH] . "/text()[" . $last[Stack::NB_XRAIS] . "]."  
+                 . ($last[Stack::START_XRAI_S] - $data[Stack::START_OFFSET]));
+         unset($GLOBALS["need_next"]);
+      }
+   }
+
+   if ($data[Stack::ANCESTOR_RELEVANT] || $paths[$path] || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
       if ($debug) print "\t* Interesting path: $path\n";
       $i = sizeof($stack)-1;
       while (($i>0) /*&& (!$stack[$i][3])*/) {
-         if ($debug) print "\tLooking at " . $stack[$i][0] . "\n";
+         if ($debug) print "\tLooking at " . $stack[$i][Stack::PATH] . "\n";
+      
          if ($highlight_only) {
             // we add an assessed elements for all the pools within a passage
             foreach($nb_passages as $idpool => $count) {
 //                print "\tEND PATH " . $stack[$i][0] . " for $idpool ($count)\n";
                if ($count > 0) {
                   if ($debug) print "\tADDING [$count passage(s)] for $idpool THE PATH " . $stack[$i][0] . "\n";
-                  $j[$idpool][$stack[$i][0]] = 2;
+                  $j[$idpool][$stack[$i][Stack::PATH]] = 2;
                }
             }
          }
-         $stack[$i][3] = true;
+         $stack[$i][Stack::ANCESTOR_RELEVANT] = true;
          $i--;
       }
       
-      $paths[$path] = array($data[2], $pos);
+      $paths[$path] = array($data[Stack::START_OFFSET], $pos, $data[Stack::MWS_START_OFFSET], $pos_mws);
+      
       // Add the information about xrai:s if needed
-      $last = &$stack[sizeof($stack)-2];
-      if ($last[4] >= 0) { 
-            // it is an xrai:s tag, we add an xpointer
-            // print "ADDED a xrai:s: $path, $data[2]\n";
-         array_push($paths[$path], "$last[0]/text()[$last[5]]", $last[4]);
+      if ($name == "xrai:s") {
+         if ($last[Stack::START_XRAI_S] >= 0) { 
+               // it is an xrai:s tag, we add an xpointer
+               // print "ADDED a xrai:s: $path, $data[2]\n";
+            array_push($paths[$path], $last[Stack::PATH] . "/text()[" . $last[Stack::NB_XRAIS] . "]", $last[Stack::START_XRAI_S]);
+         } else {
+            // Case where we are within an empty text node and skip_ws is on
+            // only choice: put the next sibling (for last part) & previous sibling (for previous part) reference
+            // TODO !!!
+            array_push($paths[$path], 0, $last_path);
+            $GLOBALS["need_next"] = &$paths[$path];
+         }
       }
    }
-
+   $last_path = $path;
 
    array_pop($stack);
    
@@ -358,21 +475,41 @@ function endElement($parser, $name) {
 }
 
 function cdata($parser, $data) {
-   global $pos;
+   global $pos, $pos_mws, $only_ws, $last_was_ws;
+   // Strip whitespaces from count
    $pos += strlen($data);
+   
+   $data = preg_replace("#\s+#"," ",$data);
+   if ($last_was_ws && preg_match("#^\s#",$data)) $pos--;
+   $last_was_ws = preg_match("#\s$#",$data);
+   $pos_mws += strlen($data);
+   
+   
+   $only_ws = $only_ws && !preg_match('#\S#', $data);
 }
 
 /** Return the XPointer for a given path
  @param path the XPath
- @param begin do we want an XPointer to the beginning of the element or to the end?
+ @param begin do we want an XPointer relative to the beginning of the element or to the end?
 */
 function getXPointer($path, $begin) {
    global $paths;
    $p = &$paths[$path];
-   if (sizeof($p) < 3) return $path;
-   return "$p[2]." . ($p[$begin ? 0 : 1] - $p[3]);
+   if (sizeof($p) <= Path::PARENT_PATH) return $path;
+   // An xrai:s node
+   if ($p[Path::PARENT_PATH]) 
+      return $p[Path::PARENT_PATH] . "." . ($p[$begin ? Path::START_OFFSET : Path::END_OFFSET] - $p[Path::PARENT_OFFSET]);
+//    print "$path : " . $p[Path::NEXT_PATH] . ", " . $p[Path::PREVIOUS_PATH] . "\n";
+   return ($begin ? $p[Path::NEXT_PATH] : $p[Path::PREVIOUS_PATH]);
 }
 
+function passageIsOnlyWS($spath, $epath) {
+   global $paths;
+   $p = &$paths[$spath];
+   if (sizeof($p) <= Path::PARENT_PATH || $p[Path::PARENT_PATH]) return false;
+   $q = &$paths[$epath];
+   return sizeof($q) > Path::PARENT_PATH && ($q[Path::PARENT_PATH] == 0);
+}
 
 /* -----*----- Loop on files -----*-----
       
@@ -416,7 +553,7 @@ while (list($id, $data) = each(&$done)) {
    $pct = intval($fileNo / $numberOfFiles * 20) * 5;
    if ($pct != $currentPct) {
       $currentPct = $pct;
-      print "---- PROGRESS ---- $pct %\n";
+      print "\n---- PROGRESS ---- $pct %\n";
    }
 
    // Will contain the list of paths to analyse
@@ -486,10 +623,11 @@ while (list($id, $data) = each(&$done)) {
    // Read XML file (if necessary)
    if (sizeof($paths) > 0) {
       print "Parsing file $data[0]/$data[1] (" . sizeof($paths) . ")\n";
-      $pos = 0;
+      $pos = $pos_mws = 0;
       $nb_passages = array();
       $stack = array(array("",array(),0,false));
       $xml_parser = xml_parser_create();
+      $last_was_ws = false;
       xml_set_element_handler($xml_parser, "startElement", "endElement");
       xml_set_character_data_handler($xml_parser, "cdata");
       xml_parser_set_option($xml_parser,XML_OPTION_CASE_FOLDING,false);
@@ -512,7 +650,7 @@ while (list($id, $data) = each(&$done)) {
       xml_parser_free($xml_parser);
    }
 
-   // Loop on pools
+   // --- Loop on pools
    if ($debug > 1) print "Info array is: " . print_r($p,true) . "\n";
    
    foreach($data[2] as &$data_item) {
@@ -523,6 +661,7 @@ while (list($id, $data) = each(&$done)) {
       if ($cmap[$coll]) $coll = $cmap[$coll];
       fwrite($files[$pool]," <file collection=\"$coll\" name=\"$data[1]\">\n");
       
+      if ($debug > 1) { print "BEP : $data_item[1] i.e. " . print_r($paths[$data_item[1]], true) . "\n"; }
       if ($data_item[1]) fwrite($files[$pool],"   <best-entry-point path=\"" . getXPointer($data_item[1], true) . "\"/>\n");
       $error = false;
       $cp = &$p[$pool];
@@ -535,7 +674,9 @@ while (list($id, $data) = each(&$done)) {
          if ($debug > 1) print "Sorted array: " .  print_r($p,true) . "\n";
          $last = -1;
          for($i = 0; $i < sizeof($cp); $i++) {
-            $s = $cp[$i][0][0]; $e =  $cp[$i][1][1];
+            $s = $cp[$i][0][Path::MWS_START_OFFSET]; 
+            $e =  $cp[$i][1][Path::MWS_END_OFFSET];
+            
             if (!isset($s) || !isset($e)) { 
                print "WARNING: skipping passage " . $cp[$i][2] . " - " . $cp[$i][3] . " (start ($s)/end ($e) empty)\n"; 
                fwrite($files[$pool],"  <!-- WARNING: Skipping passage " . $cp[$i][2] . " - " . $cp[$i][3] . " (start ($s)/end ($e) empty)-->\n");
@@ -556,7 +697,7 @@ while (list($id, $data) = each(&$done)) {
                $passages[] = array($s, $e, $cp[$i][2], $cp[$i][3]);
             }
 //          $lp = &$passages[sizeof($passages)-1];
-            print "  P[$s:$e]\n"; // . " / $lp[2], $lp[3]]\n";
+            if ($debug) print "  P[$s:$e]\n"; // . " / $lp[2], $lp[3]]\n";
             $last = $e;
          }
          
@@ -564,15 +705,21 @@ while (list($id, $data) = each(&$done)) {
         // output the passages
         foreach($passages as $psg) {
                 if ($debug) print "Output $psg[2] - $psg[3] (pool $pool)\n";
-                 fwrite($files[$pool], "   <passage start=\"" . getXPointer($psg[2],true) . "\" end=\"" . getXPointer($psg[3],false) . "\" size=\"" . ($psg[1]-$psg[0]+1). "\"/>\n");
+/*                print "Passage $psg[2] to $psg[3] is " . (passageIsOnlyWS($psg[2],$psg[3]) ? "ONLY WS" : "OK") 
+                      . " and offset $psg[0] to $psg[1]" . "\n";*/
+                if ($strip_ws && passageIsOnlyWS($psg[2],$psg[3])) {
+                    fwrite($files[$pool], "   <!-- removed whitespace only passage " . getXPointer($psg[2],true) . " to " . getXPointer($psg[3],false) . " of size " . ($psg[1]-$psg[0]). " -->\n");
+                  continue;
+                }
+                 fwrite($files[$pool], "   <passage start=\"" . getXPointer($psg[2],true) . "\" end=\"" . getXPointer($psg[3],false) . "\" size=\"" . ($psg[1]-$psg[0]). "\"/>\n");
         }
 
          if ($debug > 1) print "Current array (3): " .  print_r($p,true) . "\n";
          // Output elements
          if ($j[$pool]) foreach($j[$pool] as $path => $exh) {
             $rsize = 0;
-            $s = $paths[$path][0];
-            $e = $paths[$path][1];
+            $s = $paths[$path][Path::MWS_START_OFFSET];
+            $e = $paths[$path][Path::MWS_END_OFFSET];
             foreach($passages as $seg) {
                if ($seg[0] > $e) break; // Stop if the start of the segment is after the end of the element
                $d = min($e,$seg[1]) - max($s,$seg[0]);
@@ -580,8 +727,8 @@ while (list($id, $data) = each(&$done)) {
                if ($d >= 0) $rsize += $d + 1;
             }
             $error = false;
-            if ($rsize <= 0 && ($s != $p)) {
-               print "[[WARNING]] Specificity is null !?!\nfor $s:$e ($path) -> " ;
+            if ($rsize <= 0 && $size > 0 && ($s != $p)) {
+               print "[[WARNING]] Specificity is null !?!\nfor $s:$e ($path) : $rsize vs $size -> " ;
                foreach($passages as $seg) print "[$seg[0],$seg[1]]";
                print "\n";
                fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");

@@ -191,6 +191,7 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 
 
 		}
+		
 		hasText.push(new MutableBoolean(false));
 		hasChild.push(new MutableBoolean(false));
 		inXRaiSentence.push(new MutableBoolean(false));

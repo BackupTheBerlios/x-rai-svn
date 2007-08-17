@@ -25,35 +25,40 @@
 # - create directories (1.000 files max per directory)
 # (c) 2006 B. Piwowarski
 
-# to be called from the annoted directory only
 
-origdir="$1"
-destdir="$2"
+function error {
+   echo "$@" 1>&2
+   exit 1
+}
+
+destdir="$1"
 tmpdir="/tmp/wiki2xrai.$$"
+test $# -lt 2 && error "Synopsis: cleanup.sh <OUTDIR> <SRCDIR1> <SRCDIR2> <...>"
+shift
 
 # Basedir is two steps away
 BASEDIR="$(dirname "$(readlink -f "$0")")"/../../../lingpipe
 
-test -d "$origdir"/part-0 || exit
-test -d "$destdir" ||  exit
+   
+
+
+test -d "$destdir" ||  error "Destination directory $destdir does not exist"
 if ! test -f $BASEDIR/annotate.jar; then
 	ant -buildfile $BASEDIR/build.xml || exit
 fi
 
 echo "STARTING (LINGPIPE=$BASEDIR, $origdir TO $destdir)"
 
-for i in $origdir/part-*; do
+for i in "$@"; do
 echo "================== IN $i ($tmpdir) ====================="
-   java -Dorg.xml.sax.driver=org.apache.xerces.parsers.SAXParser -cp $BASEDIR/annotate.jar:$BASEDIR/lib/lingpipe-2.0.0.jar:$BASEDIR/lib/xercesImpl.jar:$BASEDIR/lib/xml-apis.jar AnnotateCmd -model=$BASEDIR/EN_NEWS.model -fileSuffixes="xml" -contentType="text/xml; charset=UTF-8" -elements="p,caption,item" -inputDir="$i" -outputDir="$tmpdir" -stopList=utf-16 2>&1 | grep -v "^Processing file"
+   java -Dorg.xml.sax.driver=org.apache.xerces.parsers.SAXParser -cp $BASEDIR/annotate.jar:$BASEDIR/lib/lingpipe-2.0.0.jar:$BASEDIR/lib/xercesImpl.jar:$BASEDIR/lib/xml-apis.jar AnnotateCmd -model=$BASEDIR/EN_NEWS.model -fileSuffixes="xml" -contentType="text/xml; charset=UTF-8" -elements="p,caption,item" -inputDir="$i" -outputDir="$tmpdir"  2>&1 | grep -v "^Processing file"
    
    find $tmpdir -type f -name "*.xml" |
       while read f; do
-         dir="$(dirname "$(readlink -f "$0")")"
          file=$(basename $f .xml)
          r=$(($file / 1000))
          d=$(($r / 100 % 100))/$(($r % 100))
-      #      echo "$file: $d"
-      
+         echo "Moving $file in $destdir/$d/$file"
          mkdir -p "$destdir/$d"
          mv "$f"  "$destdir/$d/$file.xml"
       done

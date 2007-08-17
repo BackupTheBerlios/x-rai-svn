@@ -1,0 +1,9 @@
+
+# Get the titles
+$dir/get-titles.sh $BASEDIR > list.dat
+
+# Within the x-rai directory, generate the .xrai files
+$dir/toxrai.pl list.dat
+
+# Clean-up, add of xrai:s tags, etc.
+sh $dir/cleanup.sh

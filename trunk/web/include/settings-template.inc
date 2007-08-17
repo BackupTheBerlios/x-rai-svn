@@ -53,6 +53,7 @@ add_menu("Links","$base_url/misc/ra-guide.pdf","Guide","Relevance Assessment gui
 // Path to documents
 $xrai_documents="PATH TO XRAI DOCUMENTS";
 $media_url="";
+// $xml_cache = "PATH TO CACHE DIRECTORY"; 
 
 // Functions that returns a file handle for a document
 // useful if documents are not locally stored
