@@ -29,7 +29,7 @@ $id_pool = $_REQUEST["id_pool"];
 $directory = $_REQUEST["directory"];
 $file = $_REQUEST["file"];
 
-if ($inex_user == "") exit("Invalid user");
+if ($inex_user == "" && !$accept_any_user) exit("Invalid user");
 
 $sorted_assessments = array("0","-1","1","2");
 
