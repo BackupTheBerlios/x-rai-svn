@@ -92,8 +92,8 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 	// True if we know that the current element has text
 	Stack<MutableBoolean> hasText = new Stack<MutableBoolean>();
 
-	// True if we know that the current element has a child
-	Stack<MutableBoolean> hasChild = new Stack<MutableBoolean>();
+	// True if we know that the current element has a child element
+	Stack<MutableBoolean> hasChildElement = new Stack<MutableBoolean>();
 
 	// True if the last element was an xrai:s (useful to include some
 	// whitespaces into the xrai:s element)
@@ -164,7 +164,7 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 	public void startDocument() {
 		super.startDocument();
 		hasText.clear();
-		hasChild.clear();
+		hasChildElement.clear();
 		cdata.clear();
 		inXRaiSentence.clear();
 		super.characters("\n".toCharArray(), 0, 1);
@@ -184,7 +184,7 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 			}
 
 			if (hasText.peek().value) {
-				hasChild.peek().value = true;
+				hasChildElement.peek().value = true;
 				// we print wraping up things
 				print_cdata(XRaiWrap.BOTH);
 			}
@@ -193,7 +193,7 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 		}
 		
 		hasText.push(new MutableBoolean(false));
-		hasChild.push(new MutableBoolean(false));
+		hasChildElement.push(new MutableBoolean(false));
 		inXRaiSentence.push(new MutableBoolean(false));
 		super.startElement(namespaceURI, localName, qName, atts);
 	}
@@ -206,18 +206,21 @@ class INEXSAXWriter extends com.aliasi.xml.SAXWriter {
 			inXRaiSentence.peek().value = false;
 		}
 		// wrap only if needed
-		else print_cdata(hasChild.peek().value && hasText.peek().value ? XRaiWrap.BOTH : XRaiWrap.NONE);
+		else print_cdata(hasChildElement.peek().value && hasText.peek().value ? XRaiWrap.BOTH : XRaiWrap.NONE);
 
 		hasText.pop();
-		hasChild.pop();
+		hasChildElement.pop();
 		inXRaiSentence.pop();
 		
 		// If we are in an xrai:s element, do not print it
 		// but rather tell we are in an xrai:s element
 		if (localName.equals(XRAI_S)) {
 			inXRaiSentence.peek().value = true;
-		} else
+		} else {
 			super.endElement(namespaceURI, localName, qName);
+			if (!hasChildElement.empty())
+					hasChildElement.peek().value = true;
+		}
 	}
 
 }
