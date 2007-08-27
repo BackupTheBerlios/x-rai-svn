@@ -41,6 +41,7 @@ $basepath = "$base_url/article.php?id_pool=$id_pool&collection=$collection&file=
 
 // SELECT root.id, anc.collection, anc.filename, ta.status,count(*) FROM toassess ta, files anc, files f, files root WHERE anc.pre>=f.pre AND anc.post <= f.post AND ta.idfile=f.id AND root.id=f.parent GROUP BY root.id, anc.id, anc.filename, anc.collection, ta.status
 
+// Get the xrai file information
 $row = &$xrai_db->getRow("SELECT * FROM $db_files WHERE collection=? AND filename=?", array($collection,$path));
 // print_r($row);
 $title = $row["title"];
@@ -84,11 +85,13 @@ if (is_file("$xrai_documents$aPath.xrai")) {
 
 
 if ($id_pool) {
+   // Get information about contained documents and xrai files
     $res = &$xrai_db->query("select f.filename, f.type, fs.inpool, fs.status, fs.hasrelevant, count(*) as count from files f JOIN filestatus fs ON fs.idfile BETWEEN f.pre AND f.post AND fs.idpool=? JOIN files fc ON fc.id = f.id WHERE f.parent = (select id from files fp where fp.id = ?) GROUP BY f.filename, f.type, fs.inpool, fs.status, fs.hasrelevant", array($id_pool,$rootid));
 //     print $xrai_db->last_query;
 //    $res = &$xrai_db->query("SELECT ta.idpool, anc.type, anc.filename, anc.pre, ta.status, ta.inpool, count(*) AS count FROM $db_files root, $db_files anc, $db_files f, $db_filestatus ta   WHERE anc.collection=root.collection AND anc.collection=f.collection AND anc.parent = root.id AND anc.pre <= f.pre AND anc.post >= f.pre AND ta.idfile = f.id AND root.id=? AND idpool=?   GROUP BY ta.idpool, root.id, anc.type, anc.filename, ta.status, ta.inpool, anc.pre ORDER BY pre ASC",array($rootid,$id_pool));
    if (DB::isError($res)) non_fatal_error("Error while retrieving assessments",$res->getUserInfo());
    else {
+      $nbRelevant = $nbNotRelevant = $nbToAssess = 0;
       while ($row = $res->fetchRow()) {
          if ($row["type"] == "xml") {
             $document[$row["filename"]] = array($row["status"], $row["inpool"] == $db_true);
@@ -97,9 +100,14 @@ if ($id_pool) {
          $s = ($row["status"] == 2 ? 2 : 1) * ($row["inpool"] == $db_true ? 1 : -1);
          $assessments[$row["filename"]][$s] = $row["count"];
          $all_assessments[$s] += $row["count"];
-         
+                  
+         if ($row["status"] != "2") $nbToAssess += $row["count"];
+         else if ($row["hasrelevant"] == $db_true) $nbRelevant += $row["count"];
+         else $nbNotRelevant += $row["count"];
+            
       }
       $res->free();
+      print "<div class='info'><b>Informations about this view</b>: $nbToAssess documents need to be assessed; among the assessed documents, $nbRelevant contain relevant passage(s) and $nbNotRelevant do not.</div>";
    }
 		 
 // 	print_r($assessed);

@@ -38,7 +38,9 @@ make_header("Pool summary for topic $id_topic");
 
 
 $todojs = "";
-$res = &$xrai_db->query("SELECT ta.idpool, root.id AS rootid, root.collection, ta.status, ta.inpool, count(*) AS count
+$nbRelevant = $nbNotRelevant = $nbToAssess = 0;
+
+$res = &$xrai_db->query("SELECT ta.idpool, root.id AS rootid, root.collection, ta.status, ta.inpool, sum(CASE WHEN ta.hasRelevant AND ta.status = 2 THEN 1 ELSE 0 END) as nbRelevant, SUM(CASE WHEN not(ta.hasRelevant) AND ta.status = 2 THEN 1 ELSE 0 END) as nbNotRelevant, count(*) AS count
   FROM $db_files root, $db_files f, $db_filestatus ta
   WHERE idpool=? AND root.parent is null AND root.pre <= f.pre AND root.post >= f.pre AND ta.idfile = f.id
   GROUP BY ta.idpool, root.id, root.collection, ta.status, ta.inpool",array($id_pool));
@@ -52,9 +54,15 @@ else {
       $t[$s] = $row["count"];
       $total[$s] += $row["count"];
       $todojs .= ($todojs ? "," : "todo = new Array(") . "'$row[collection]'";
+      $nbToAssess += $row["count"] - $row["nbrelevant"] - $row["nbnotrelevant"];
+      $nbRelevant += $row["nbrelevant"];
+      $nbNotRelevant += $row["nbnotrelevant"];
+
    }
    $res->free();
 }
+//       if ($is_root) print htmlentities($xrai_db->last_query);
+      print "<div class='info'><b>Informations about this view</b>: $nbToAssess documents need to be assessed; among the assessed documents, $nbRelevant contain relevant passage(s) and $nbNotRelevant do not.</div>";
 
 
 // Output totals

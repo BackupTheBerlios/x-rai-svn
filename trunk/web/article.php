@@ -348,6 +348,7 @@ function startElement($parser, $name, $attrs) {
       print "<xrai_itag xrai_tagname=\"$name\"";
    } else {
       print "<$name";
+      // handle undefined namespaces
       if (preg_match("#^([^:]+):#", $name, $matches) && !$defined_ns[$matches[1]]) {
             print " xmlns:$matches[1]=\"$documentns\"";
             $defined_ns[$matches[1]] = true;
@@ -359,7 +360,8 @@ function startElement($parser, $name, $attrs) {
    if ($depth == 0) print " xmlns:xraic=\"$documentns\" xmlns:xrai=\"$xrains\" xmlns=\"$documentns\"";
    $depth++;
    foreach($attrs as $aname => $value) {
-      if (preg_match("#^([^:]+):#", $aname, $matches) && !$defined_ns[$matches[1]])
+      // Handle undefined namespaces
+      if (preg_match("#^([^:]*):#", $aname, $matches) && !$defined_ns[$matches[1]])
          print " " . preg_replace("#:#","_",$aname);
       else print " $aname";
       print "=\"" . htmlspecialchars($value) . "\"";
@@ -438,7 +440,7 @@ if ($load_errors) {
    ?>
    <script language="javascript">
       alert("There <?= $load_errors > 1 ? "are $load_errors errors" : "1 error"?> in the structure of this file; you MUST not assess it!");
-      // TODO fordbid editing
+      XRai.noSave = true;
    </script>
    <?
 }

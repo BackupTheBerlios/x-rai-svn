@@ -90,6 +90,7 @@ div.message_notice {
 p { text-align: justify; }
 img { border: 0; }
 
+.info { background: #eeeeee; color: #004; text-align: center; }
 .warning {  background: #eeeeee; color: #ff0000; text-align: center; }
 .error { background: #eeeeee; color: #ff0000; text-align: center; font-weight: bold; }
 

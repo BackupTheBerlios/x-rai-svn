@@ -187,9 +187,9 @@ function make_footer($exit = false) {
 }
 
 function non_fatal_error($message, $dbg="") {
-   global $do_debug;
+   global $do_debug, $is_root;
    print "<div class='error'>$message</div>";
-   if ($do_debug) print "<div>$dbg</div>";
+   if ($do_debug || $is_root) print "<div>" . htmlentities($dbg) . "</div>";
 }
 
 function fatal_error($message, $dbg="") {
