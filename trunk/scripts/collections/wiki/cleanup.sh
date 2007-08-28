@@ -42,9 +42,13 @@ BASEDIR="$(dirname "$(readlink -f "$0")")"/../../../lingpipe
    
 
 
-test -d "$destdir" ||  error "Destination directory $destdir does not exist"
+test -d "$destdir" ||  error "Destination directory $destdir does not exist"S
+
+ant -quiet -buildfile $BASEDIR/build.xml || echo "Cannot build/check that annotate.jar is well up to date"
+
 if ! test -f $BASEDIR/annotate.jar; then
-	ant -buildfile $BASEDIR/build.xml || exit
+	echo "Cannot find the annote.jar file" 1>&2
+	exit 1
 fi
 
 echo "STARTING (LINGPIPE=$BASEDIR, $origdir TO $destdir)"
