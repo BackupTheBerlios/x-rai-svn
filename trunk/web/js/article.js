@@ -1408,7 +1408,7 @@ XRai.setBound = function(x, bound, force) {
    if (!x) return;
    if (bound == -1 && (force || (x.getAttribute("a") == "0"))) {
       var y = x.parentNode;
-      if ((y.realIntersection > 0 || y.reallyContained > 0) && XRai.containsPassage(y)) return;
+      if ((y.realIntersection > 0 || y.reallyContained > 0) && XRai.containsPassage(y)) return;
       XRai.setAssessment(x,-1);
    } else if (bound == 0 && x.getAttribute("a") == "-1") XRai.setAssessment(x,"0");
    else if (bound > 0 && x.getAttribute("a") > bound) XRai.setAssessment(x,"0");
@@ -1632,7 +1632,7 @@ XRai.updateSaveIcon = function() {
       if (docStatus == 2) XRai.setFinished(2);
       else if (XRai.isConsistent()) XRai.setFinished(1);
       else XRai.setFinished(0);
-   } else if (docStatus > 0) {
+   } else if (docStatus > 0) {
       if (docStatus == 2 && XRai.toAssess.length > 0) docStatus = 1;
       if (docStatus == 1 && XRai.toAssess.length == 0) { XRai.setFinished(1); }
       else if (docStatus == 2) XRai.setFinished(2);
@@ -1838,12 +1838,80 @@ function isInvalidTagName(name) {
    return name.match(/^([a-zA-Z][^:]*)(:[a-zA-Z][^:]*)?$/) == null;
 }
 
+
+
+XRai.stepre = /^([^\/\[\]]+)\[(\d+)\]$/;
+
+XRai.resolvePathStep = function(child, stack, i) {
+   var s = XRai.stepre.exec(stack[i]);
+   if (debug) XRai.debug("Resolving " + s[1] + ", " + s[2] +  ", fs=" + (child.nodeType != Node.TEXT_NODE ? XRai.getPath(child) : XRai.getPath(child.parentNode) + "/text()[1]" ) + "\n");
+   var rank = s[2];
+   var isText = s[1] == "text()";
+   var isFirstXRaiS = true;
+   for(; child && rank; child = XRai.nextSibling(child)) {
+      var name = XRai.getTagName(child);
+      if (isText) {
+         if (name == "xrai:s" && isFirstXRaiS) {
+            isFirstXRaiS = false;
+               rank--;
+         } else if (child.nodeType == Node.TEXT_NODE) {
+               if (s[2] != "1") {
+                  XRai.debug("Searching for text()[" + s[2] + "] and node is pure PCDATA");
+                  return null;
+               }
+               rank--;
+         } else {
+            isFirstXRaiS = true;
+         }
+      } else if (name == s[1]) rank--;
+      
+      if (!rank) break;
+   }
+   if (!child) {
+      if (debug) XRai.debug("Step " + stack[i] + " not found!\n");
+      return null;
+   }
+   i++;
+   if (stack.length > i) return XRai.resolvePathStep(XRai.firstChild(child),stack,i);
+   return child;
+}
+         
+XRai.resolvePath = function(path) {
+   if (path == "" || path == null || path == "null") return null;
+   var x;
+   if (XRai.xpe) {
+      var matches = path.split("/");
+      var s = "";
+      var m;
+      var searchText = null;
+      for(var i = 1; i < matches.length; i++)
+      if (m = matches[i].match(/^(?!xrai:)(.*:.*)(\[.+)$/)) 
+               s += "/xraic:xrai_itag[@xrai_tagname=\"" + m[1] + "\"]" + m[2];
+      else if (matches[i].indexOf("xrai:") == 0) s += "/" + matches[i];
+      else if (m = matches[i].match(/^text\(\)\[(\d+)\]$/)) searchText = m[1];         
+      else s += "/xraic:" + matches[i];
+            
+      path = "." + s; // path.replace(/\/(?!xrai:)/g,"/xraic:");
+      if (debug) XRai.debug("Evaluating " + path + (searchText ? " with text()[" + searchText + "]" : "")  + "\n");
+      try {
+         x = XRai.xpe.evaluate(path, XRai.getRoot().parentNode, XRai.nsResolver, 0, null);
+         x = x.iterateNext();
+         if (x && searchText) x = XRai.resolvePathStep(x.firstChild, new Array("text()[" + searchText + "]"), 0);
+      } catch(e) {
+         XRai.debug("Caught exception " + e + "\n");
+         return null;
+      }
+   } else  {
+      // No XPath resolution in browser: do it ourselves
+      stack = path.split("/");
+      x = XRai.resolvePathStep(XRai.getRoot(), stack, 1);
+   }
+   
+   return x;    
+   
+}
 // Loading
 XRaiLoad = function() {
-   if (document.implementation.hasFeature("XPath", "3.0")) {
-      this.xpe = document; //new XPathEvaluator();
-      this.nsResolver = this.xpe.createNSResolver(XRai.getRoot());
-   }
 
    this.loadErrors = 0;
    this.loadWarnings = 0;
@@ -1855,91 +1923,11 @@ XRaiLoad = function() {
    
    this.toadd = new Array();
 
-   if (debug) {
-      XRai.debug("\n\nLOADING\n");
-      if (this.xpe) XRai.debug("NS resolver: xraic = " + this.nsResolver.lookupNamespaceURI("xraic") + "; xrai = " + this.nsResolver.lookupNamespaceURI("xrai") + "\n");
-   }
-
-   // step regexp => 2 prefix, 3 localname, 4 rank
-//    this.stepre = /^(([^\/\[\]:]+):)?([^\/\[\]:]+)\[(\d+)\]$/;
-
-   // step regexp => 1 tagName, 2 rank
-   this.stepre = /^([^\/\[\]]+)\[(\d+)\]$/;
-   this.resolvePathStep = function(child, stack, i) {
-      var s = this.stepre.exec(stack[i]);
-      if (debug) XRai.debug("Resolving " + s[1] + ", " + s[2] +  ", fs=" + (child.nodeType != Node.TEXT_NODE ? XRai.getPath(child) : XRai.getPath(child.parentNode) + "/text()[1]" ) + "\n");
-      var rank = s[2];
-      var isText = s[1] == "text()";
-      var isFirstXRaiS = true;
-      for(; child && rank; child = XRai.nextSibling(child)) {
-         var name = XRai.getTagName(child);
-         if (isText) {
-            if (name == "xrai:s" && isFirstXRaiS) {
-               isFirstXRaiS = false;
-                rank--;
-            } else if (child.nodeType == Node.TEXT_NODE) {
-                if (s[2] != "1") {
-                   XRai.debug("Searching for text()[" + s[2] + "] and node is pure PCDATA");
-                   return null;
-                }
-                rank--;
-            } else {
-               isFirstXRaiS = true;
-            }
-         } else if (name == s[1]) rank--;
-         
-         if (!rank) break;
-      }
-      if (!child) {
-         if (debug) XRai.debug("Step " + stack[i] + " not found!\n");
-         return null;
-      }
-      i++;
-      if (stack.length > i) return this.resolvePathStep(XRai.firstChild(child),stack,i);
-      return child;
-   }
-
-   /** Resolve an XPath */
-   this.resolvePath = function(path) {
-      if (path == "" || path == null || path == "null") return null;
-      var x;
-      if (this.xpe) {
-       var matches = path.split("/");
-       var s = "";
-       var m;
-       var searchText = null;
-       for(var i = 1; i < matches.length; i++)
-         if (m = matches[i].match(/^(?!xrai:)(.*:.*)(\[.+)$/)) 
-                  s += "/xraic:xrai_itag[@xrai_tagname=\"" + m[1] + "\"]" + m[2];
-         else if (matches[i].indexOf("xrai:") == 0) s += "/" + matches[i];
-         else if (m = matches[i].match(/^text\(\)\[(\d+)\]$/)) searchText = m[1];         
-         else s += "/xraic:" + matches[i];
-              
-       path = "." + s; // path.replace(/\/(?!xrai:)/g,"/xraic:");
-         if (debug) XRai.debug("Evaluating " + path + (searchText ? " with text()[" + searchText + "]" : "")  + "\n");
-         try {
-            x = this.xpe.evaluate(path, XRai.getRoot().parentNode, this.nsResolver, 0, null);
-            x = x.iterateNext();
-            if (x && searchText) x = this.resolvePathStep(x.firstChild, new Array("text()[" + searchText + "]"), 0);
-         } catch(e) {
-            XRai.debug("Caught exception " + e + "\n");
-            return null;
-         }
-      } else  {
-         // No XPath resolution in browser: do it ourselves
-         stack = path.split("/");
-         x = this.resolvePathStep(XRai.getRoot(), stack, 1);
-      }
-      
-      return x;    
-      
-   }
-
    this.add = function(start,end,a) {
       try {
          if (debug) XRai.debug("[LOADING" + (end != "" ? "*" : "") + "] " + a + " : "  + start + " - " + end + "\n");
-         var eStart = this.resolvePath(start);
-         var eEnd = this.resolvePath(end);
+         var eStart = XRai.resolvePath(start);
+         var eEnd = XRai.resolvePath(end);
          
          if (!eStart || (end != "" && !eEnd)) {
             if (debug) XRai.debug("[LDERROR] " + eStart + "/" + eEnd + "\n");
@@ -1973,8 +1961,8 @@ XRaiLoad = function() {
    // Can be a passage
    this.addSupport = function(startpath, endpath) {
       if (debug) XRai.debug("[LOAD] Loading support element: " + startpath + " => " + endpath + "\n");
-      var startPath = this.resolvePath(startpath);
-      var endPath =  this.resolvePath(endpath);
+      var startPath = XRai.resolvePath(startpath);
+      var endPath =  XRai.resolvePath(endpath);
       
       if (!startPath || !endPath) {
          if (debug) XRai.debug("Error: " + endPath + "\n");
@@ -1997,7 +1985,7 @@ XRaiLoad = function() {
 		 
    this.setBEP = function(path) {
       if (path == "" || path == null || path == "null") return;
-      var ePath = this.resolvePath(path);
+      var ePath = XRai.resolvePath(path);
       if (!ePath) {
          if (debug) XRai.debug("Error (BEP): path not resolved " + ePath  + "/" + path + "\n");
          this.loadErrors++;
@@ -2161,6 +2149,19 @@ XRai.init = function() {
    window.addEventListener("focus", XRai.onfocus, true);
    for(var i = 0; i < XRai.initFunctions.length; i++)
       XRai.initFunctions[i]();
+      
+      
+   // Init XPath resolution variables
+   if (document.implementation.hasFeature("XPath", "3.0")) {
+      XRai.xpe = document; //new XPathEvaluator();
+      XRai.nsResolver = XRai.xpe.createNSResolver(XRai.getRoot());
+   }
+   
+   if (debug) {
+      XRai.debug("\n\nPath resolution\n");
+      if (XRai.xpe) XRai.debug("NS resolver: xraic = " + XRai.nsResolver.lookupNamespaceURI("xraic") + "; xrai = " + XRai.nsResolver.lookupNamespaceURI("xrai") + "\n");
+   }
+
    XRai.debug("Document loaded");
 }
 
@@ -2242,3 +2243,11 @@ XRai.toggleBEPMode = function(event) {
    XRai.debug("BEP mode is " + XRai.BEPMode);
 }
 
+
+XRai.xpathMove = function() {
+  var x = prompt("Enter the XPath"); 
+  if (x) {
+     var y = XRai.resolvePath(x);
+     if (y) show_focus(y);
+  }
+}
