@@ -67,6 +67,7 @@ if php -d memory_limit=128M $SDIR/download_pools.php "$@" "$STATE" $TMPDIR; then
    (cd /tmp; tar c "$NAME") | gzip -c > "$OUTTGZ"
 else
    echo "Error while downloading the pools" 1>&2
+   cat $TMPDIR.log
 fi
 
 rm -rf $TMPDIR

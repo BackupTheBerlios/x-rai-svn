@@ -12,6 +12,8 @@ function collectionStartDocument($collection,$file,$title) {
 //    print "<div class='warning'>Problems with the connection to the Wikipedia XML documents server.</div>\n";
 
 }
+// SQL for image table:
+// create table wikienimages (id integer not null, name character varying(255) not null primary key, width integer not null default 0, height integer not null default 0);
 
 function collectionStartElement($name, &$attrs) {
   global $base_url, $xrai_settings, $xrai_db;
@@ -21,9 +23,8 @@ function collectionStartElement($name, &$attrs) {
       if (!DB::isError($row) && $row) {
          $filename = (intval($row["id"] / 100000) % 100) . "/" . (intval($row["id"] / 1000) % 100) . "/" . $row["id"];
          $path = $xrai_settings["wikien"]["mediadir"] . "/$filename";
-         if (is_file($path) && $row["width"] == 0) {
-            
-         }
+/*         if (is_file($path) && $row["width"] == 0) {
+         }*/
          print "<html:img alt=\"[$filename]\" title=\"" . htmlspecialchars($pname) . "\" src=\"$base_url/media/wikien/$filename\">"; 
       } else print "<html:img title=\"" . htmlspecialchars($pname) . " (not found)\" alt=\"[Not found: " . htmlspecialchars($pname) . "]\">";
    } 
