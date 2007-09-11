@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+<head>
+  <title>Installing X-RAI</title>
+</head>
+
+<body>
+
+<div style="font-size: x-large">
+<span style="color: #9a0000;">How to install X-Rai </span></div>
+
+<p>B. Piwowarki</p>
+
+<p>Last update: September 2007</p>
+
+<h1>Pre-requisite</h1>
+
+<p>In order to install x-rai, you need: </p>
+<ul>
+  <li>A web server (apache)</li>
+  <li>PHP with PEAR, modules: postgresql, xslt</li>
+  <li>a postgresql server</li>
+  <li>perl, bash </li>
+</ul>
+
+<h1>Installing</h1>
+
+<p>Decompress the archive or checkout via SVN. The web directory is the only
+one that have to be published by the web server, through a link for example
+with UNIX. The file structure must not be changed.</p>
+
+<p>Change the name of "settings-template.inc" to "settings.inc" in
+web/include, and edit that file with the corresponding values. </p>
+
+<h2>The .xrai files</h2>
+
+<p>The .xrai files are used to describe the structure of a collection. The
+main document (the root of the structure) is the file index.xrai within the
+root directory of the x-rai file of the collection. They are used for
+allowing the user to browse into the collection. They are basically HTML
+elements with two special elements, namely <strong>subcollection</strong> and
+<strong>document</strong>. </p>
+
+<p>&lt;subcollection path=""&gt;...&lt;/subcollection&gt;</p>
+
+<p>&lt;document path=""&gt;...&lt;/document&gt;</p>
+
+<p>A path must be a path to the corresponding x-rai in the case of
+"subcollection" or to an XML file of the collection in the case of
+"document".</p>
+
+<p>The interface will create each time a link using as title text the text
+inside "subcollection" or "document".</p>
+</body>
+</html>
