@@ -229,10 +229,10 @@ $only_ws = true;
 $done = array();
 
 // First loop: get the list of files to explore
-print "Getting the list of files...\n";
+print "Getting the list of " . $status->numRows() . "files...\n";
 $numberOfFiles = 0;
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
-
+      
    // New topic?
    if ($current[0] != $row["idpool"]) {
       if ($current[0] != null) addPool(&$current);
@@ -565,7 +565,7 @@ while (list($id, $data) = each(&$done)) {
    // judgments 
    $j = array();
    
-   print "\n[In $data[0]/$data[1] ($id)]\n";
+   if ($debug> 0) print "\n[In $data[0]/$data[1] ($id)]\n";
    // Should not happen !
    if (sizeof($data[2]) == 0) die();
 
@@ -622,7 +622,7 @@ while (list($id, $data) = each(&$done)) {
 
    // Read XML file (if necessary)
    if (sizeof($paths) > 0) {
-      print "Parsing file $data[0]/$data[1] (" . sizeof($paths) . ")\n";
+      if ($debug) print "Parsing file $data[0]/$data[1] (" . sizeof($paths) . ")\n";
       $pos = $pos_mws = 0;
       $nb_passages = array();
       $stack = array(array("",array(),0,false));
@@ -655,7 +655,7 @@ while (list($id, $data) = each(&$done)) {
    
    foreach($data[2] as &$data_item) {
       $pool = &$data_item[0];
-      print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
+      if ($debug > 0) print "  > In pool $base_url/article?id_pool=$pool&collection=$data[0]&file=$data[1]\n";
       if ($debug > 1)  print "Current array: " .  print_r($p,true) . "\n";
       $coll = $data[0];
       if ($cmap[$coll]) $coll = $cmap[$coll];
@@ -730,7 +730,7 @@ while (list($id, $data) = each(&$done)) {
             if ($rsize <= 0 && $size > 0 && ($s != $p)) {
                print "[[WARNING]] Specificity is null !?!\nfor $s:$e ($path) : $rsize vs $size -> " ;
                foreach($passages as $seg) print "[$seg[0],$seg[1]]";
-               print "\n";
+               if ($debug) print "\n";
                fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");
                continue;
             }

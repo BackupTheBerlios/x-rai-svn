@@ -19,7 +19,12 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 if [ $# -lt 3 ]; then
-   echo "download_pools.sh <name> <archive directory> <state> [options]"
+echo "download_pools.sh <name> <archive directory> <state> [options]"
+echo 
+echo "where options are"
+echo -e "\t-cmap id1 id2\tMaps collection id (id1 to id2)"
+echo -e "\t-no-whitespace-nodes\tIgnore whitespace only text nodes"
+echo -e "\t-merge-whitespaces\tTreat a sequence of spaces as one character"
    exit 1
 fi
    
@@ -58,7 +63,7 @@ echo "Let's go!"
 rm -rf $TMPDIR
 mkdir $TMPDIR
 echo "Command line: php -d memory_limit=128M $SDIR/download_pools.php $@ official $TMPDIR"
-if php -d memory_limit=128M $SDIR/download_pools.php "$@" "$STATE" $TMPDIR > $TMPDIR.log 2>&1; then
+if php -d memory_limit=128M $SDIR/download_pools.php "$@" "$STATE" $TMPDIR; then
    (cd /tmp; tar c "$NAME") | gzip -c > "$OUTTGZ"
 else
    echo "Error while downloading the pools" 1>&2
