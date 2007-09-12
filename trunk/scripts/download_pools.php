@@ -721,11 +721,12 @@ while (list($id, $data) = each(&$done)) {
          if ($debug > 1) print "Current array (3): " .  print_r($p,true) . "\n";
          // Output elements
          if ($j[$pool]) foreach($j[$pool] as $path => $exh) {
-            $rsize = 0;
-            $size = $e - $s; // +1 ???
             
             $s = $paths[$path][Path::MWS_START_OFFSET];
             $e = $paths[$path][Path::MWS_END_OFFSET];
+            $rsize = 0;
+            $size = $e - $s; // +1 ???
+            
             // Compute the intersection between segments and passages
             foreach($passages as $seg) {
                if ($seg[0] > $e) break; // Stop if the start of the segment is after the end of the element
@@ -744,7 +745,7 @@ while (list($id, $data) = each(&$done)) {
             }
             
             if ($rsize > $size)
-               die("Specificity is > 1 ($rsize)!?!\nfor $s:$e ($path) with passages " . print_r($passages,true) );
+               die("Specificity is > 1 ($rsize > $size)!?!\nfor $s:$e ($path) with passages " . print_r($passages,true) );
 
          if (!preg_match('#xrai:s#',$path)) {
             fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" size=\"$size\" rsize=\"$rsize\"/>\n");
