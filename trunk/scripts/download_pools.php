@@ -722,6 +722,8 @@ while (list($id, $data) = each(&$done)) {
          // Output elements
          if ($j[$pool]) foreach($j[$pool] as $path => $exh) {
             $rsize = 0;
+            $size = $e - $s; // +1 ???
+            
             $s = $paths[$path][Path::MWS_START_OFFSET];
             $e = $paths[$path][Path::MWS_END_OFFSET];
             // Compute the intersection between segments and passages
@@ -733,7 +735,7 @@ while (list($id, $data) = each(&$done)) {
             }
             $error = false;
             
-            if ($rsize <= 0 && $size > 0 && ($s != $p)) {
+            if ($rsize <= 0 && $size > 0) {
                print "[[WARNING]] Specificity is null !?!\nfor $s:$e ($path) : $rsize vs $size -> " ;
                foreach($passages as $seg) print "[$seg[0],$seg[1]]";
                if ($debug) print "\n";
@@ -741,7 +743,6 @@ while (list($id, $data) = each(&$done)) {
                continue;
             }
             
-            $size = $e - $s; // +1 ???
             if ($rsize > $size)
                die("Specificity is > 1 ($spe)!?!\nfor $s:$e ($path) -> " . print_r($passages,true) );
 
