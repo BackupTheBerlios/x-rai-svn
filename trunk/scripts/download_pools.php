@@ -40,7 +40,7 @@ set_time_limit(0);
 
 require_once("xrai-inc.php");
 
-$debug = 1;
+$debug = 0;
 
 define('ASSESSED',1);
 define('P_START',2);
@@ -81,6 +81,10 @@ while ($flag) {
          $cmap[$x] = $y;
          print "Mapping $x to $y\n";
          break;
+      case "-d":
+      case "--debug":
+	$debug++;
+	break;
       default:
          $flag = false;
    }
