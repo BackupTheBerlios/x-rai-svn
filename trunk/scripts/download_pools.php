@@ -744,7 +744,7 @@ while (list($id, $data) = each(&$done)) {
             }
             
             if ($rsize > $size)
-               die("Specificity is > 1 ($spe)!?!\nfor $s:$e ($path) -> " . print_r($passages,true) );
+               die("Specificity is > 1 ($rsize)!?!\nfor $s:$e ($path) with passages " . print_r($passages,true) );
 
          if (!preg_match('#xrai:s#',$path)) {
             fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" size=\"$size\" rsize=\"$rsize\"/>\n");
