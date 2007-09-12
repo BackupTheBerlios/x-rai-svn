@@ -40,7 +40,7 @@ set_time_limit(0);
 
 require_once("xrai-inc.php");
 
-$debug = 0;
+$debug = 1;
 
 define('ASSESSED',1);
 define('P_START',2);
@@ -720,13 +720,15 @@ while (list($id, $data) = each(&$done)) {
             $rsize = 0;
             $s = $paths[$path][Path::MWS_START_OFFSET];
             $e = $paths[$path][Path::MWS_END_OFFSET];
+            // Compute the intersection between segments and passages
             foreach($passages as $seg) {
                if ($seg[0] > $e) break; // Stop if the start of the segment is after the end of the element
                $d = min($e,$seg[1]) - max($s,$seg[0]);
-   //             print "$path, inter([$s:$e],[" . $cp[$i][0][0] . ":" . $cp[$i][1][1] . "]) = $d\n";
-               if ($d >= 0) $rsize += $d + 1;
+                if ($debug) print "$path, inter([$s:$e],[" . $seg[0] . ":" . $seg[1] . "]) = $d\n";
+               if ($d >= 0) $rsize += $d; // + 1;
             }
             $error = false;
+            
             if ($rsize <= 0 && $size > 0 && ($s != $p)) {
                print "[[WARNING]] Specificity is null !?!\nfor $s:$e ($path) : $rsize vs $size -> " ;
                foreach($passages as $seg) print "[$seg[0],$seg[1]]";
@@ -734,13 +736,15 @@ while (list($id, $data) = each(&$done)) {
                fwrite($files[$pool],"  <!-- Ignored assessment (null specificity): path: $path, exhaustivity: " . ($exh == -1 ? "?" : $exh) . "-->\n");
                continue;
             }
-            $size = ($e - $s + 1);
-            $spe = $rsize / $size;;
+            
+            $size = $e - $s; // +1 ???
             if ($rsize > $size)
                die("Specificity is > 1 ($spe)!?!\nfor $s:$e ($path) -> " . print_r($passages,true) );
 
-         if (!preg_match('#xrai:s#',$path))
+         if (!preg_match('#xrai:s#',$path)) {
             fwrite($files[$pool], "   <element path=\"$path\" exhaustivity=\"" . ($exh == -1 ? "?" : $exh) . "\" size=\"$size\" rsize=\"$rsize\"/>\n");
+
+         }
          }
       }
       fwrite($files[$pool]," </file>\n");
