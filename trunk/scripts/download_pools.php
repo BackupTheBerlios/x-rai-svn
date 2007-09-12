@@ -767,4 +767,5 @@ foreach($files as $id => $fh) {
    fclose($fh);
 }
 
+print "Done.\n\n";
 ?>
