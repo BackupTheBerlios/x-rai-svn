@@ -69,22 +69,24 @@ while ($flag) {
       case "-no-whitespace-nodes":
          array_shift($argv);
          $strip_ws = true;
+         print "* Will ignore whitespace only text nodes\n";
          break;
       case "-merge-whitespaces":
          array_shift($argv);
          $strip_ws_pos = true;
+         print "* Will merge adjacent whitespaces\n";
          break;
       case "-cmap":
          array_shift($argv);
          $x = array_shift($argv);
          $y = array_shift($argv);
          $cmap[$x] = $y;
-         print "Mapping $x to $y\n";
+         print "* Will map $x to $y\n";
          break;
       case "-d":
       case "--debug":
-	$debug++;
-	break;
+         $debug++;
+         break;
       default:
          $flag = false;
    }
@@ -99,9 +101,9 @@ if (!is_dir($outdir)) {
 
 $restrict="";
 if (sizeof($argv) > 0) {
+   print "* Will restrict to pools: " . implode(",",$argv) . "\n";
    $restrict = " AND idpool in (" . implode(",",$argv) . ") ";
 }
-print "Restrict to pools: " . implode(",",$argv) . "\n";
 
 // DTD file
 
@@ -223,6 +225,7 @@ function addPool(&$data) {
 }
 
 // Select the pools for a given file
+print "Getting the list of assessed files for the selected pools\n";
 $status = $xrai_db->query("SELECT idpool, idtopic, status, idfile, collection, filename, topics.type, main, paths.path as bep FROM filestatus, pools, files, topics, paths WHERE topics.id = pools.idtopic AND pools.id = idpool AND files.id = idfile AND state=? $restrict AND paths.id=bep ORDER BY idpool",array($state));
 if (DB::isError($status)) { print "Error.\n" . $status->getUserInfo() . "\n\nExiting\n"; exit(1); }
 
@@ -233,7 +236,9 @@ $only_ws = true;
 $done = array();
 
 // First loop: get the list of files to explore
-print "Getting the list of " . $status->numRows() . "files...\n";
+print "Got a list of " . $status->numRows() . " files for all pools...\n";
+
+print "Getting topic definitions...\n";
 $numberOfFiles = 0;
 while ($row = $status->fetchRow(DB_FETCHMODE_ASSOC)) {
       
@@ -545,7 +550,7 @@ function implode_array($sep, &$a, $k) {
    return $s;
 }
 
-print "Loop on files (total = $numberOfFiles)...\n";
+print "Loop $numberOfFiles distinct files\n";
 $fileNo = 0;
 $currentPct = 0; // current percentage
 
@@ -554,10 +559,10 @@ reset($done);
 while (list($id, $data) = each(&$done)) {
    // Progress indicator
    $fileNo++;
-   $pct = intval($fileNo / $numberOfFiles * 20) * 5;
+   $pct = intval($fileNo / $numberOfFiles * 100);
    if ($pct != $currentPct) {
       $currentPct = $pct;
-      print "\n---- PROGRESS ---- $pct %\n";
+      print "---- $pct % completed ----\n";
    }
 
    // Will contain the list of paths to analyse

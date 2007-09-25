@@ -954,6 +954,9 @@ XRai.normalisePassage = function(x,y) {
 XRai.unhighlight = function() {
    // Check if we can unhighlight (status is open, write access, and there is
    // already an highlighted passage)
+   if (docStatus != 0) {
+      Message.show("warning","You cannot highlight a passage when the document is marked as validated\n",-1);      
+   }
    if (!write_access || (docStatus != 0) || (!XRai.firstPassage)) return;
    
    var toremove = new Array();
@@ -1032,7 +1035,10 @@ XRai.unhighlight = function() {
 
 XRai.highlight = function() {
    if (!write_access) return;
-   if (docStatus != 0) return;
+   if (docStatus != 0) {
+      Message.show("warning","You cannot highlight a passage when the document is marked as validated\n",-1);      
+      return;
+   }
    try {
 
       var toremove = new Array();
