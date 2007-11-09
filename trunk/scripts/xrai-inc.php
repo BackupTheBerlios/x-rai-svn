@@ -29,4 +29,10 @@ chdir(dirname(__FILE__) . "/../web");
 require_once("include/xrai.inc");
 require_once("include/assessments.inc");
 chdir($olddir);
+
+function dbMessage(&$res) {
+      global $xrai_db;
+      return $res->getMessage() . " for " . $xrai_db->last_query;
+   }
+   
 ?>

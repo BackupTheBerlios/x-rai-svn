@@ -92,7 +92,7 @@ else {
    while ($row = $ch->fetchRow(DB_FETCHMODE_ASSOC)) {
       print "<div>";
       printStatus($a[$row["collection"]], $total);
-      print " <a id='$row[collection]' href=\"collections/$row[collection]?id_pool=$id_pool\">" . htmlspecialchars($row["title"]) . "</a>";
+      print " <a id='$row[collection]' href=\"collections$phpext/$row[collection]?id_pool=$id_pool\">" . htmlspecialchars($row["title"]) . "</a>";
       print "</div>";
    }
 }

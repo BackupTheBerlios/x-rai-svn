@@ -159,7 +159,7 @@ function begin_subcollection($path) {
 function end_subcollection() { print "</a>"; }
 
 function begin_document($path) {
-  global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath, $collection, $document;
+  global $PHP_SELF, $base_url, $id_pool, $assessments, $basepath, $collection, $document, $phpext;
 //   print "$basepath";
    $id = get_full_path($basepath, $path);
   if ($document[$id]) {
@@ -176,7 +176,7 @@ function begin_document($path) {
       print "</span> ";
   }
   print "<a id='" . xmlspecialchars($id) . "'" . ($a[1] ? " name='toAssess'" : "")
-   . " href=\"$base_url/article?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
+   . " href=\"$base_url/article$phpext?collection=$collection&amp;id_pool=$id_pool&amp;file=$id\">";
 }
 
 function end_document() { print "</a>"; }

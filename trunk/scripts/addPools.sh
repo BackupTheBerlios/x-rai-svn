@@ -22,7 +22,7 @@
 
 function synopsis {
    echo "$1" 1>&2
-   echo "Synopsis: addPools.sh <state> <default collection> <pool dir> [<association file>]"
+   echo "Synopsis: addPools.sh [options] <state> <default collection> <pool dir> [<association file>]"
    exit $2
 }
    
@@ -32,7 +32,7 @@ function log {
 
 while test $# -gt 0; do
   case "$1" in
-     -skip-done) skipdone=" -skipdone ";;
+     -skip-done) skipdone=" -skip-done "; log "Skipping already existing (login,topic) pools"; shift;;
      *) break 2;
   esac
 done

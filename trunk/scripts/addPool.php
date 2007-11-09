@@ -51,11 +51,6 @@ $filename=$_SERVER["argv"][5+$i];
 if (!is_file($filename))
    die("'$filename' is not a file\n");
 
-if ($skipdone) {
-   $res = $xrai_db->getOne("SELECT count(*) FROM $db_pools WHERE idtopic=? AND login=?",array($userid,$poolname));
-   if (DB::isError($res)) { print "Error while reading pool state\n"; exit(1); }
-   if ($res > 0) { print "Skipping since there is already $res pool(s) corresponding to $userid/$poolname\n"; exit(0); }
-}
 
 $xrai_db->autoCommit(false);
 print "Starting processing of pool file '$filename'\n";
@@ -80,6 +75,13 @@ function startElement($parser, $name, $attrs) {
    if ($name == "pool") {
       $id = $attrs["topic"];
       if (!$id) die("No topic id defined!\n");
+      
+      global  $skipdone;
+      if ($skipdone) {
+         $res = $xrai_db->getOne("SELECT count(*) FROM $db_pools WHERE idtopic=? AND login=?",array($id,$userid));
+         if (DB::isError($res)) { print "Error while reading pool state: " . dbMessage($res) . "\n"; exit(1); }
+         if ($res > 0) { print "Skipping since there is already $res pool(s) corresponding to $userid/$id\n"; exit(0); }
+      }
 
       if (!$poolid) {
          $poolid = $xrai_db->nextId("{$db_pools}_id");
