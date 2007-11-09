@@ -30,6 +30,13 @@ function log {
    echo "$@" 1>&2
 }
 
+while test $# -gt 0; do
+  case "$1" in
+     -skip-done) skipdone=" -skipdone ";;
+     *) break 2;
+  esac
+done
+
 basedir="$(dirname "$(readlink -f "$0")")"
 test $# -eq 3 || test $# -eq 4 || synopsis "Wrong number of arguments" 1
   
@@ -46,7 +53,7 @@ file="$4"
    log "Adding pool for topic $topic and login $login"
    poolfile="$dir/$topic.xml"
    if test -f "$poolfile"; then
-      php "$basedir"/addPool.php "$state" "$login" "Topic for pool $topic" "$default" "$poolfile"
+      php "$basedir"/addPool.php $skipdone "$state" "$login" "Topic for pool $topic" "$default" "$poolfile"
    else
       log "Error: pool file $poolfile not found"
    fi   

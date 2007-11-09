@@ -27,8 +27,12 @@ require_once("xrai-inc.php");
 $argv = &$_SERVER["argv"];
 $poolid = 0;
 $i = 0;
+$skipdone=false;
+
 while ($i + 1 < sizeof($argv)) {
    switch($argv[$i+1]) {
+      // skip when (login,topic) is already there
+      case "-skip-done": $skipdone=true; $i++; break;
       case "-update": $poolid = $argv[$i+2]; print "NOTICE: Updating pool $poolid\n"; $i += 2; break;
       default: break 2;
    }
@@ -46,6 +50,12 @@ $collection=$_SERVER["argv"][4+$i];
 $filename=$_SERVER["argv"][5+$i];
 if (!is_file($filename))
    die("'$filename' is not a file\n");
+
+if ($skipdone) {
+   $res = $xrai_db->getOne("SELECT count(*) FROM $db_pools WHERE idtopic=? AND login=?",array($userid,$poolname));
+   if (DB::isError($res)) { print "Error while reading pool state\n"; exit(1); }
+   if ($res > 0) { print "Skipping since there is already $res pool(s) corresponding to $userid/$poolname\n"; exit(0); }
+}
 
 $xrai_db->autoCommit(false);
 print "Starting processing of pool file '$filename'\n";
