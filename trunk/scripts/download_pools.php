@@ -154,7 +154,6 @@ fwrite($dtd_file,'
   <!ELEMENT element EMPTY>
 
   <!ATTLIST assessments
-            (whitespace-text-node="' . ($strip_ws ? "strip-ALPHA" : "keep-ALPHA") .' "
             pool CDATA #REQUIRED
             topic CDATA #REQUIRED
             version CDATA #REQUIRED>
@@ -221,7 +220,8 @@ function addPool(&$data) {
    $dir = "$dir" . "/topic-$data[1]";
    if (!is_dir($dir)) mkdir($dir);
    $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
-   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
+   fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\"" 
+      . "whitespace-text-node=\"" ($strip_ws ? "strip" : "keep") . "\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
 // Select the pools for a given file
