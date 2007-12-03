@@ -1,4 +1,5 @@
 <?
+// kate: font-size 11; indent-mode cstyle
 /*
     download_pools.php
     Generates the assessment files
@@ -83,6 +84,12 @@ while ($flag) {
          $cmap[$x] = $y;
          print "* Will map $x to $y\n";
          break;
+     case "-limit":
+         array_shift($argv);
+         $topics = split(",",array_shift($argv));
+         print "* Will restrict to pools: " . implode(",",$topics) . "\n";
+         $restrict = " AND idpool in (" . implode(",",$topics) . ") ";
+         break;         
       case "-d":
       case "--debug":
          $debug++;
@@ -99,10 +106,9 @@ if (!is_dir($outdir)) {
   exit(1);
 }
 
-$restrict="";
 if (sizeof($argv) > 0) {
-   print "* Will restrict to pools: " . implode(",",$argv) . "\n";
-   $restrict = " AND idpool in (" . implode(",",$argv) . ") ";
+   print "Error: unprocessed arguments left: " . implode(" ",$argv) . "\n";
+   exit(1);
 }
 
 // DTD file
@@ -130,7 +136,7 @@ fwrite($dtd_file,'
 <!ELEMENT keywords (#PCDATA)>
 <!ATTLIST inex_topic
   topic_id     CDATA     #REQUIRED
-  query_type  CDATA #REQUIRED
+  query_type  CDATA #IMPLIED
   ct_no      CDATA         #REQUIRED
 >
 <!ELEMENT title (#PCDATA)>
@@ -144,7 +150,7 @@ fwrite($dtd_file,'
                               -->
 
 
-  <!ELEMENT file ((best-entry-point, passage+, element+)?)>
+  <!ELEMENT file ((best-entry-point, passage*, element*)?)>
   <!ELEMENT passage EMPTY>
   <!ATTLIST passage start CDATA #REQUIRED end CDATA #REQUIRED size CDATA #REQUIRED>
 
@@ -156,6 +162,7 @@ fwrite($dtd_file,'
   <!ATTLIST assessments
             pool CDATA #REQUIRED
             topic CDATA #REQUIRED
+            whitespace-text-node CDATA "keep"
             version CDATA #REQUIRED>
   <!ATTLIST collection name CDATA #REQUIRED>
   <!ATTLIST file collection CDATA #REQUIRED name CDATA #REQUIRED>
@@ -221,7 +228,7 @@ function addPool(&$data) {
    if (!is_dir($dir)) mkdir($dir);
    $fh = $files[$data[0]] = fopen("$dir/pool-$data[0].xml","w");
    fwrite($fh, "<?xml version=\"1.0\"?>\n<!DOCTYPE assessments SYSTEM \"../../assessments.dtd\">\n<assessments pool=\"$data[0]\" topic=\"$data[1]\" version=\"2\"" 
-      . "whitespace-text-node=\"" ($strip_ws ? "strip" : "keep") . "\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
+      . " whitespace-text-node=\"" . ($strip_ws ? "strip" : "keep") . "\">\n\n<!-- Topic definition -->\n" . $data[3] . "\n\n<!-- Topic assessments (only completed files) -->\n\n");
 }
 
 // Select the pools for a given file
@@ -297,6 +304,11 @@ addPool(&$current);
  If the element is xrai:s, added to the array are:
    2. parent path (i.e. a text node), 
    3. offset in the parent path
+   4. The parent path
+   5. the parent offset
+ If parent path is 0
+   6. previous path
+   7. next path
 
   The stack $stack is composed of an array whose components are:
    0. path, 
@@ -323,6 +335,7 @@ const END_OFFSET = 1;
 const MWS_START_OFFSET = 2;
 const MWS_END_OFFSET = 3;
 
+// Parent path (in the case of an xrai:s tag)
 const PARENT_PATH = 4;
 // IF PARENT PATH IS NOT 0
 const PARENT_OFFSET = 5;
@@ -348,7 +361,7 @@ class Stack {
 }
    
 function startElement($parser, $name, $attrs) {
-   global $stack, $pos, $pos_mws, $paths, $nb_passages, $topicPassages, $highlight_only, $debug, $only_ws;
+   global $stack, $debug, $pos, $pos_mws, $paths, $nb_passages, $topicPassages, $highlight_only, $debug, $only_ws, $need_next;
 
    // Update the current element
    if (sizeof($stack) == 1) { $last_was_ws = false; }
@@ -358,6 +371,7 @@ function startElement($parser, $name, $attrs) {
    if (!isset($rank)) $rank = 1; else $rank++;
 
    $path = $last[0] . "/{$name}[{$rank}]";
+   if ($debug > 1) print "\t### BOP $path\n";
    if ($highlight_only && is_array($topicPassages[$path])) {
       $x = &$topicPassages[$path][0]; // a passage (the fifth element (idx = 4) is the pool id
 //       print "Size of starting passages is " . sizeof($x) . "\n";
@@ -367,12 +381,20 @@ function startElement($parser, $name, $attrs) {
 
       }
    }
-      
+   
+   // Did we need next element 
+   if ($GLOBALS["need_next"]) {
+      // FIXME: should not be there
+      array_push($need_next, "$path");
+      if ($debug) print "\tAdded (need_next, new element) $path\n";  
+      unset($GLOBALS["need_next"]);
+      $GLOBALS["need_next"] = null;
+   }
+   
    // For the moment, only made of white spaces  
    $only_ws = true;
    
    // -- Push a new element in the array for the current element
-   
    array_push($stack,array($path, array(), $pos, false, -1, 0, $pos_mws));
 }
 
@@ -383,11 +405,13 @@ function endElement($parser, $name) {
    // Update information about the parent of the current element
    $last = &$stack[sizeof($stack)-2];
    $data = &$stack[sizeof($stack)-1];
+      
+   if ($debug > 1) print "\t*** EOP ".$data[Stack::PATH]."\n";
 
    if ($last) {
-      // if the element was an xrai:s element, only count it as a white space node
+      // if the element was an xrai:s element, only count it as a text node
       // if (1) we don't care about stripping ws only nodes or
-      // (2) it did not contain only whitespaces
+      // (2) it did contain non white space characters
       if ($name == "xrai:s") {
          $x = $last[Stack::START_XRAI_S];
          if (!$strip_ws || !$only_ws) {
@@ -416,17 +440,27 @@ function endElement($parser, $name) {
    // Check if we needed our information for handling special case of xrai:s tags
    
 
+   // --- Check if information was needed for this path
    if ($need_next) {
       if ($name != "xrai:s") {
          array_push($need_next, $path);
+         if ($debug) print  "\tAdded/1 (need_next) $path\n";
          unset($GLOBALS["need_next"]);
+        $GLOBALS["need_next"] = null;
       } else  if ($last[Stack::START_XRAI_S] >= 0) {
-           array_push($need_next, $last[Stack::PATH] . "/text()[" . $last[Stack::NB_XRAIS] . "]."  
-                 . ($last[Stack::START_XRAI_S] - $data[Stack::START_OFFSET]));
+         $p = $last[Stack::PATH] . "/text()[" . $last[Stack::NB_XRAIS] . "]."  
+                 . ($last[Stack::START_XRAI_S] - $data[Stack::START_OFFSET]);
+         if ($debug) print  "\tAdded/2 (need_next) $path\n";
+         array_push($need_next, $p);
          unset($GLOBALS["need_next"]);
+        $GLOBALS["need_next"] = null;
+      } else {
+         if ($debug > 1) print "\tWARNING: need next but no info (still in a WS only node)\n";
       }
-   }
+   } else if ($debug > 1) print "\t[don't need next]\n";
 
+   
+   // --- Check if we need to set the information for this path
    if ($data[Stack::ANCESTOR_RELEVANT] || $paths[$path] || ($highlight_only && (sizeof($nb_passages) > 0)) ) {
       if ($debug) print "\t* Interesting path: $path\n";
       $i = sizeof($stack)-1;
@@ -447,6 +481,7 @@ function endElement($parser, $name) {
          $i--;
       }
       
+      // Fill the paths array
       $paths[$path] = array($data[Stack::START_OFFSET], $pos, $data[Stack::MWS_START_OFFSET], $pos_mws);
       
       // Add the information about xrai:s if needed
@@ -458,8 +493,9 @@ function endElement($parser, $name) {
          } else {
             // Case where we are within an empty text node and skip_ws is on
             // only choice: put the next sibling (for last part) & previous sibling (for previous part) reference
-            // TODO !!!
+            // parent node is 0, and we add the last pasth
             array_push($paths[$path], 0, $last_path);
+            if ($debug) print "\tAdding $path into need_next (last path is $last_path)\n";
             $GLOBALS["need_next"] = &$paths[$path];
          }
       }
@@ -508,7 +544,8 @@ function getXPointer($path, $begin) {
    // An xrai:s node
    if ($p[Path::PARENT_PATH]) 
       return $p[Path::PARENT_PATH] . "." . ($p[$begin ? Path::START_OFFSET : Path::END_OFFSET] - $p[Path::PARENT_OFFSET]);
-//    print "$path : " . $p[Path::NEXT_PATH] . ", " . $p[Path::PREVIOUS_PATH] . "\n";
+      //    print "$path : " . $p[Path::NEXT_PATH] . ", " . $p[Path::PREVIOUS_PATH] . "\n";
+   // Other type of node
    return ($begin ? $p[Path::NEXT_PATH] : $p[Path::PREVIOUS_PATH]);
 }
 
@@ -719,8 +756,14 @@ while (list($id, $data) = each(&$done)) {
                 if ($strip_ws && passageIsOnlyWS($psg[2],$psg[3])) {
                     fwrite($files[$pool], "   <!-- removed whitespace only passage " . getXPointer($psg[2],true) . " to " . getXPointer($psg[3],false) . " of size " . ($psg[1]-$psg[0]). " -->\n");
                   continue;
-                }
-                 fwrite($files[$pool], "   <passage start=\"" . getXPointer($psg[2],true) . "\" end=\"" . getXPointer($psg[3],false) . "\" size=\"" . ($psg[1]-$psg[0]). "\"/>\n");
+                  }
+                  $pstart = getXPointer($psg[2],true);
+                  if ($pstart == "") {
+                     print "WARNING: empty passage start for $psg[2]\n";
+                  }
+                  if ($debug > 1) 
+                     fwrite($files[$pool], "   <!-- passage $psg[2] to $psg[3] -->\n");
+                 fwrite($files[$pool], "   <passage start=\"$pstart\" end=\"" . getXPointer($psg[3],false) . "\" size=\"" . ($psg[1]-$psg[0]). "\"/>\n");
         }
 
          if ($debug > 1) print "Current array (3): " .  print_r($p,true) . "\n";

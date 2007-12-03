@@ -1,4 +1,5 @@
 <?
+// kate: indent-mode cstyle
 /**
     stats.php
     Display statistics about the pools
@@ -120,6 +121,11 @@ View:
 </ul>
 </div>
 <a name="bypool"/><h1>Pools</h1><table class="stats"><thead><tr><th>Official</th><th>Editable</th><th>Pool ID</th><th>Topic ID</th><th>login</th><th># assessed docs</th><th># unassessed docs</th></tr></thead><tbody><?
+
+// Number of assessed topics
+$nb_assessed_topics = 0;
+$nb_assessed_pools = 0;
+
 while ($row=$res->fetchRow()) {
    $row["enabled"] = $db_true == $row["enabled"];
    if (!is_array($topics[$row["topic"]])) 
@@ -130,6 +136,14 @@ while ($row=$res->fetchRow()) {
    $is_done = ($row["todo"] == 0 && $row["done"] > 0) ? 1 : 0;
    if (!is_array($logins[$login])) $logins[]  = array(0,0);
    $logins[$login][$is_done]++;
+   if ($is_done) {
+      if (!$assessed_topics[$topicid]) { 
+         $nb_assessed_topics++;
+         $assessed_topics[$topicid] = true;
+      }
+     $nb_assessed_pools++;
+   }
+    
    $topics[$row["topic"]]["main"] = $topics[$row["topic"]]["main"] || $row["main"];
    // array: 0-link, 1-todo, 2-done
    $image_main = " <img style=\"vertical-align: middle;\" onclick=\"changeMain($row[pool])\" name=\"m-$row[pool]\" src=\"$base_url/img/" . ($row["main"] ? "greenled" : "redled") 
@@ -143,7 +157,11 @@ while ($row=$res->fetchRow()) {
    <td><?=$image_state?></td>
    <td><a href="<?="$base_url/pool?id_pool=$row[pool]"?>"><?=$row["pool"]?></a></td><td><?=$row["topic"]?></td><td><?=$row["login"]?></td><td><?=$row["done"]?></td><td><?=$row[todo]?></td></tr><?
 }
-?></tbody></table><?
+?></tbody></table>
+      
+      
+<p><b>Summary:</b> <?=$nb_assessed_pools?> assessed pools for <?=$nb_assessed_topics?> topics.</p>
+<?
 
       // Summary for topics
 function getBar($title, $n, $d) {
